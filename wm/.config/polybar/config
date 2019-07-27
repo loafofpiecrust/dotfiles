@@ -1,0 +1,311 @@
+
+; scroll to the bottom for some icons...
+
+[colors]
+background = ${xrdb:color0:#222}
+background-alt = ${xrdb:color1:#222}
+foreground = ${xrdb:color7:#dfdfdf}
+foreground-alt = ${xrdb:color8:#555}
+foreground-bright = ${xrdb:color6:#dfdfdf}
+; Keep trying to flip colors 5 and 2
+primary = ${xrdb:color5:#ffb52a}
+secondary = ${xrdb:color2:#e60053}
+alert = ${xrdb:color4:#bd2c40}
+red = #bd2c40
+
+misc1 = ${xrdb:color2:#bd2c40}
+misc2 = ${xrdb:color3:#bd2c40}
+
+[settings]
+screenchange-reload = true
+
+[global/wm]
+margin-top = 0
+margin-bottom = 5
+
+
+[bar/main]
+monitor = ${env:MONITOR:eDP1}
+width = 100%
+height = 32
+fixed-center = true
+top = true
+enable-ipc = true
+
+background = ${colors.background}
+foreground = ${colors.foreground}
+
+line-size = 3
+line-color = #f00
+
+padding-left = 2
+padding-right = 2
+module-margin = 1
+
+font-0 = "monospace:size=13"
+font-1 = "Material Design Icons:pixelsize=14"
+
+modules-left = cpu memory wlan
+modules-center = 
+modules-right = randpaper i3 volume battery date powermenu
+
+; tray-position = left
+; tray-padding = 2
+; tray-transparent = false
+
+scroll-up = i3wm-wsnext
+scroll-down = i3wm-wsprev
+
+
+[module/xwindow]
+type = internal/xwindow
+label = %title:0:30:...%
+
+
+[module/xkeyboard]
+type = internal/xkeyboard
+blacklist-0 = num lock
+
+format-prefix = " "
+format-prefix-foreground = ${colors.foreground-alt}
+format-prefix-underline = ${colors.secondary}
+
+label-layout = %layout%
+label-layout-underline = ${colors.secondary}
+
+label-indicator-padding = 2
+label-indicator-margin = 1
+label-indicator-background = ${colors.secondary}
+label-indicator-underline = ${colors.secondary}
+
+
+[module/i3]
+type = internal/i3
+pin-workspaces = true
+; strip-wsnumbers = true
+
+; wms: , , , , , , , , , Ｒ, Ｓ, Ｔ, Ｕ, , , , , , 
+ws-icon-default = 
+ws-icon-0 = 1;
+ws-icon-1 = 2;
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-5 = 6;
+ws-icon-6 = 7;
+ws-icon-7 = 8;
+ws-icon-8 = 9;
+ws-icon-9 = 10;
+label-unfocused = %icon%
+label-unfocused-padding = 1
+
+label-focused = %icon%
+label-focused-background = ${colors.secondary}
+label-focused-foreground = ${colors.background}
+; label-focused-underline = ${colors.primary}
+label-focused-padding = 1
+
+; label-monitor = %name%
+
+; label-occupied = %index%
+; label-occupied = •
+; label-occupied-padding = 2
+
+; label-urgent = %index%!
+; label-urgent = •
+label-urgent-background = ${colors.alert}
+; label-urgent-padding = 2
+
+label-empty = %icon%
+label-empty-foreground = ${colors.foreground-alt}
+label-empty-padding = 1
+
+
+; harddrive: 
+; chip: 
+[module/cpu]
+type = internal/cpu
+interval = 10
+format-prefix = "CPU "
+format-prefix-foreground = ${colors.foreground-alt}
+label = %percentage:2%%
+
+
+[module/memory]
+type = internal/memory
+interval = 10
+format-prefix = "RAM "
+format-prefix-foreground = ${colors.foreground-alt}
+label = %percentage_used:2%%
+foreground = ${colors.primary}
+
+
+[module/wlan]
+type = internal/network
+interface = wlp58s0
+interval = 3.0
+
+format-connected-prefix = "%{A1:networkmanager_dmenu:}"
+format-connected-suffix = "%{A}"
+
+format-connected = <ramp-signal> <label-connected>
+; format-connected-underline = #9f78e1
+label-connected = %essid% [%downspeed%]
+
+format-packetloss = <label-packetloss>
+label-packetloss = Connecting
+
+format-disconnected = <label-disconnected>
+;format-disconnected-underline = ${self.format-connected-underline}
+label-disconnected =  Borked
+label-disconnected-foreground = ${colors.foreground-alt}
+
+; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷, 
+;       浪, 鸞, 藍, 臘, 朗, 狼, 來
+ramp-signal-0 = 冷
+ramp-signal-1 = 爛
+ramp-signal-2 = 嵐
+ramp-signal-3 = 襤
+ramp-signal-4 = 蠟
+ramp-signal-foreground = ${colors.misc1}
+
+
+[module/eth]
+type = internal/network
+interface = net0
+interval = 3.0
+
+format-connected-underline = #55aa55
+format-connected-prefix = " "
+format-connected-prefix-foreground = ${colors.foreground-alt}
+label-connected = %local_ip%
+
+format-disconnected =
+;format-disconnected = <label-disconnected>
+;format-disconnected-underline = ${self.format-connected-underline}
+;label-disconnected = %ifname% disconnected
+;label-disconnected-foreground = ${colors.foreground-alt}
+
+
+[module/date]
+type = internal/date
+interval = 20
+format-prefix = 
+format-prefix-foreground = ${colors.misc2}
+label = %date% %time%
+date =
+date-alt = " %Y-%m-%d"
+time = %H:%M
+time-alt = %H:%M
+
+
+[module/volume]
+type = internal/volume
+
+format-volume-prefix = %{A3:pavucontrol&:}
+format-volume-suffix = %{A}
+format-volume = <label-volume> <bar-volume>
+
+;volume: , , , 
+label-volume = ""
+label-volume-foreground = ${colors.foreground-bright}
+; format-volume-underline = ${colors.foreground-bright}
+
+format-muted-foreground = ${colors.foreground-alt}
+format-muted = <label-muted> <bar-volume>
+label-muted = ""
+
+bar-volume-width = 10
+bar-volume-foreground-0 = ${self.label-volume-foreground}
+bar-volume-gradient = false
+
+; heart: , , , 
+bar-volume-indicator = |
+bar-volume-fill = -
+bar-volume-empty = -
+bar-volume-empty-foreground = ${colors.foreground-alt}
+
+
+[module/battery]
+type = internal/battery
+battery = BAT1
+adapter = AC
+full-at = 98
+
+format-charging-prefix = %{A3:xfce4-power-manager-settings:}
+format-charging-suffix = %{A}
+format-discharging-prefix = ${self.format-charging-prefix}
+format-discharging-suffix = ${self.format-charging-suffix}
+
+format-discharging = <label-discharging> <bar-capacity>
+label-discharging = +%time%
+
+format-charging = <label-charging> <bar-capacity>
+label-charging = -%time%
+
+bar-capacity-width = 10
+
+; 
+bar-capacity-indicator = 
+bar-capacity-fill = 
+bar-capacity-empty = 
+bar-capacity-fill-foreground = ${colors.primary}
+bar-capacity-indicator-foreground = ${colors.primary}
+bar-capacity-empty-foreground = ${colors.foreground-alt}
+
+
+[module/powermenu]
+type = custom/text
+click-left = ~/dotfiles/scripts/rofi-logout.sh
+content = 
+content-foreground = ${colors.background-alt}
+
+
+[module/randpaper]
+type = custom/text
+; landscape: , , , , 
+content = 
+content-foreground = ${colors.background-alt}
+click-left = wpg -m
+
+[module/system-upgrade]
+type = custom/ipc
+format =  <output>
+hook-0 = echo ""
+hook-1 = echo Upgrading...
+hook-2 = echo Success
+hook-3 = echo Failed
+initial = 1
+click-left = ~/dotfiles/scripts/upgrade-system.fish %pid% &
+
+
+; terminal: 
+; flower: 
+; bg folder: 
+; speedometer: , , , 
+; all gender: 
+; ghost: 
+; heart: , , , , 
+; headphones: 
+; home: 
+; landscape: , , , , 
+; key: 
+; keyboard: 
+; penguin: 
+; exit: 
+; lock: 
+; calendar: , 
+; art: 
+; totoro: 
+; power: , , , 
+; radioactive: 
+; recycle: 
+; rocket: 
+; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷, 
+;       浪, 鸞, 藍, 臘, 朗, 狼, 來
+; everything: 
+;volume: , , , 
+; alert: , 
+;  yinyang: , , , , ｇ, 
+; wms: , , , , , , , , , Ｒ, Ｓ, Ｔ, Ｕ, , , , , 
+; hdmi: 

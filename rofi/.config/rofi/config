@@ -1,0 +1,5 @@
+
+rofi.theme: ~/.config/wpg/formats/colors-rofi-light.rasi
+rofi.columns: 2
+rofi.show-icons: true
+rofi.font: monospace 12
