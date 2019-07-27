@@ -88,6 +88,7 @@
     openssh.enable = true;
     printing.enable = true;
     tlp.enable = true; # power saving
+    tzupdate.enable = true; # automatic timezone by IP
   };
 
   # Enable the X11 windowing system.
