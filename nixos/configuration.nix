@@ -64,13 +64,16 @@
         clickMethod = "clickfinger";
       };
 
-      # desktopManager.xfce.enable = true;
       desktopManager = {
         default = "xfce";
         xterm.enable = false;
         xfce.enable = true;
         xfce.noDesktop = true;
         xfce.enableXfwm = false;
+        xfce.thunarPlugins = [
+          pkgs.xfce.thunar-archive-plugin
+          pkgs.xfce.thunar-volman
+        ];
       };
       windowManager.i3.enable = true;
       windowManager.i3.package = pkgs.i3-gaps;
@@ -90,11 +93,7 @@
     tlp.enable = true; # power saving
     tzupdate.enable = true; # automatic timezone by IP
   };
-
-  # Enable the X11 windowing system.
-  # services.xserver.xkbOptions = "eurosign:e";
   
-  # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {
     users.snead = {
       hashedPassword = 
