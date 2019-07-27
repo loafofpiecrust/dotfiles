@@ -3,33 +3,30 @@
 {
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
+    # system tools
+    killall
+    neofetch
+    stow
+    fortune
+    powertop
+    gksu
+
+    # user tools
     networkmanager
+    alacritty
+    shutter
+
     # desktop environment
-    i3-gaps
     polybar
     dunst
-    compton-git
     rofi
     rofi-menugen
     networkmanager_dmenu
     pavucontrol
-    neofetch
     feh
     wpgtk
-    nitrogen
-    fortune
-    oblogout
-    stow
-    killall
-    gksu
-    powertop
-    shutter
 
-    # baseline tools
-    alacritty
-    fish
-
-    # dev
+    # languages
     git
     rustup
     gcc
@@ -38,11 +35,10 @@
     kotlin
     nodejs
 
-    # ide
+    # dev
     jetbrains.idea-ultimate
     insomnia
     vscode
-#     libreoffice
 
     # apps
     firefox-devedition-bin

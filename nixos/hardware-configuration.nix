@@ -4,29 +4,35 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports =
-    [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
-    ];
+  imports = [
+    <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
+  ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "usb_storage" 
-"sd_mod" "bbswitch" ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-intel" ];
-  boot.extraModulePackages = [ ];
+  boot = {
+    # Use the systemd-boot EFI boot loader.
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
 
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/root";
-    fsType = "ext4";
+    initrd.availableKernelModules = ["xhci_pci" "nvme" "usb_storage" 
+  "sd_mod" "bbswitch"];
+    initrd.kernelModules = [];
+    kernelModules = ["kvm-intel"];
+    extraModulePackages = [];
   };
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/F3E8-3D3D";
-    fsType = "vfat";
-  };
-  
-  fileSystems."/home" = {
-    device = "/dev/disk/by-label/home";
-    fsType = "ext4";
+  fileSystems = {
+    "/boot" = {
+      device = "/dev/disk/by-uuid/F3E8-3D3D";
+      fsType = "vfat";
+    };
+    "/" = {
+      device = "/dev/disk/by-label/root";
+      fsType = "ext4";
+    };
+    "/home" = {
+      device = "/dev/disk/by-label/home";
+      fsType = "ext4";
+    };
   };
 
   swapDevices = [
@@ -40,4 +46,10 @@
   hardware.opengl.extraPackages = [pkgs.linuxPackages.nvidia_x11.out];
   hardware.opengl.extraPackages32 = 
 [pkgs.linuxPackages.nvidia_x11.lib32];
+
+  services.undervolt = {
+    enable = true;
+    coreOffset = "-110";
+    gpuOffset = "-110";
+  };
 }

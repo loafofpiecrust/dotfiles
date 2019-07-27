@@ -11,9 +11,10 @@
     ./packages.nix
   ];
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  networking = {
+    hostName = "loafofpiecrust";
+    networkmanager.enable = true;
+  };
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -82,14 +83,13 @@
         background = "/home/snead/.background-image";
       };
     };
-    compton.enable = true;
+
+    compton = {
+      enable = true;
+      package = pkgs.compton-git;
+    };
     openssh.enable = true;
     printing.enable = true;
-    undervolt = {
-      enable = true;
-      coreOffset = "-110";
-      gpuOffset = "-110";
-    };
   };
 
   # Enable the X11 windowing system.
@@ -107,10 +107,12 @@
     };
   };
 
-  programs.fish.enable = true;
-  programs.dconf.enable = true;
-  programs.nm-applet.enable = false;
-  programs.java.enable = true;
+  programs = {
+    fish.enable = true;
+    dconf.enable = true;
+    nm-applet.enable = false;
+    java.enable = true;
+  };
 
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
@@ -118,8 +120,4 @@
   # should.
   system.stateVersion = "19.03"; # Did you read the comment?
 
-  networking = {
-    hostName = "loafofpiecrust";
-    networkmanager.enable = true;
-  };
 }
