@@ -27,9 +27,6 @@
     defaultLocale = "en_US.UTF-8";
   };
 
-  # Set your time zone.
-  time.timeZone = "America/New_York";
-
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
