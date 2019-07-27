@@ -9,6 +9,7 @@
     stow
     fortune
     powertop
+    htop
     gksu
     mate.engrampa # provides all archive formats
 
