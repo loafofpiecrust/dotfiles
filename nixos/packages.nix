@@ -10,6 +10,7 @@
     fortune
     powertop
     gksu
+    mate.engrampa # provides all archive formats
 
     # user tools
     networkmanager
@@ -43,6 +44,8 @@
     # apps
     firefox-devedition-bin
     spotify
+    calibre # ebook manager
+    mate.atril # pdf viewer
 #     zoom-us
 #     slack
 
