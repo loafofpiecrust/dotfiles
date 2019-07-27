@@ -90,6 +90,7 @@
     };
     openssh.enable = true;
     printing.enable = true;
+    tlp.enable = true; # power saving
   };
 
   # Enable the X11 windowing system.

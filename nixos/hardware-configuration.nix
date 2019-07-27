@@ -19,6 +19,8 @@
     initrd.kernelModules = [];
     kernelModules = ["kvm-intel"];
     extraModulePackages = [];
+    # I never use bluetooth
+    blacklistedKernelModules = ["btusb" "bluetooth"];
 
     # boot niceties
     cleanTmpDir = true;
