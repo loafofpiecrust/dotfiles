@@ -46,6 +46,7 @@
     spotify
     calibre # ebook manager
     mate.atril # pdf viewer
+    xfce.parole # video player
 #     zoom-us
 #     slack
 

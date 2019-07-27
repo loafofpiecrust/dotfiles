@@ -56,6 +56,14 @@ modules-right = randpaper i3 volume battery date powermenu
 scroll-up = i3wm-wsnext
 scroll-down = i3wm-wsprev
 
+[bar/second]
+inherit = bar/main
+monitor = HDMI1
+modules-left = 
+modules-center = 
+modules-right = i3 date
+
+
 
 [module/xwindow]
 type = internal/xwindow
@@ -98,6 +106,11 @@ ws-icon-8 = 9;
 ws-icon-9 = 10;
 label-unfocused = %icon%
 label-unfocused-padding = 1
+
+format = <label-state>
+
+label-visible = %icon%
+label-visible-padding = 1
 
 label-focused = %icon%
 label-focused-background = ${colors.secondary}
