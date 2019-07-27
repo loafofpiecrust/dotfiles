@@ -11,6 +11,7 @@
   boot = {
     # Use the systemd-boot EFI boot loader.
     loader.systemd-boot.enable = true;
+    loader.systemd-boot.editor = false; # editor defeats the purpose of all security...
     loader.efi.canTouchEfiVariables = true;
 
     initrd.availableKernelModules = ["xhci_pci" "nvme" "usb_storage" 
@@ -18,6 +19,14 @@
     initrd.kernelModules = [];
     kernelModules = ["kvm-intel"];
     extraModulePackages = [];
+
+    # boot niceties
+    cleanTmpDir = true;
+    consoleLogLevel = 3;
+    # splash screen
+    plymouth = {
+      enable = true;
+    };
   };
 
   fileSystems = {
