@@ -11,12 +11,11 @@
     powertop
     htop
     gksu
+    networkmanager
     mate.engrampa # provides all archive formats
 
     # user tools
-    networkmanager
     alacritty
-    shutter
 
     # desktop environment
     polybar
