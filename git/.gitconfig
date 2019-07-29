@@ -1,0 +1,10 @@
+[user]
+name = Taylor Snead
+email = taylorsnead@gmail.com
+username = loafofpiecrust
+
+[credential]
+helper = cache
+
+[core]
+editor = code
