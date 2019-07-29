@@ -49,6 +49,8 @@
   swapDevices = [
     { label = "swap"; }
   ];
+  
+  networking.hostName = "loafofpiecrust";
 
   nix.maxJobs = lib.mkDefault 8;
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";

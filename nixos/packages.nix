@@ -74,6 +74,7 @@
     fira-code
     material-design-icons
     hermit
+    charis-sil # IPA font
     # Add user fonts to ~/.local/share/fonts
   ];
 }
