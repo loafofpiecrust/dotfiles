@@ -4,18 +4,21 @@
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     # system tools
+    binutils
     killall
-    neofetch
-    stow
-    fortune
     powertop
+    ripgrep
     htop
     gksu
     networkmanager
-    mate.engrampa # provides all archive formats
+    gnome3.file-roller # provides all archive formats
+    networkmanager-openvpn
+    docker
 
     # user tools
     alacritty
+    stow
+    fortune
 
     # desktop environment
     polybar
@@ -47,8 +50,9 @@
     calibre # ebook manager
     mate.atril # pdf viewer
     xfce.parole # video player
-#     zoom-us
-#     slack
+    font-manager
+    slack
+    deluge
 
     # games
 #     steam
