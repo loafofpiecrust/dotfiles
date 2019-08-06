@@ -45,11 +45,10 @@ module-margin = 1
 font-0 = "monospace:size=13"
 font-1 = "Material Design Icons:pixelsize=14"
 
-modules-left = cpu memory wlan
+modules-left = vpn wlan cpu memory
 modules-center = 
 modules-right = randpaper i3 volume battery date powermenu
-
-; tray-position = left
+# tray-position = left
 ; tray-padding = 2
 ; tray-transparent = false
 
@@ -126,6 +125,7 @@ label-focused-padding = 1
 
 ; label-urgent = %index%!
 ; label-urgent = •
+label-urgent = %icon%
 label-urgent-background = ${colors.alert}
 ; label-urgent-padding = 2
 
@@ -182,6 +182,11 @@ ramp-signal-3 = 襤
 ramp-signal-4 = 蠟
 ramp-signal-foreground = ${colors.misc1}
 
+
+[module/vpn]
+type = custom/script
+exec = ~/.config/polybar/vpn-status.sh
+interval = 10
 
 [module/eth]
 type = internal/network
