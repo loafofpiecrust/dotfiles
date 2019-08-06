@@ -65,6 +65,13 @@
       displayManager.lightdm = {
         enable = true;
         background = "/home/snead/.background-image";
+        greeters.gtk = {
+          indicators = [ "~spacer" "~session" "~clock" "~power" ];
+          cursorTheme.package = pkgs.bibata-cursors;
+          cursorTheme.name = "Bibata Oil";
+          theme.package = pkgs.adapta-gtk-theme;
+          theme.name = "Adapta";
+        };
       };
     };
 
@@ -84,8 +91,8 @@
 "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
       isNormalUser = true;
       home = "/home/snead";
-      extraGroups = ["wheel" "networkmanager"];
-      shell = "/run/current-system/sw/bin/fish";
+      extraGroups = ["wheel" "networkmanager" "docker"];
+      shell = pkgs.fish;
     };
   };
 
@@ -95,6 +102,10 @@
     nm-applet.enable = false;
     java.enable = true;
   };
+
+  # Do we really need docker always running?
+  # virtualisation.docker.enable = true;
+  
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
