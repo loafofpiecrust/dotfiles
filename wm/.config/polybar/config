@@ -45,7 +45,7 @@ module-margin = 1
 font-0 = "monospace:size=13"
 font-1 = "Material Design Icons:pixelsize=14"
 
-modules-left = vpn wlan cpu memory
+modules-left = cpu memory vpn wlan
 modules-center = 
 modules-right = randpaper i3 volume battery date powermenu
 # tray-position = left
@@ -127,7 +127,7 @@ label-focused-padding = 1
 ; label-urgent = •
 label-urgent = %icon%
 label-urgent-background = ${colors.alert}
-; label-urgent-padding = 2
+label-urgent-padding = 1
 
 label-empty = %icon%
 label-empty-foreground = ${colors.foreground-alt}
@@ -160,6 +160,8 @@ interval = 3.0
 
 format-connected-prefix = "%{A1:networkmanager_dmenu:}"
 format-connected-suffix = "%{A}"
+format-disconnected-prefix = ${self.format-connected-prefix}
+format-disconnected-suffix = ${self.format-connected-suffix}
 
 format-connected = <ramp-signal> <label-connected>
 ; format-connected-underline = #9f78e1
