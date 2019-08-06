@@ -75,6 +75,15 @@
     material-design-icons
     hermit
     charis-sil # IPA font
+    google-fonts
+    ubuntu_font_family
+    fantasque-sans-mono
     # Add user fonts to ~/.local/share/fonts
   ];
+
+  fonts.fontconfig = {
+    defaultFonts.monospace = ["Operator Mono" "Fantasque Sans Mono"];
+    defaultFonts.sansSerif = ["Product Sans" "Ubuntu"];
+    defaultFonts.serif = ["Merriweather"];
+  };
 }
