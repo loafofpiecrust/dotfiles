@@ -87,7 +87,7 @@
 
   fonts.fontconfig = {
     defaultFonts.monospace = ["Operator Mono" "Fantasque Sans Mono"];
-    defaultFonts.sansSerif = ["Product Sans" "Ubuntu"];
+    defaultFonts.sansSerif = ["Ubuntu"];
     defaultFonts.serif = ["Merriweather"];
   };
 }
