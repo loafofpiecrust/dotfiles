@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sleep 1s
+pkill polybar
+polybar main
