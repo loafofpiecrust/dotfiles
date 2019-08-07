@@ -75,6 +75,7 @@
 
   fonts.fonts = with pkgs; [
     noto-fonts
+    noto-fonts-cjk
     fira-code
     material-design-icons
     hermit
@@ -86,8 +87,8 @@
   ];
 
   fonts.fontconfig = {
-    defaultFonts.monospace = ["Operator Mono" "Fantasque Sans Mono"];
-    defaultFonts.sansSerif = ["Ubuntu"];
+    defaultFonts.monospace = ["Operator Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC"];
+    defaultFonts.sansSerif = ["Ubuntu" "Noto Sans CJK SC"];
     defaultFonts.serif = ["Merriweather"];
   };
 }
