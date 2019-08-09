@@ -61,9 +61,9 @@
     # gtk themes
     adapta-gtk-theme
     arc-theme
-    capitaine-cursors
-    bibata-cursors
     paper-icon-theme
+    arc-icon-theme
+    bibata-cursors
   ];
 
   nixpkgs.config.packageOverrides = pkgs: rec {

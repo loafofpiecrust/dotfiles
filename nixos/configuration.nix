@@ -59,18 +59,19 @@
           pkgs.xfce.thunar-volman
         ];
       };
-      windowManager.i3.enable = true;
-      windowManager.i3.package = pkgs.i3-gaps;
+      windowManager.i3 = {
+        enable = true;
+        package = pkgs.i3-gaps;
+      };
       
       displayManager.lightdm = {
         enable = true;
-        background = "/home/snead/.background-image";
         greeters.gtk = {
-          indicators = [ "~spacer" "~session" "~clock" "~power" ];
+          indicators = ["~spacer" "~session" "~clock" "~power"];
           cursorTheme.package = pkgs.bibata-cursors;
           cursorTheme.name = "Bibata Oil";
-          theme.package = pkgs.adapta-gtk-theme;
-          theme.name = "Adapta";
+          theme.package = pkgs.arc-theme;
+          theme.name = "Arc";
         };
       };
     };
