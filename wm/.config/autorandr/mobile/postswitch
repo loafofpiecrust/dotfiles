@@ -1,5 +1,5 @@
 #!/bin/sh
 
-sleep 1s
 pkill polybar
+while pgrep polybar >/dev/null; do sleep 0.1; done
 polybar main
