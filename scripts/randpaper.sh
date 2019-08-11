@@ -7,7 +7,7 @@ sleep 0.25
 feh --bg-fill ~/.config/wpg/.current &
 
 # ...and import its color palette to fish
-bass source ~/.config/wpg/formats/colors.sh
+source ~/.config/wpg/templates/colors.fish
 
 # TODO: Fix showing in lightdm
 # rm -f /usr/share/backgrounds/custom/current
@@ -17,5 +17,5 @@ bass source ~/.config/wpg/formats/colors.sh
 # chmod 555 ~/.background-image
 
 # Restart dunst to apply theme
-ln -sf ~/.config/wpg/formats/dunstrc ~/.config/dunst/dunstrc
+ln -sf ~/.config/wpg/templates/dunstrc ~/.config/dunst/dunstrc
 pkill dunst && dunst &

@@ -7,8 +7,8 @@
 polybar main &
 pkill nm-applet & # not needed with my polybar modules
 
-# Random Wallpaper
-wpg -m &
+# Restore last wallpaper
+~/.config/wpg/wp_init.sh &
 
 # Notification manager
 dunst &
