@@ -58,9 +58,7 @@ scroll-down = i3wm-wsprev
 [bar/second]
 inherit = bar/main
 monitor = HDMI1
-modules-left = 
-modules-center = 
-modules-right = i3 date
+tray-position = none
 
 
 
