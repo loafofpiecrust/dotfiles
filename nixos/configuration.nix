@@ -8,6 +8,7 @@
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
+    ./laptop.nix
     ./packages.nix
   ];
 
@@ -103,6 +104,12 @@
     dconf.enable = true;
     nm-applet.enable = false;
     java.enable = true;
+  };
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
   };
 
   # Do we really need docker always running?

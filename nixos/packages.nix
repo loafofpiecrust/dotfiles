@@ -19,6 +19,7 @@
     alacritty
     stow
     fortune
+    lastpass-cli
 
     # desktop environment
     polybar
@@ -28,10 +29,11 @@
     networkmanager_dmenu
     pavucontrol
     feh
-    wpgtk
+    unstable.wpgtk
 
     # languages
     git
+    pijul
     rustup
     gcc
     python3
@@ -70,6 +72,11 @@
     polybar = pkgs.polybar.override {
       i3GapsSupport = true;
       pulseSupport = true;
+    };
+    unstable = import <nixos-unstable> {
+      # pass the nixpkgs config to the unstable alias
+      # to ensure `allowUnfree = true;` is propagated:
+      config = config.nixpkgs.config;
     };
   };
 
