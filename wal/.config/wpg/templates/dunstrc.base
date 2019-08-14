@@ -329,7 +329,3 @@
 [volume]
 appname = "Xfce volume daemon"
 format = ""
-
-[brightness]
-appname = xfce4-power-manager
-format = ""
