@@ -33,7 +33,7 @@
 
     # languages
     git
-    pijul
+    unstable.pijul
     rustup
     gcc
     python3
