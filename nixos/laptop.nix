@@ -15,10 +15,6 @@
     # boot niceties
     cleanTmpDir = true;
     consoleLogLevel = 3;
-    # splash screen
-    plymouth = {
-      enable = true;
-    };
   };
   
   networking.hostName = "loafofpiecrust";
@@ -37,7 +33,7 @@
   services.redshift = {
     enable = true;
     latitude = "42.35843";
-    longitude = " -71.05977";
+    longitude = "-71.05977";
     temperature.night = 3700;
   };
 }

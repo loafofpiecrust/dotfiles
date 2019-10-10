@@ -3,7 +3,7 @@
 
 [colors]
 background = ${xrdb:color0:#222}
-background-alt = ${xrdb:color1:#222}
+background-alt = ${xrdb:color1:#dfdfdf}
 foreground = ${xrdb:color7:#dfdfdf}
 foreground-alt = ${xrdb:color8:#555}
 foreground-bright = ${xrdb:color6:#dfdfdf}
@@ -42,18 +42,15 @@ padding-left = 2
 padding-right = 2
 module-margin = 1
 
-font-0 = "monospace:size=13"
+font-0 = "monospace:size=11:weight=bold"
 font-1 = "Material Design Icons:pixelsize=14"
 
 modules-left = cpu memory vpn wlan
 modules-center = 
-modules-right = randpaper i3 volume battery date powermenu
-# tray-position = left
-; tray-padding = 2
-; tray-transparent = false
+modules-right = randpaper bspwm volume battery date powermenu
 
-scroll-up = i3wm-wsnext
-scroll-down = i3wm-wsprev
+scroll-up = bspwm-desknext
+scroll-down = bspwm-deskprev
 
 [bar/second]
 inherit = bar/main
@@ -133,6 +130,57 @@ label-urgent-padding = 1
 label-empty = %icon%
 label-empty-foreground = ${colors.foreground-alt}
 label-empty-padding = 1
+
+
+[module/bspwm]
+type = internal/bspwm
+pin-workspaces = true
+
+fuzzy-match = true
+ws-icon-default = 
+ws-icon-0 = 0;
+ws-icon-1 = 2;
+ws-icon-2 = 3;
+ws-icon-3 = 4;
+ws-icon-4 = 5;
+ws-icon-5 = 6;
+ws-icon-6 = 7;
+ws-icon-7 = 8;
+ws-icon-8 = 9;
+ws-icon-9 = 1;
+label-unfocused = %icon%
+label-unfocused-padding = 1
+
+format = <label-state>
+
+label-visible = %icon%
+label-visible-background = ${colors.secondary}
+label-visible-foreground = ${colors.background}
+label-visible-padding = 1
+
+label-focused = %icon%
+label-focused-background = ${self.label-visible-background}
+label-focused-foreground = ${self.label-visible-foreground}
+label-focused-padding = 1
+
+; label-monitor = %name%
+
+; label-occupied = %index%
+; label-occupied = •
+; label-occupied-padding = 2
+
+; label-urgent = %index%!
+; label-urgent = •
+label-urgent = %icon%
+label-urgent-background = ${colors.alert}
+label-urgent-padding = 1
+
+label-empty = %icon%
+label-empty-foreground = ${colors.foreground-alt}
+label-empty-padding = 1
+
+label-occupied = %icon%
+label-occupied-padding = 1
 
 
 ; harddrive: 
@@ -277,8 +325,8 @@ bar-capacity-empty-foreground = ${colors.foreground-alt}
 
 [module/powermenu]
 type = custom/text
-click-left = ~/dotfiles/scripts/rofi-logout.sh
 content = 
+click-left = /home/snead/dotfiles/scripts/rofi-logout.sh
 content-foreground = ${colors.background-alt}
 
 
@@ -288,16 +336,6 @@ type = custom/text
 content = 
 content-foreground = ${colors.background-alt}
 click-left = wpg -m
-
-[module/system-upgrade]
-type = custom/ipc
-format =  <output>
-hook-0 = echo ""
-hook-1 = echo Upgrading...
-hook-2 = echo Success
-hook-3 = echo Failed
-initial = 1
-click-left = ~/dotfiles/scripts/upgrade-system.fish %pid% &
 
 
 ; terminal: 

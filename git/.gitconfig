@@ -8,3 +8,4 @@ helper = cache
 
 [core]
 editor = code
+excludesfile = ~/.gitignore

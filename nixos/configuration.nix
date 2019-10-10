@@ -43,6 +43,7 @@
     xserver = {
       enable = true;
       layout = "us";
+      enableCtrlAltBackspace = true;
 
       videoDrivers = ["intel"]; # TODO: Pick gpu drivers
       libinput = {
@@ -63,9 +64,9 @@
           pkgs.xfce.thunar-volman
         ];
       };
-      windowManager.i3 = {
+
+      windowManager.bspwm = {
         enable = true;
-        package = pkgs.i3-gaps;
       };
       
       displayManager.lightdm = {
@@ -80,6 +81,7 @@
       };
     };
 
+    # Window compositing effects.
     compton = {
       enable = true;
       package = pkgs.compton-git;
@@ -88,17 +90,22 @@
     printing.enable = true;
     tlp.enable = true; # power saving
     tzupdate.enable = true; # automatic timezone by IP
-    autorandr.enable = true;
+    autorandr.enable = true; # monitor presets
+
+    # Limit journal size
+    journald.extraConfig = ''
+      SystemMaxUse=512M
+    '';
   };
   
   users = {
     users.snead = {
-      hashedPassword = 
-"$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
       isNormalUser = true;
       home = "/home/snead";
       extraGroups = ["wheel" "networkmanager" "docker" "adbusers"];
       shell = pkgs.fish;
+      hashedPassword = 
+"$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
     };
   };
 
@@ -113,7 +120,7 @@
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 30d";
+    options = "--delete-older-than 7d";
   };
 
   # Do we really need docker always running?

@@ -50,6 +50,7 @@
 
     # apps
     firefox-devedition-bin
+    chromium # backup
     spotify
     calibre # ebook manager
     mate.atril # pdf viewer
@@ -59,6 +60,7 @@
     zoom-us
     deluge
     filezilla
+    bleachbit
 
     # games
 #     steam
