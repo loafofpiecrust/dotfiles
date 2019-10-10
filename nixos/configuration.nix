@@ -12,6 +12,9 @@
     ./packages.nix
   ];
 
+  # Keep the system up to date with latest NixOS releases.
+  system.autoUpgrade.enable = true;
+
   # Select internationalisation properties.
   i18n = {
     consoleFont = "Hermit";
@@ -94,7 +97,7 @@
 "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
       isNormalUser = true;
       home = "/home/snead";
-      extraGroups = ["wheel" "networkmanager" "docker"];
+      extraGroups = ["wheel" "networkmanager" "docker" "adbusers"];
       shell = pkgs.fish;
     };
   };
@@ -104,6 +107,7 @@
     dconf.enable = true;
     nm-applet.enable = false;
     java.enable = true;
+    adb.enable = true;
   };
 
   nix.gc = {
@@ -125,5 +129,4 @@
   # servers. You should change this only after NixOS release notes say you
   # should.
   system.stateVersion = "19.03"; # Did you read the comment?
-
 }

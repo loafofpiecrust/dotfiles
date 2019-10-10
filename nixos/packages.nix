@@ -11,6 +11,7 @@
     htop
     gksu
     networkmanager
+    unzip
     gnome3.file-roller # provides all archive formats
     networkmanager-openvpn
     docker
@@ -40,6 +41,7 @@
     go
     kotlin
     nodejs
+    yarn
 
     # dev
     jetbrains.idea-ultimate
@@ -54,7 +56,9 @@
     xfce.parole # video player
     font-manager
     slack
+    zoom-us
     deluge
+    filezilla
 
     # games
 #     steam
@@ -94,7 +98,7 @@
   ];
 
   fonts.fontconfig = {
-    defaultFonts.monospace = ["Operator Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC"];
+    defaultFonts.monospace = ["SF Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC"];
     defaultFonts.sansSerif = ["Ubuntu" "Noto Sans CJK SC"];
     defaultFonts.serif = ["Merriweather"];
   };
