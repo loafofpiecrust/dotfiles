@@ -1,0 +1,5 @@
+fishd.*
+fish_variables
+
+functions/*
+!functions/fish_*.fish
