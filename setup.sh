@@ -9,4 +9,5 @@ stow wal
 stow wm
 stow firefox
 
-gksudo ln -sf $(dirname "$0")/nixos/*.nix /etc/nixos
+# Link our nixos config files into the system path
+gksudo ln -sf $(dirname "$0")/nixos/*.nix /etc/nixos/

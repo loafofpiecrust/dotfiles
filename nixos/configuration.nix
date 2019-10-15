@@ -104,8 +104,7 @@
       home = "/home/snead";
       extraGroups = ["wheel" "networkmanager" "docker" "adbusers"];
       shell = pkgs.fish;
-      hashedPassword = 
-"$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
+      hashedPassword = "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
     };
   };
 

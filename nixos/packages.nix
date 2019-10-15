@@ -70,7 +70,6 @@
     adapta-gtk-theme
     arc-theme
     paper-icon-theme
-    arc-icon-theme
     bibata-cursors
   ];
 
@@ -101,7 +100,7 @@
 
   fonts.fontconfig = {
     defaultFonts.monospace = ["SF Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC"];
-    defaultFonts.sansSerif = ["Ubuntu" "Noto Sans CJK SC"];
+    defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC"];
     defaultFonts.serif = ["Merriweather"];
   };
 }
