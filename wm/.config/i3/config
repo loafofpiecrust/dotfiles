@@ -289,5 +289,5 @@ bindsym $mod+n exec thunar
 bindsym $mod+m exec "/usr/local/bin/switch-audio-port"
 
 # Autostart apps
-exec --no-startup-id "~/dotfiles/scripts/autostart.sh"
+exec --no-startup-id "~/bin/autostart.sh"
 exec --no-startup-id "ibus-daemon --xid -d"

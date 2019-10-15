@@ -327,7 +327,7 @@ bar-capacity-empty-foreground = ${colors.foreground-alt}
 [module/powermenu]
 type = custom/text
 content = 
-click-left = /home/snead/dotfiles/scripts/rofi-logout.sh
+click-left = rofi-logout.sh
 content-foreground = ${colors.background-alt}
 
 
