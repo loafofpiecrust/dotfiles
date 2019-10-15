@@ -2,9 +2,9 @@
 
 #begin main
 prompt="Select"
-add_exec 'Lock'         'dm-tool lock'
-add_exec 'Log Out'      'kill -9 -1'
-add_exec 'Sleep'        'systemctl suspend'
-add_exec 'Reboot'       'systemctl reboot'
-add_exec 'Shutdown'     'systemctl poweroff'
+add_exec 'lock'         'dm-tool lock'
+add_exec 'log out'      'kill -9 -1'
+add_exec 'sleep'        'systemctl suspend'
+add_exec 'reboot'       'systemctl reboot'
+add_exec 'shutdown'     'systemctl poweroff'
 #end main

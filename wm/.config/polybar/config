@@ -206,7 +206,7 @@ foreground = ${colors.primary}
 [module/wlan]
 type = internal/network
 interface = wlp58s0
-interval = 3.0
+interval = 3
 
 format-connected-prefix = "%{A1:networkmanager_dmenu:}"
 format-connected-suffix = "%{A}"
