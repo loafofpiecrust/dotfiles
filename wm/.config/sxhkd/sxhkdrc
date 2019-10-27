@@ -48,11 +48,6 @@ super + m
 super + y
 	bspc query -N -n focused.automatic && bspc node -n last.!automatic || bspc node last.leaf -n focused
 
-# Toogle tiling of window
-super + s
-	bspc query --nodes -n focused.tiled && state=floating || state=tiled; \
-	bspc node --state \~$state
-
 # swap the current node and the biggest node
 ; super + g
 ; 	bspc node -s biggest
@@ -61,9 +56,14 @@ super + s
 # state/flags
 #
 
+# Toogle floating window
+super + s
+	bspc query --nodes -n focused.tiled && state=floating || state=tiled; \
+	bspc node --state \~$state
+
 # set the window state
-; super + {t,shift + t,d,f}
-; 	bspc node -t {tiled,pseudo_tiled,floating,fullscreen -l above}
+super + {t,shift + t,d,f}
+	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
 
 # set the node flags
 super + ctrl + {x,y,z}
