@@ -30,18 +30,18 @@
     networkmanager_dmenu
     pavucontrol
     feh
-    unstable.wpgtk
+    wpgtk
 
     # languages
     git
-    unstable.pijul
     rustup
     gcc
     python3
     go
     kotlin
-    nodejs
+    nodejs-10_x
     yarn
+    unstable.nim
 
     # dev
     jetbrains.idea-ultimate
@@ -77,6 +77,9 @@
     polybar = pkgs.polybar.override {
       i3GapsSupport = true;
       pulseSupport = true;
+    };
+    yarn = pkgs.yarn.override {
+      nodejs = pkgs.nodejs-10_x;
     };
     unstable = import <nixos-unstable> {
       # pass the nixpkgs config to the unstable alias

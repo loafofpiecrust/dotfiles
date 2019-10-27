@@ -12,8 +12,10 @@
     ./packages.nix
   ];
 
-  # Keep the system up to date with latest NixOS releases.
-  system.autoUpgrade.enable = true;
+  system.autoUpgrade = {
+    enable = true;
+    channel = https://nixos.org/channels/nixos-19.09;
+  };
 
   # Select internationalisation properties.
   i18n = {
