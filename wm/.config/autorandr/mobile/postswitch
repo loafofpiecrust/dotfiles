@@ -1,9 +1,13 @@
-#!/bin/sh
+#!/usr/bin/env fish
 
 # Shove all workspaces onto the main screen
 bspc monitor eDP1 -d 1 2 3 4 5 6 7 8 9 0
 
 # Launch just the default bar
-pkill polybar
-while pgrep polybar >/dev/null; do sleep 0.1; done
-polybar main & disown
+# but only if there were others there.
+if test (pgrep polybar | wc -l) -ne 1
+    while pkill polybar >/dev/null
+        sleep 0.05
+    end
+    polybar main & disown
+end

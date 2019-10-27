@@ -302,7 +302,7 @@ battery = BAT1
 adapter = AC
 full-at = 98
 
-format-charging-prefix = %{A3:xfce4-power-manager-settings:}
+format-charging-prefix = %{A3:xfce4-power-manager-settings&:}
 format-charging-suffix = %{A}
 format-discharging-prefix = ${self.format-charging-prefix}
 format-discharging-suffix = ${self.format-charging-suffix}

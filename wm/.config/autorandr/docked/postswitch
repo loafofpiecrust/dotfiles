@@ -5,7 +5,10 @@ bspc monitor eDP1  -d 1 2 3 4 5
 bspc monitor HDMI1 -d 6 7 8 9 0
 
 # Launch both bars
-pkill polybar
-while pgrep polybar >/dev/null; do sleep 0.1; done
-polybar main & disown
-polybar second & disown
+if test (pgrep polybar | wc -l) -ne 2
+    while pkill polybar >/dev/null
+        sleep 0.05
+    end
+    polybar main & disown
+    polybar second & disown
+end
