@@ -1,7 +1,7 @@
 
 cat ~/.config/wpg/sequences &
 
-source ~/.config/wpg/templates/colors.fish
+source ~/.cache/wal/colors.fish
 
 # Install all fish packages on new systems!
 if not functions -q fisher
@@ -9,3 +9,5 @@ if not functions -q fisher
     curl https://git.io/fisher --create-dirs -sLo $XDG_CONFIG_HOME/fish/functions/fisher.fish
     fish -c fisher
 end
+
+set -x GOPATH ~/.go

@@ -1,6 +1,4 @@
 fishd.*
 fish_variables
 conf.d/
-
-functions/*
-!functions/fish_*.fish
+functions/

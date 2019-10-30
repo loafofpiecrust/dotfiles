@@ -8,6 +8,7 @@ stow term
 stow wal
 stow wm
 stow firefox
+stow system
 
 # Link our nixos config files into the system path
 sudo stow -t /etc/nixos nixos

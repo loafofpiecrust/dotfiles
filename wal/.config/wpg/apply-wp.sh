@@ -7,7 +7,7 @@ sleep 0.3
 feh --bg-fill ~/.config/wpg/.current &
 
 # ...and import its color palette to fish
-source ~/.config/wpg/templates/colors.fish
+source ~/.cache/wal/colors.fish
 
 # Apply colors to bspwm
 ~/.config/bspwm/apply-colors.sh
@@ -20,5 +20,5 @@ source ~/.config/wpg/templates/colors.fish
 # chmod 555 ~/.background-image
 
 # Restart dunst to apply theme
-ln -sf ~/.config/wpg/templates/dunstrc ~/.config/dunst/dunstrc
-pkill dunst && dunst &
+ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
+pkill dunst && dunst & disown
