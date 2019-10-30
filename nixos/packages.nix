@@ -12,6 +12,7 @@
     gksu
     networkmanager
     unzip
+    nnn # file manager
     gnome3.file-roller # provides all archive formats
     networkmanager-openvpn
     docker
@@ -30,7 +31,7 @@
     networkmanager_dmenu
     pavucontrol
     feh
-    wpgtk
+    unstable.wpgtk
 
     # languages
     git

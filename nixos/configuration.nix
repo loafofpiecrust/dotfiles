@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   imports = [
@@ -46,6 +46,7 @@
       enable = true;
       layout = "us";
       enableCtrlAltBackspace = true;
+      autoRepeatInterval = 25; # ms between key repeats
 
       videoDrivers = ["intel"]; # TODO: Pick gpu drivers
       libinput = {
