@@ -9,6 +9,7 @@ stow wal
 stow wm
 stow firefox
 stow system
+stow emacs
 
 # Link our nixos config files into the system path
 sudo stow -t /etc/nixos nixos
