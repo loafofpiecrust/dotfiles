@@ -21,10 +21,12 @@
 
 ;; Colors config (supposedly this should be at the top of the file)
 (custom-set-faces
- '(company-tooltip ((t :background "white"
-                       :foreground "black")))
- '(line-number-current-line ((t :background "white"
-                                :foreground "black")))
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(company-tooltip ((t :background "white" :foreground "black")))
+ '(line-number-current-line ((t :background "white" :foreground "black")))
  '(lsp-ui-doc-background ((t :background "black"))))
 
 
@@ -34,6 +36,8 @@
 (use-package forge :after magit)
 (use-package yasnippet)
 (use-package projectile)
+(use-package emojify)
+
 
 ;; mini-buffer tab completion
 (use-package ivy)
@@ -106,9 +110,9 @@
 
 ;; evil mode by default while I adjust to emacs!
 (evil-mode 1)
-(setq ido-enable-flex-matching t)
-(setq ido-everywhere 1)
-(ido-mode 1)
+;;(setq ido-enable-flex-matching t)
+;;(setq ido-everywhere 1)
+;;(ido-mode 1)
 
 
 ;; Enable spellcheck in comments and strings (requires ispell)
@@ -136,7 +140,8 @@
                              (ivy-mode 1)
                              (electric-pair-mode)
 							 (global-display-line-numbers-mode)
-							 (column-number-mode)))
+                             (global-emojify-mode)
+                             (column-number-mode)))
 
 
 ;; Custom key bindings
