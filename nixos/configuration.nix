@@ -82,8 +82,15 @@
           theme.name = "Arc";
         };
       };
+
     };
 
+    # Shared emacs server for :zap: speedy-macs
+    emacs = {
+      enable = true;
+      defaultEditor = true;
+    };
+    
     # Window compositing effects.
     compton = {
       enable = true;

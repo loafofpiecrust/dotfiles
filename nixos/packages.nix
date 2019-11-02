@@ -45,6 +45,7 @@
     unstable.nim
 
     # dev
+    emacs
     jetbrains.idea-ultimate
     insomnia
     vscode
@@ -81,6 +82,14 @@
     };
     yarn = pkgs.yarn.override {
       nodejs = pkgs.nodejs-10_x;
+    };
+    emacs = pkgs.emacs.override {
+      # I don't use the emacs GUI
+      withGTK2 = false;
+      withGTK3 = false;
+      withX = false;
+      # Build with imagemagick support to get emojis! 
+      imagemagick = pkgs.imagemagickBig;
     };
     unstable = import <nixos-unstable> {
       # pass the nixpkgs config to the unstable alias

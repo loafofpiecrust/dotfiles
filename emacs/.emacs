@@ -16,31 +16,45 @@
 (setq straight-use-package-by-default 1)
 (straight-use-package 'use-package)
 
+;; General config
+(menu-bar-mode -1)
+(setq-default tab-width 4)
+(show-paren-mode 1)
+;; Custom theme to use terminal colors best
+(load-theme 'terminal-wal t)
+
 ;; Make sure to use :commands and :hook to defer package load until its used
 ;; This is mainly relevant for language packages, where we don't need them all at once.
 
-;; Colors config (supposedly this should be at the top of the file)
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(company-tooltip ((t :background "white" :foreground "black")))
- '(line-number-current-line ((t :background "white" :foreground "black")))
- '(lsp-ui-doc-background ((t :background "black"))))
+;; ui packages
+(use-package diminish) ; hide minor mode lines
+(use-package doom-modeline
+  :hook (after-init . doom-modeline-mode))
+
+;; Editing
+;; evil mode by default while I adjust to emacs!
+(use-package evil
+  :hook (after-init . evil-mode))
+(setq-default indent-tabs-mode nil) ; spaces by default
+(cua-mode t) ; normal copy-paste bindings
+(use-package dtrt-indent) ; auto-detect indentation
+(use-package move-text
+  :bind (("M-<up>" . move-text-up)
+         ("M-<down>" . move-text-down)))
+(use-package whole-line-or-region)
 
 
 ;; Essential packages
-(use-package evil)
-(use-package magit)
-(use-package forge :after magit)
 (use-package yasnippet)
 (use-package projectile)
-(use-package emojify)
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
+(use-package flycheck
+  :hook (after-init . global-flycheck-mode))
 
 
 ;; mini-buffer tab completion
-(use-package ivy)
+(use-package ivy :hook (after-init . ivy-mode))
 (setq ivy-use-virtual-buffers t)
 (setq enable-recursive-minibuffers t)
 (setq ivy-re-builders-alist
@@ -49,16 +63,7 @@
         (t . ivy--regex-fuzzy)))
 (setq projectile-completion-system 'ivy)
 
-
-;; code completion and LSP setup
-(use-package lsp-mode
-  :hook ((go-mode rust-mode) . lsp-deferred)
-  :commands (lsp lsp-deferred)) ; language server protocol
-
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode))
-
-;; auto-complete
+;; in-buffer auto-complete
 (use-package company
   :hook (prog-mode . company-mode))
 (setq company-idle-delay 0.2)
@@ -67,63 +72,41 @@
 (setq company-require-match -1)
 
 ;; show docs in popup!
-(use-package pos-tip)
 (use-package company-quickhelp
   :hook (company-mode . company-quickhelp-mode))
+
+;; code completion and LSP setup
+(use-package lsp-mode
+  :hook (((go-mode rust-mode) . lsp-deferred)
+         ;; Format code on save
+         (lsp-mode . (lambda ()
+                       (add-hook 'before-save-hook 'lsp-format-buffer))))
+  :commands (lsp lsp-deferred)) ; language server protocol
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode))
 
 (use-package company-lsp)
 (push 'company-lsp company-backends)
 
-;; Editing
-(setq-default indent-tabs-mode nil) ; spaces by default
-(use-package dtrt-indent) ; auto-detect indentation
-(use-package move-text
-  :bind (("M-<up>" . move-text-up)
-         ("M-<down>" . move-text-down)))
-(use-package smart-hungry-delete
-  :bind (("<backspace>" . smart-hungry-delete-backward-char))
-  :defer nil ; dont defer so we can add our functions to hooks 
-  :config (smart-hungry-delete-add-default-hooks))
 
-;; Languages
-(use-package nix-mode :commands nix-mode)
-(use-package bazel-mode :commands bazel-mode)
-(use-package yaml-mode :commands yaml-mode)
+;; version control
+(use-package magit)
+(use-package forge :after magit)
+;; Show changed lines in the margin
+(use-package diff-hl
+  :hook ((after-init . (lambda ()
+                         (global-diff-hl-mode)
+                         (diff-hl-margin-mode)))
+         (magit-post-refresh . diff-hl-magit-post-refresh)))
 
-;; golang
-(use-package go-mode :commands go-mode)
 
-(add-hook 'lsp-mode-hook (lambda ()
-                           (add-hook 'before-save-hook 'lsp-format-buffer)))
-
-;; Rust
-(use-package rust-mode :commands rust-mode)
-
-;; typesetting
-(use-package markdown-mode)
-;; TODO: latex plugins!
-
-;; ui packages
-(use-package diminish) ; hide minor mode lines
-(use-package smart-mode-line)
-(sml/setup)
-
-;; evil mode by default while I adjust to emacs!
-(evil-mode 1)
-;;(setq ido-enable-flex-matching t)
-;;(setq ido-everywhere 1)
-;;(ido-mode 1)
-
+(setq frame-background-mode 'dark)
 
 ;; Enable spellcheck in comments and strings (requires ispell)
 (add-hook 'text-mode-hook 'flyspell-mode)
 (add-hook 'prog-mode-hook 'flyspell-prog-mode)
 (setq flyspell-issue-message-flag nil)
-
-;; Disable toolbar, I don't use it.
-(menu-bar-mode -1)
-(setq-default tab-width 4)
-(show-paren-mode 1)
 
 
 ;; Backup settings
@@ -137,28 +120,69 @@
 
 ;; Enable completion, pair matching, line numbers
 (add-hook 'after-init-hook (lambda ()
-                             (ivy-mode 1)
                              (electric-pair-mode)
 							 (global-display-line-numbers-mode)
-                             (global-emojify-mode)
                              (column-number-mode)))
 
+(use-package smart-hungry-delete)
+(smart-hungry-delete-add-default-hooks)
 
 ;; Custom key bindings
 (global-set-key (kbd "M-SPC") 'company-complete)
-;; TODO: Rebind commands for marking??
+(global-set-key (kbd "<backspace>") 'smart-hungry-delete-backward-char)
 (global-set-key (kbd "C-s") 'save-buffer)
 ;; TODO: Rebind isearch-forward
 (global-set-key (kbd "C-]") 'tab-to-tab-stop)
-;;(global-set-key (kbd "C-<tab>") 'indent-relative) ; TODO: rebind, C-tab doesn't work
-;;(global-set-key (kbd "C-_") 'comment-line)
 ;; rebind undo-tree-undo for undoing stuff!
 ;; Generally need to pick bindings for undo/redo
 ;; TODO: Backspace works weird in terminal...?!
 
-(load-theme 'tango-dark)
 
-;;(if (eq (gentenv "TERM") "xt"))
+;; Languages
+(use-package nix-mode :commands nix-mode)
+(use-package bazel-mode :commands bazel-mode)
+(use-package yaml-mode :commands yaml-mode)
+(use-package json-mode :commands json-mode)
+(use-package go-mode :commands go-mode)
+(use-package rust-mode :commands rust-mode)
+
+(use-package rainbow-mode
+  :hook (after-init . 'rainbow-mode))
+
+;; javascript and typescript
+(defun custom-tide-setup ()
+  (tide-setup)
+  (tide-hl-identifier-mode 1))
+
+(use-package tide
+ :hook ((typescript-mode . custom-tide-setup)
+        (before-save . tide-format-before-save)))
+
+(use-package web-mode)
+(add-to-list 'auto-mode-alist '("\\.tsx$" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
+
+(add-hook 'web-mode-hook
+          (lambda ()
+            (let ((ext (file-name-extension buffer-file-name)))
+              (when (or (string-equal ext "tsx")
+                        (string-equal ext "jsx"))
+                (custom-tide-setup)))))
+
+;; Use eslint for js/ts
+;; FIXME!
+;; (flycheck-disable-checker 'typescript-tslint)
+;;(flycheck-disable-checker 'javascript-jshint)
+;;(flycheck-add-mode 'javascript-eslint 'web-mode)
+;; (flycheck-add-mode 'javascript-eslint 'typescript-mode)
+
+
+;; typesetting
+(use-package markdown-mode :commands markdown-mode)
+(use-package poly-markdown :after markdown-mode)
+;; TODO: latex plugins!
+
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -166,4 +190,10 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default))))
+    ("eabaa2ba26896ab0253f87c1a3ba62fe137a44f22965ccd04f89644bead32e75" "4f87a907299c237ec58c634647b44aca5ee636fb7861da19a9defa0b0658b26e" default))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

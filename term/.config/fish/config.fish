@@ -10,4 +10,7 @@ if not functions -q fisher
     fish -c fisher
 end
 
+set -x EDITOR "emacsclient -t"
+
 set -x GOPATH ~/.go
+set -g fish_user_paths $GOPATH $HOME/.cargo/bin $fish_user_paths
