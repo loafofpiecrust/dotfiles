@@ -28,18 +28,23 @@
 ;; for better search.
 
 ;;; General built-in Configuration
-(menu-bar-mode -1)
+(tool-bar-mode -1)
+(menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
+(menu-bar-mode 1)
+(scroll-bar-mode -1)
 (setq-default tab-width 4
-              fill-column 80)
+              indent-tabs-mode nil ; use spaces for indentation
+              fill-column 80
+              display-line-numbers-width 3)
 (show-paren-mode 1)
 (add-hook 'text-mode-hook 'auto-fill-mode)
-(setq-default indent-tabs-mode nil) ; spaces by default
 ;; Attempt to scroll less jarringly
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 (setq mouse-wheel-progressive-speed nil)
 (setq mouse-wheel-follow-mouse t)
 (setq scroll-step 1)
 (setq frame-background-mode 'dark)
+(setq delete-by-moving-to-trash t) ; use system trash
 
 ;; TODO: Apply some WYSIWYG styling to org-mode text (italics, bolds, etc)
 
@@ -55,11 +60,19 @@
   (setq which-key-idle-delay 0.5)
   :config (which-key-mode))
 
+;; Dashboard!
+(use-package dashboard
+  :config (dashboard-setup-startup-hook))
 
 ;;;; Mode line
 (use-package diminish) ; hide minor mode lines
-(use-package doom-modeline
-  :hook (after-init . doom-modeline-mode))
+;; (use-package doom-modeline
+;;   :config (doom-modeline-mode))
+
+(use-package spaceline
+  :config
+  (spaceline-emacs-theme)
+  (setq-default spaceline-highlight-face-func 'spaceline-highlight-face-evil-state))
 
 (use-package counsel
   :config (counsel-mode))
@@ -69,8 +82,9 @@
 
 ;;; Editing
 (use-package evil
-  :config (progn
-            (evil-mode t)))
+  :config
+  (setq evil-move-cursor-back nil)
+  (evil-mode t))
 (use-package evil-leader
   :config (progn
             (setq evil-leader/in-all-states t)
@@ -97,14 +111,18 @@
   "xw" '("words")
   "xws" '("spell-check" . flyspell-correct-wrapper)
   "xwc" 'count-words
-  "g" 'magit-status)
+  "g" 'magit-status
+  "n" '("narrowing")
+  "nw" 'widen
+  "nn" 'outshine-narrow-to-subtree)
 
+(use-package editorconfig
+  :config (editorconfig-mode t))
 (use-package dtrt-indent) ; auto-detect indentation
 (use-package move-text ; TODO: replace. works weird with selected region.
   :bind (("M-<up>" . move-text-up)
          ("M-<down>" . move-text-down)))
 (use-package whole-line-or-region)
-
 
 
 ;;; Project management
@@ -139,7 +157,7 @@
 (global-set-key (kbd "C-\\") 'neotree-project-dir)
 ;; TODO: Rebind 'toggle-input-method (for multilingual input)?
 
-
+;;; Latex
 ;; latex packages have to go near the top for some reason.
 ;; otherwise they just mysteriously don't load.
 ;; Because 'auctex is doodled, must use straight directly here.
@@ -149,15 +167,16 @@
 (setq-default TeX-engine 'xetex) ; enables unicode support
 
 
-;; Essential packages
+;;; Essential packages
 (use-package yasnippet)
-;;(use-package emojify) ; TODO: Fix unicode emoji font...
-  ;; :hook (after-init . global-emojify-mode)
-  ;; :init (setq emojify-display-style 'unicode))
+(use-package emojify
+  :config (global-emojify-mode t))
 
 ;;; Syntax checking
 (use-package flycheck
-  :hook (after-init . global-flycheck-mode))
+  :config
+  (global-flycheck-mode)
+  (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
 
 ;;; Ivy and mini-buffer completion
@@ -191,11 +210,11 @@
 ;; Completion for LaTeX macros
 (use-package company-math)
 (use-package company-auctex)
-(push 'company-latex-commands company-backends)
-(push 'company-math-symbols-latex company-backends)
-(push 'company-auctex-environments company-backends)
-(push 'company-auctex-macros company-backends)
-
+(dolist (e '(company-latex-commands
+             company-math-symbols-latex
+             company-auctex-environments
+             company-auctex-macros))
+  (push e company-backends))
 
 ;;; Language Server Protocol!
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
@@ -219,7 +238,11 @@
 
 ;;; Version Control
 (use-package magit)
+;; Provides evil friendly git bindings
+(use-package evil-magit :after magit
+  :init (setq evil-magit-state 'normal))
 (use-package forge :after magit) ; connects to GitHub
+
 ;; Show changed lines in the margin
 (use-package diff-hl
   :hook ((magit-post-refresh . diff-hl-magit-post-refresh))
@@ -275,8 +298,11 @@
 (use-package rainbow-mode
   :hook (after-init . rainbow-mode))
 
+;;; Auxiliary Modes
+(use-package restclient)
+
 ;;; Programming Languages
-;;;; simple to setup
+;;;; One liners
 (use-package nix-mode)
 (use-package bazel-mode)
 (use-package yaml-mode)
@@ -317,7 +343,7 @@
 
 ;;;; typesetting
 (use-package markdown-mode)
-(use-package poly-markdown :after markdown-mode)
+(use-package poly-markdown :commands markdown-mode)
 ;; org-mode additions
 (use-package org-bullets
   :hook ((org-mode . org-bullets-mode)))
