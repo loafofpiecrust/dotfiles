@@ -30,7 +30,6 @@
 ;;; General built-in Configuration
 (tool-bar-mode -1)
 (menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
-(menu-bar-mode 1)
 (scroll-bar-mode -1)
 (setq-default tab-width 4
               indent-tabs-mode nil ; use spaces for indentation
@@ -39,34 +38,46 @@
 (show-paren-mode 1)
 (add-hook 'text-mode-hook 'auto-fill-mode)
 ;; Attempt to scroll less jarringly
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-(setq mouse-wheel-progressive-speed nil)
-(setq mouse-wheel-follow-mouse t)
-(setq scroll-step 1)
-(setq frame-background-mode 'dark)
+;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+;; (setq mouse-wheel-progressive-speed nil)
+;; (setq mouse-wheel-follow-mouse t)
+;; (setq scroll-step 1)
+;; ;;(setq frame-background-mode 'dark)
 (setq delete-by-moving-to-trash t) ; use system trash
 
-;; TODO: Apply some WYSIWYG styling to org-mode text (italics, bolds, etc)
+;;(use-package smooth-scrolling)
+;;(smooth-scrolling-mode 1)
+;; ;; TODO: Apply some WYSIWYG styling to org-mode text (italics, bolds, etc)
 
 ;;; Give me outlines!
 (use-package outshine
   :hook (prog-mode . outshine-mode))
 
-
 ;;; UI Packages
+(use-package page-break-lines)
+(use-package all-the-icons)
+
 (use-package which-key
   :init
   (setq which-key-enable-extended-define-key t)
   (setq which-key-idle-delay 0.5)
   :config (which-key-mode))
 
-;; Dashboard!
+;;;; Dashboard!
 (use-package dashboard
-  :config (dashboard-setup-startup-hook))
+  :config
+  (dashboard-setup-startup-hook)
+  ;; Load in both independent and client windows.
+  (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
+  (setq dashboard-items '((recents . 5)
+                          (projects . 5)
+                          (agenda . 5)))
+  (setq dashboard-startup-banner 'logo)
+  (setq dashboard-set-heading-icons t))
 
 ;;;; Mode line
 (use-package diminish) ; hide minor mode lines
-;; (use-package doom-modeline
+;;(use-package doom-modeline
 ;;   :config (doom-modeline-mode))
 
 (use-package spaceline
@@ -75,55 +86,78 @@
   (setq-default spaceline-highlight-face-func 'spaceline-highlight-face-evil-state))
 
 (use-package counsel
-  :config (counsel-mode))
+  :hook (after-init . counsel-mode))
 
 (use-package flyspell-correct-ivy)
 
 
-;;; Editing
+;;; Primary Keybindings (evil)
+(use-package general)
 (use-package evil
+  :init
+  (setq evil-want-keybinding nil) ; let evil-collection bind keys
+  (setq evil-want-C-i-jump nil) ; keep tab for indenting
   :config
   (setq evil-move-cursor-back nil)
   (evil-mode t))
-(use-package evil-leader
-  :config (progn
-            (setq evil-leader/in-all-states t)
-            (global-evil-leader-mode)))
+(use-package evil-collection :after evil
+  :custom
+  (evil-collection-outline-bind-tab-p t)
+  (evil-collection-company-use-tng nil)
+  :config (evil-collection-init))
 
-(evil-leader/set-leader "<SPC>")
-(evil-leader/set-key
-  "SPC" 'counsel-M-x
-  "b" '("buffers")
-  "bo" 'other-buffer
-  "bb" 'counsel-switch-buffer
-  "bk" 'kill-buffer 
-  "bh" 'home
-  "f" '("files")
-  "ff" 'counsel-find-file
-  "fd" 'dired
-  "/" 'comment-line
-  "e" '("eval")
-  "ee" (kbd "C-x C-e")
-  "w" '("windows")
-  "wo" 'other-window
-  "wk" 'delete-window
-  "x" '("text")
-  "xw" '("words")
-  "xws" '("spell-check" . flyspell-correct-wrapper)
-  "xwc" 'count-words
-  "g" 'magit-status
-  "n" '("narrowing")
-  "nw" 'widen
-  "nn" 'outshine-narrow-to-subtree)
+;; General evil mode overrides
+(general-define-key
+ :states '(normal motion)
+ "TAB" 'outshine-kbd-TAB)
 
+;; Leader key commands
+(general-define-key
+ :states '(normal motion)
+ :prefix "<SPC>"
+ :keymaps 'override
+ "SPC" 'counsel-M-x
+ "b" '("buffers")
+ "bo" 'other-buffer
+ "bb" 'counsel-switch-buffer
+ "bk" 'kill-buffer 
+ "bh" 'home
+ "f" '("files")
+ "ff" 'counsel-find-file
+ "fd" 'dired
+ "/" 'comment-line
+ "e" '("eval")
+ "ee" (kbd "C-x C-e")
+ "w" '("windows")
+ "wo" 'other-window
+ "wk" 'delete-window
+ "x" '("text")
+ "xw" '("words")
+ "xws" '("spell-check" . flyspell-correct-wrapper)
+ "xwc" 'count-words
+ "g" 'magit-status
+ "n" '("narrowing")
+ "nw" 'widen
+ "ns" 'outshine-narrow-to-subtree
+ "nn" 'org-narrow-to-element
+ "nb" 'org-narrow-to-block)
+
+;;; Editing Convenience
 (use-package editorconfig
-  :config (editorconfig-mode t))
+  :hook (prog-mode . editorconfig-mode))
 (use-package dtrt-indent) ; auto-detect indentation
 (use-package move-text ; TODO: replace. works weird with selected region.
   :bind (("M-<up>" . move-text-up)
          ("M-<down>" . move-text-down)))
 (use-package whole-line-or-region)
 
+(use-package smartparens
+  :config (require 'smartparens-config)
+  :hook ((prog-mode . smartparens-mode)
+         ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
+
+(use-package evil-smartparens
+  :hook (smartparens-enabled . evil-smartparens-mode))
 
 ;;; Project management
 (use-package projectile)
@@ -154,7 +188,6 @@
                 (neotree-find file-name)))
         (message "Could not find git project root."))))
 
-(global-set-key (kbd "C-\\") 'neotree-project-dir)
 ;; TODO: Rebind 'toggle-input-method (for multilingual input)?
 
 ;;; Latex
@@ -180,15 +213,17 @@
 
 
 ;;; Ivy and mini-buffer completion
-(use-package ivy :hook (after-init . ivy-mode))
-(setq ivy-use-virtual-buffers t)
-(setq enable-recursive-minibuffers t)
-(setq ivy-re-builders-alist
-      '((ivy-switch-buffer . ivy--regex-plus)
-        (ivy-bibtex . ivy--regex-ignore-order)
-        ;; Use fuzzy matching for most cases
-        (t . ivy--regex-fuzzy)))
-(setq projectile-completion-system 'ivy)
+(use-package ivy
+  :hook (after-init . ivy-mode)
+  :config
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  (setq ivy-re-builders-alist
+        '((ivy-switch-buffer . ivy--regex-plus)
+          (ivy-bibtex . ivy--regex-ignore-order)
+          ;; Use fuzzy matching for most cases
+          (t . ivy--regex-fuzzy)))
+  (setq projectile-completion-system 'ivy))
 
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex)
@@ -204,8 +239,8 @@
   (setq company-require-match -1))
 
 ;; show docs in popup!
-(use-package company-quickhelp
-  :hook (company-mode . company-quickhelp-mode))
+;;(use-package company-quickhelp
+;;  :hook (company-mode . company-quickhelp-mode))
 
 ;; Completion for LaTeX macros
 (use-package company-math)
@@ -220,11 +255,11 @@
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
 (use-package lsp-mode
-  :hook (((go-mode rust-mode) . lsp-deferred)
+  :hook (((go-mode rustic-mode) . lsp-deferred)
          ;; Format code on save
          (lsp-mode . (lambda ()
                        (add-hook 'before-save-hook 'lsp-format-buffer))))
-  :commands (lsp lsp-deferred)) ; language server protocol
+  :commands (lsp lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
@@ -247,8 +282,7 @@
 (use-package diff-hl
   :hook ((magit-post-refresh . diff-hl-magit-post-refresh))
   :config
-  (global-diff-hl-mode)
-  (diff-hl-margin-mode))
+  (global-diff-hl-mode))
 
 
 ;; Email!
@@ -274,11 +308,12 @@
 (add-hook 'after-init-hook (lambda ()
                              (global-visual-line-mode t)
                              (electric-pair-mode)
-							 (global-display-line-numbers-mode)
+                             (electric-indent-mode)
+                             (global-display-line-numbers-mode)
                              (column-number-mode)))
 
 (use-package smart-hungry-delete)
-(smart-hungry-delete-add-default-hooks)
+;;(smart-hungry-delete-add-default-hooks)
 
 (use-package multiple-cursors)
 (use-package expand-region
@@ -346,21 +381,23 @@
 (use-package poly-markdown :commands markdown-mode)
 ;; org-mode additions
 (use-package org-bullets
-  :hook ((org-mode . org-bullets-mode)))
+  :hook (org-mode . org-bullets-mode))
 ;; (use-package org-plus-contrib)
 
+
 ;;; Custom key bindings
-(global-set-key (kbd "M-SPC") 'company-complete)
-(global-set-key (kbd "<backspace>") 'smart-hungry-delete-backward-char)
-(global-set-key (kbd "C-s") 'save-buffer)
-;; TODO: Rebind isearch-forward
-(global-set-key (kbd "C-]") 'tab-to-tab-stop)
-;; rebind undo-tree-undo for undoing stuff!
-;; Generally need to pick bindings for undo/redo
+(use-package hungry-delete
+  :config (global-hungry-delete-mode))
+
+(general-define-key
+ "M-SPC" 'company-complete
+ "C-s" 'save-buffer
+ "C-]" 'tab-to-tab-stop
+ "C-\\" 'neotree-project-dir)
+; TODO: Rebind isearch-forward
 ;; TODO: Backspace works weird in terminal...?!
 ;; Useful commands to rebind/learn: transpose-words, downcase-word, pop-mark
 
-(setq x-select-enable-primary t)
 (cua-mode t) ; normal copy-paste bindings (must go near end)
 
 ;;; Considering spacemacs
@@ -378,8 +415,8 @@
 ;; aux modes i'll use (but not too many aux modes!)
 
 ;;; Autofill
-(setq comment-auto-fill-only-comments t)
-(setq-default auto-fill-function 'do-auto-fill)
+;;(setq comment-auto-fill-only-comments t)
+;;(setq-default auto-fill-function 'do-auto-fill)
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
@@ -390,14 +427,16 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-enabled-themes (quote (terminal-wal)))
  '(custom-safe-themes
    (quote
-    ("5b77b74104748f954929fa3156201a95af9f0f6beb4860e2435cfd00db0219dc" "dbed1a5cfa6470f7a7338a3d9183c6d9439ea3f03fdd73879f60cd128b5ed05e" "b7388ac03767752ade970303768d65dd5d1b47a860308866a56df30ed1a16c2f" "eabaa2ba26896ab0253f87c1a3ba62fe137a44f22965ccd04f89644bead32e75" "4f87a907299c237ec58c634647b44aca5ee636fb7861da19a9defa0b0658b26e" default))))
+    ("a43cda2f075da1534eb50d7dce3ca559276a49c623321d55f68ad8ee218f420e" "5b77b74104748f954929fa3156201a95af9f0f6beb4860e2435cfd00db0219dc" "dbed1a5cfa6470f7a7338a3d9183c6d9439ea3f03fdd73879f60cd128b5ed05e" "b7388ac03767752ade970303768d65dd5d1b47a860308866a56df30ed1a16c2f" "eabaa2ba26896ab0253f87c1a3ba62fe137a44f22965ccd04f89644bead32e75" "4f87a907299c237ec58c634647b44aca5ee636fb7861da19a9defa0b0658b26e" default))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
-(load-theme 'terminal-wal t)
+ '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono")))))
+(if (display-graphic-p)
+    (progn (use-package doom-themes)
+           (load-theme 'doom-Iosvkem t))
+    (load-theme 'terminal-wal t))

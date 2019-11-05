@@ -326,6 +326,11 @@
 #
 # vim: ft=cfg
 
+[brightness]
+appname = "xfce4-power-manager"
+summary = "Brightness:*"
+format = ""
+
 [volume]
 appname = "Xfce volume daemon"
 format = ""
