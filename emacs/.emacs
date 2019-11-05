@@ -54,9 +54,8 @@
   :hook (prog-mode . outshine-mode))
 
 ;;; UI Packages
-(use-package page-break-lines)
 (use-package all-the-icons)
-
+;; Show key combo helpers
 (use-package which-key
   :init
   (setq which-key-enable-extended-define-key t)
@@ -64,6 +63,7 @@
   :config (which-key-mode))
 
 ;;;; Dashboard!
+(use-package page-break-lines)
 (use-package dashboard
   :config
   (dashboard-setup-startup-hook)
@@ -96,7 +96,6 @@
 (use-package evil
   :init
   (setq evil-want-keybinding nil) ; let evil-collection bind keys
-  (setq evil-want-C-i-jump nil) ; keep tab for indenting
   :config
   (setq evil-move-cursor-back nil)
   (evil-mode t))
@@ -106,10 +105,21 @@
   (evil-collection-company-use-tng nil)
   :config (evil-collection-init))
 
-;; General evil mode overrides
+(general-define-key
+ :states 'normal
+ "U" 'undo-tree-redo)
+
+;; Fix outline bindings in non-insert states
 (general-define-key
  :states '(normal motion)
+ :keymaps 'override
  "TAB" 'outshine-kbd-TAB)
+
+;; General evil mode overrides
+(general-define-key
+ :states '(normal insert)
+ "M-j" 'move-text-down
+ "M-k" 'move-text-up)
 
 ;; Leader key commands
 (general-define-key
@@ -131,11 +141,13 @@
  "w" '("windows")
  "wo" 'other-window
  "wk" 'delete-window
+ "wj" 'delete-other-windows
  "x" '("text")
  "xw" '("words")
  "xws" '("spell-check" . flyspell-correct-wrapper)
  "xwc" 'count-words
- "g" 'magit-status
+ "g" '("git")
+ "gs" 'magit-status
  "n" '("narrowing")
  "nw" 'widen
  "ns" 'outshine-narrow-to-subtree
@@ -157,36 +169,44 @@
          ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
 
 (use-package evil-smartparens
-  :hook (smartparens-enabled . evil-smartparens-mode))
+  :hook ((smartparens-enabled . evil-smartparens-mode)))
 
 ;;; Project management
 (use-package projectile)
-(use-package neotree
-  :commands neotree-toggle
-  :config
-  (setq neo-smart-open t)
-  ;; Rebind neotree commands for evil mode
-  (evil-define-key 'normal neotree-mode-map
-    "TAB" 'neotree-enter
-    "RET" 'neotree-enter
-    "g" 'neotree-refresh
-    "." 'neotree-hidden-file-toggle))
+(use-package treemacs
+  :config (general-define-key
+           "C-\\" 'treemacs))
 
-;; reload tree automatically on project switch
-(setq projectile-switch-project-action 'neotree-projectile-action)
+(use-package treemacs-evil :after treemacs evil)
+(use-package treemacs-projectile :after treemacs projectile)
+(use-package treemacs-magit :after treemacs magit)
+;; (use-package neotree
+;;   :commands neotree-toggle
+;;   :config (progn
+;;             (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+;;             (setq neo-smart-open t)
+;;             ;; Rebind neotree commands for evil mode
+;;             (evil-define-key 'normal neotree-mode-map
+;;               "TAB" 'neotree-enter
+;;               "RET" 'neotree-enter
+;;               "g" 'neotree-refresh
+;;               "." 'neotree-hidden-file-toggle)))
 
-(defun neotree-project-dir ()
-    "Open NeoTree at the git root."
-    (interactive)
-    (let ((project-dir (projectile-project-root))
-          (file-name (buffer-file-name)))
-      (neotree-toggle)
-      (if project-dir
-          (if (neo-global--window-exists-p)
-              (progn
-                (neotree-dir project-dir)
-                (neotree-find file-name)))
-        (message "Could not find git project root."))))
+;; ;; reload tree automatically on project switch
+;; (setq projectile-switch-project-action 'neotree-projectile-action)
+
+;; (defun neotree-project-dir ()
+;;     "Open NeoTree at the git root."
+;;     (interactive)
+;;     (let ((project-dir (projectile-project-root))
+;;           (file-name (buffer-file-name)))
+;;       (neotree-toggle)
+;;       (if project-dir
+;;           (if (neo-global--window-exists-p)
+;;               (progn
+;;                 (neotree-dir project-dir)
+;;                 (neotree-find file-name)))
+;;         (message "Could not find git project root."))))
 
 ;; TODO: Rebind 'toggle-input-method (for multilingual input)?
 
@@ -228,7 +248,6 @@
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex)
 
-
 ;;; Code Completion (in-buffer)
 (use-package company
   :config
@@ -255,7 +274,7 @@
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
 (use-package lsp-mode
-  :hook (((go-mode rustic-mode) . lsp-deferred)
+  :hook (((go-mode rustic-mode java-mode) . lsp-deferred)
          ;; Format code on save
          (lsp-mode . (lambda ()
                        (add-hook 'before-save-hook 'lsp-format-buffer))))
@@ -273,16 +292,21 @@
 
 ;;; Version Control
 (use-package magit)
+;; TODO: Rebind magit file bindings behind C-c
+
 ;; Provides evil friendly git bindings
-(use-package evil-magit :after magit
-  :init (setq evil-magit-state 'normal))
+;; (use-package evil-magit :after magit)
 (use-package forge :after magit) ; connects to GitHub
+
+(use-package github-review)
 
 ;; Show changed lines in the margin
 (use-package diff-hl
-  :hook ((magit-post-refresh . diff-hl-magit-post-refresh))
   :config
-  (global-diff-hl-mode))
+  (global-diff-hl-mode)
+  (diff-hl-dired-mode t))
+
+(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
 
 
 ;; Email!
@@ -307,28 +331,15 @@
 ;;; Enable completion, pair matching, line numbers
 (add-hook 'after-init-hook (lambda ()
                              (global-visual-line-mode t)
-                             (electric-pair-mode)
-                             (electric-indent-mode)
-                             (global-display-line-numbers-mode)
-                             (column-number-mode)))
-
-(use-package smart-hungry-delete)
-;;(smart-hungry-delete-add-default-hooks)
+                             (electric-indent-mode t)
+                             (global-display-line-numbers-mode t)
+                             (column-number-mode t)))
 
 (use-package multiple-cursors)
 (use-package expand-region
   :bind (("M-=" . 'er/expand-region)
          ("M--" . 'er/contract-region)))
 
-;; (use-package paredit
-;;   :bind (:map paredit-mode-map
-;;               ("M-[" . 'paredit-splice-sexp-killing-backward)
-;;               ("M-]" . 'paredit-splice-sexp-killing-forward)
-;;               ("ESC <up>" . nil)
-;;               ("ESC <down>" . nil)
-;;               ("M-<up>" . nil)
-;;               ("M-<down>" . nil))
-;;   :hook ((emacs-lisp-mode lisp-mode eval-expression-minibuffer-setup) . paredit-mode))
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
   :hook (after-init . rainbow-mode))
@@ -345,6 +356,13 @@
 (use-package go-mode)
 ;; TODO: Get rust-analyzer setup, supposed to blow RLS out of the water
 (use-package rustic)
+
+;;;; Java
+(use-package lsp-java)
+;;;; GraphQL
+(use-package graphql-mode)
+;; (use-package company-graphql)
+;; (add-to-list 'company-backends 'company-graphql)
 
 ;;;; javascript and typescript
 (use-package eslint-fix)
@@ -439,4 +457,4 @@
 (if (display-graphic-p)
     (progn (use-package doom-themes)
            (load-theme 'doom-Iosvkem t))
-    (load-theme 'terminal-wal t))
+  (load-theme 'terminal-wal t))
