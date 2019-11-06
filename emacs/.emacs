@@ -28,6 +28,7 @@
 ;; for better search.
 
 ;;; General built-in Configuration
+;; (use-package better-defaults)
 (tool-bar-mode -1)
 (menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
 (scroll-bar-mode -1)
@@ -43,11 +44,21 @@
 ;; (setq mouse-wheel-follow-mouse t)
 ;; (setq scroll-step 1)
 ;; ;;(setq frame-background-mode 'dark)
-(setq delete-by-moving-to-trash t) ; use system trash
+(setq delete-by-moving-to-trash t)       ; use system trash
+
+(fringe-mode '(12 . 0))
+
+(use-package exec-path-from-shell
+  :config (exec-path-from-shell-initialize))
 
 ;;(use-package smooth-scrolling)
 ;;(smooth-scrolling-mode 1)
 ;; ;; TODO: Apply some WYSIWYG styling to org-mode text (italics, bolds, etc)
+
+;; Empty scratch buffers
+(setq initial-scratch-message "")
+;; Easier confirmation
+(fset 'yes-or-no-p 'y-or-n-p)
 
 ;;; Give me outlines!
 (use-package outshine
@@ -60,6 +71,9 @@
   :init (setq which-key-enable-extended-define-key t
               which-key-idle-delay 0.5)
   :config (which-key-mode t))
+
+;; (use-package rainbow-delimiters
+;;   :hook (prog-mode . rainbow-delimeters-mode))
 
 ;;;; Dashboard!
 (use-package page-break-lines)
@@ -76,14 +90,11 @@
 
 ;;;; Mode line
 (use-package diminish) ; hide minor mode lines
-;;(use-package doom-modeline
-;;   :config (doom-modeline-mode))
 
-(use-package spaceline
-  :config
-  (spaceline-emacs-theme)
-  (setq-default spaceline-highlight-face-func 'spaceline-highlight-face-evil-state))
+(use-package telephone-line
+  :config (telephone-line-mode t))
 
+;;;; Additions to ivy
 (use-package counsel
   :hook (after-init . counsel-mode))
 
@@ -94,16 +105,16 @@
 ;;; Primary Keybindings (evil)
 (use-package general)
 (use-package evil
-  :init
-  (setq evil-want-keybinding nil) ; let evil-collection bind keys
-  :config
-  (setq evil-move-cursor-back nil)
-  (evil-mode t))
+  :init (setq evil-want-keybinding nil        ; let evil-collection bind keys
+              evil-move-beyond-eol t)
+  :config (evil-mode t))
 (use-package evil-collection :after evil
   :custom
   (evil-collection-outline-bind-tab-p t)
   (evil-collection-company-use-tng nil)
   :config (evil-collection-init))
+(use-package evil-commentary :after evil
+  :config (evil-commentary-mode t))
 
 ;; Default some modes to use emacs bindings
 ;;(dolist (e '(magit-mode))
@@ -149,6 +160,10 @@
              "wo" 'other-window
              "wk" 'delete-window
              "wj" 'delete-other-windows
+             "w<left>" 'evil-window-left
+             "w<right>" 'evil-window-right
+             "w<up>" 'evil-window-up
+             "w<down>" 'evil-window-down
              "t" '("text")
              "tw" '("words")
              "tws" '("spell-check" . flyspell-correct-wrapper)
@@ -162,7 +177,9 @@
              "nb" 'org-narrow-to-block
              "p" projectile-command-map
              "m" '("modes")
-             "mr" 'restclient-mode)))
+             "mr" 'restclient-mode
+             "j" '("jump")
+             "jd" 'dumb-jump-go)))
 
 ;;; Editing Convenience
 (use-package editorconfig
@@ -179,48 +196,30 @@
   :hook ((prog-mode . smartparens-mode)
          ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
 
-(use-package evil-smartparens
-  :hook (smartparens-enabled . evil-smartparens-mode))
+(use-package evil-cleverparens
+  :hook (smartparens-enabled . evil-cleverparens-mode))
 
+;; Make expression editing easier everywhere
+;; (use-package lispy
+;;   :hook ((emacs-lisp-mode lisp-mode) . lispy-mode))
+;; (use-package lispyville
+;;   :config (electric-pair-mode t)
+;;   :hook (prog-mode . lispyville-mode))
+
+;; Always indent, no matter what
 (use-package aggressive-indent
-  :hook (prog-mode . aggressive-indent-mode))
+  :config (global-aggressive-indent-mode t))
 
 ;;; Project management
 (use-package projectile
   :config (projectile-mode t))
+
+;; Project tree
 (use-package treemacs
   :bind ("C-\\" . treemacs))
-
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs evil)
 (use-package treemacs-magit :after treemacs magit)
-;; (use-package neotree
-;;   :commands neotree-toggle
-;;   :config (progn
-;;             (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-;;             (setq neo-smart-open t)
-;;             ;; Rebind neotree commands for evil mode
-;;             (evil-define-key 'normal neotree-mode-map
-;;               "TAB" 'neotree-enter
-;;               "RET" 'neotree-enter
-;;               "g" 'neotree-refresh
-;;               "." 'neotree-hidden-file-toggle)))
-
-;; ;; reload tree automatically on project switch
-;; (setq projectile-switch-project-action 'neotree-projectile-action)
-
-;; (defun neotree-project-dir ()
-;;     "Open NeoTree at the git root."
-;;     (interactive)
-;;     (let ((project-dir (projectile-project-root))
-;;           (file-name (buffer-file-name)))
-;;       (neotree-toggle)
-;;       (if project-dir
-;;           (if (neo-global--window-exists-p)
-;;               (progn
-;;                 (neotree-dir project-dir)
-;;                 (neotree-find file-name)))
-;;         (message "Could not find git project root."))))
 
 ;; TODO: Rebind 'toggle-input-method (for multilingual input)?
 
@@ -237,7 +236,9 @@
 ;;; Essential packages
 (use-package yasnippet)
 (use-package emojify
-  :config (global-emojify-mode t))
+  :config
+  (setq emojify-emoji-styles '(unicode github))
+  (global-emojify-mode t))
 
 ;;; Syntax checking
 (use-package flycheck
@@ -362,8 +363,9 @@
 ;;; Enable completion, pair matching, line numbers
 (add-hook 'after-init-hook (lambda ()
                              (global-visual-line-mode t)
-                             (global-display-line-numbers-mode t)
                              (column-number-mode t)))
+
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
 
 (use-package multiple-cursors)
 (use-package expand-region
@@ -375,8 +377,9 @@
   :hook (after-init . rainbow-mode))
 
 ;;; Auxiliary Modes
+(use-package request)
 (use-package restclient :commands restclient-mode)
-(use-package dumb-jump)
+(use-package dumb-jump :commands dumb-jump-go)
 
 ;;; Programming Languages
 ;;;; One liners
@@ -432,6 +435,7 @@
 ;; org-mode additions
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode))
+(setq org-fontify-whole-heading-line t)
 ;; (use-package org-plus-contrib)
 ;;; Custom key bindings
 (use-package hungry-delete
@@ -489,4 +493,6 @@
  '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono")))))
 
 (use-package doom-themes)
-(load-theme 'doom-Iosvkem t)
+;; (load-theme 'doom-Iosvkem t)
+(use-package gruvbox-theme)
+(load-theme 'gruvbox t)
