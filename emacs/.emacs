@@ -487,7 +487,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono")))))
-(if (display-graphic-p)
-    (progn (use-package doom-themes)
-           (load-theme 'doom-Iosvkem t))
-  (load-theme 'terminal-wal t))
+
+(use-package doom-themes)
+(load-theme 'doom-Iosvkem t)
