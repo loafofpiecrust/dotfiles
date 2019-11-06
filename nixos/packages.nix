@@ -93,6 +93,7 @@
   fonts.fonts = with pkgs; [
     noto-fonts
     noto-fonts-cjk
+    noto-fonts-emoji
     fira-code
     material-design-icons
     hermit
@@ -104,7 +105,7 @@
   ];
 
   fonts.fontconfig = {
-    defaultFonts.monospace = ["SF Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC"];
+    defaultFonts.monospace = ["SF Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC" "Noto Emoji"];
     defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC"];
     defaultFonts.serif = ["Merriweather"];
   };

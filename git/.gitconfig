@@ -9,3 +9,5 @@ helper = cache
 [core]
 editor = code
 excludesfile = ~/.gitignore
+[github]
+	user = loafofpiecrust
