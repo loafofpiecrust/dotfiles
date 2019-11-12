@@ -20,12 +20,13 @@
 (straight-use-package 'use-package)
 
 ;; TODO: Map opposite things to C-? and C-S where possible
-;; TODO: widen neotree
 ;; TODO: Use some similar keybinds from bspwm/firefox/etc. [] for buffer nav,
-;; arrows for window nav,
-;; TODO: Get list-packages to work with straight? At least hook up the same
-;; repos so we can use it to find packages. Add evil-mode to *Packages* buffer
-;; for better search.
+;; TODO: Bind shorter keys to stuff: dumb jump, last position (currently C-o), next position (currently C-i?), 
+;; TODO: Bind swiper to a key in normal state
+;; TODO: Make frame background translucent
+;; TODO: Fix treemacs unable to open new projects! Has to do with terminal color sequences???
+;; TODO: Slight margin between line number and text. Slight vertical margin from window top to first line.
+;; TODO: Smoother scrolling?
 
 ;;; General built-in Configuration
 ;; (use-package better-defaults)
@@ -33,7 +34,7 @@
 (menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
 (scroll-bar-mode -1)
 (setq-default tab-width 4
-              indent-tabs-mode nil ; use spaces for indentation
+              indent-tabs-mode nil      ; use spaces for indentation
               fill-column 80
               display-line-numbers-width 3)
 (show-paren-mode 1)
@@ -48,12 +49,13 @@
 
 (fringe-mode '(12 . 0))
 
+(save-place-mode t)
+
 (use-package exec-path-from-shell
   :config (exec-path-from-shell-initialize))
 
 ;;(use-package smooth-scrolling)
 ;;(smooth-scrolling-mode 1)
-;; ;; TODO: Apply some WYSIWYG styling to org-mode text (italics, bolds, etc)
 
 ;; Empty scratch buffers
 (setq initial-scratch-message "")
@@ -108,13 +110,26 @@
   :init (setq evil-want-keybinding nil        ; let evil-collection bind keys
               evil-move-beyond-eol t)
   :config (evil-mode t))
+
+;; bind keys for many modes with better evil compatibility
 (use-package evil-collection :after evil
   :custom
   (evil-collection-outline-bind-tab-p t)
   (evil-collection-company-use-tng nil)
   :config (evil-collection-init))
+
+;; commenting lines with verb 'g'
 (use-package evil-commentary :after evil
   :config (evil-commentary-mode t))
+
+;; surround things with verb 'S'
+(use-package evil-surround
+  :config (global-evil-surround-mode t))
+
+;; add more surroundings by default
+(use-package evil-embrace
+  :config (evil-embrace-enable-evil-surround-integration)
+  :hook (org-mode . embrace-org-mode-hook))
 
 ;; Default some modes to use emacs bindings
 ;;(dolist (e '(magit-mode))
@@ -159,10 +174,10 @@
              "wo" 'other-window
              "wk" 'delete-window
              "wj" 'delete-other-windows
-             "w<left>" 'evil-window-left
-             "w<right>" 'evil-window-right
-             "w<up>" 'evil-window-up
-             "w<down>" 'evil-window-down
+             "w <left>" 'evil-window-left
+             "w <right>" 'evil-window-right
+             "w <up>" 'evil-window-up
+             "w <down>" 'evil-window-down
              "t" '("text")
              "tw" '("words")
              "tws" '("spell-check" . flyspell-correct-wrapper)
@@ -179,7 +194,11 @@
              "mr" 'restclient-mode
              "mc" 'calc
              "j" '("jump")
-             "jd" 'dumb-jump-go)))
+             "jd" 'dumb-jump-go
+             "jg" 'dumb-jump-go-prompt
+             "i" '("input method")
+             "is" 'set-input-method
+             "it" 'toggle-input-method)))
 
 ;;;; Mode-local keybindings
 (general-create-definer local-leader-def :prefix "\\")
@@ -203,6 +222,7 @@
          ("M-<down>" . move-text-down)))
 (use-package whole-line-or-region)
 
+;; Make expression editing easier everywhere
 (use-package smartparens
   :config (require 'smartparens-config)
   :hook ((prog-mode . smartparens-mode)
@@ -210,13 +230,6 @@
 
 (use-package evil-cleverparens
   :hook (smartparens-enabled . evil-cleverparens-mode))
-
-;; Make expression editing easier everywhere
-;; (use-package lispy
-;;   :hook ((emacs-lisp-mode lisp-mode) . lispy-mode))
-;; (use-package lispyville
-;;   :config (electric-pair-mode t)
-;;   :hook (prog-mode . lispyville-mode))
 
 ;; Always indent, no matter what
 (use-package aggressive-indent
@@ -233,8 +246,6 @@
 (use-package treemacs-projectile :after treemacs evil)
 (use-package treemacs-magit :after treemacs magit)
 
-;; TODO: Rebind 'toggle-input-method (for multilingual input)?
-
 ;;; Latex
 ;; latex packages have to go near the top for some reason.
 ;; otherwise they just mysteriously don't load.
@@ -243,7 +254,6 @@
 ;; latex additions
 (add-hook 'TeX-mode-hook 'TeX-fold-mode)
 (setq-default TeX-engine 'xetex) ; enables unicode support
-
 
 ;;; Essential packages
 (use-package yasnippet)
@@ -283,6 +293,11 @@
   (setq company-selection-wrap-around t)
   (setq company-require-match -1))
 
+(use-package company-fuzzy
+  :hook (company-mode . company-fuzzy-mode))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
 ;; show docs in popup!
 ;;(use-package company-quickhelp
 ;;  :hook (company-mode . company-quickhelp-mode))
@@ -374,11 +389,17 @@
 
 ;;; Enable completion, pair matching, line numbers
 (add-hook 'after-init-hook (lambda ()
+                             (global-subword-mode t)
+                             (global-prettify-symbols-mode t)
+                             (global-auto-revert-mode t)
+                             ;; (electric-pair-mode t)
                              (global-visual-line-mode t)
                              (column-number-mode t)))
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'text-mode-hook 'display-line-numbers-mode)
 
+;; TODO: Bind multiple cursors to some keys. Follow VSCode/Sublime convention?
 (use-package multiple-cursors)
 (use-package expand-region
   :bind (("M-=" . 'er/expand-region)
@@ -449,8 +470,16 @@
 ;; org-mode additions
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode))
-(setq org-fontify-whole-heading-line t)
+(setq org-fontify-emphasized-text t)
 ;; (use-package org-plus-contrib)
+
+;; Give org-mode some evil keybindings
+(use-package evil-org
+  :hook (org-mode . evil-org-mode)
+  :config (progn (evil-org-set-key-theme)
+                 (require 'evil-org-agenda)
+                 (evil-org-agenda-set-keys)))
+
 ;;; Custom key bindings
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
@@ -461,10 +490,6 @@
  "C-]" 'tab-to-tab-stop)
 
 ;; TODO: Rebind isearch-forward
-;; TODO: Backspace works weird in terminal...?!
-;; Useful commands to rebind/learn: transpose-words, downcase-word, pop-mark
-
-(cua-mode t) ; normal copy-paste bindings (must go near end)
 
 ;;; Considering spacemacs
 ;; Spacemacs
@@ -493,18 +518,32 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(company-box-icons-alist (quote company-box-icons-all-the-icons))
  '(custom-safe-themes
    (quote
     ("a43cda2f075da1534eb50d7dce3ca559276a49c623321d55f68ad8ee218f420e" "5b77b74104748f954929fa3156201a95af9f0f6beb4860e2435cfd00db0219dc" "dbed1a5cfa6470f7a7338a3d9183c6d9439ea3f03fdd73879f60cd128b5ed05e" "b7388ac03767752ade970303768d65dd5d1b47a860308866a56df30ed1a16c2f" "eabaa2ba26896ab0253f87c1a3ba62fe137a44f22965ccd04f89644bead32e75" "4f87a907299c237ec58c634647b44aca5ee636fb7861da19a9defa0b0658b26e" default)))
  '(evil-collection-company-use-tng nil)
  '(evil-collection-outline-bind-tab-p t)
  '(lsp-rust-server (quote rust-analyzer)))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono")))))
+ '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono"))))
+ '(org-document-title ((t (:weight bold :height 1.6))))
+ '(org-level-1 ((t (:height 1.35))))
+ '(org-level-2 ((t (:height 1.2))))
+ '(org-level-3 ((t (:height 1.1))))
+ '(outline-1 ((t (:inherit org-level-1))))
+ '(outline-2 ((t (:inherit org-level-2))))
+ '(outline-3 ((t (:inherit org-level-3))))
+ '(outline-4 ((t (:inherit org-level-4))))
+ '(outline-5 ((t (:inherit org-level-5))))
+ '(outline-6 ((t (:inherit org-level-6))))
+ '(outline-7 ((t (:inherit org-level-7))))
+ '(outline-8 ((t (:inherit org-level-8)))))
 
 (use-package doom-themes)
 ;; (load-theme 'doom-Iosvkem t)

@@ -1,5 +1,6 @@
 
-cat ~/.config/wpg/sequences &
+# The line below screws up emacs and may be unnecessary
+# cat ~/.config/wpg/sequences &
 
 source ~/.cache/wal/colors.fish
 
