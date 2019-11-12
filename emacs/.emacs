@@ -120,29 +120,28 @@
 ;;(dolist (e '(magit-mode))
 ;;(add-to-list 'evil-emacs-state-modes e))
 
-(general-define-key
- :states 'normal
- "U" 'undo-tree-redo)
+(general-def 'normal
+  "U" 'undo-tree-redo)
 
 ;; Fix outline bindings in non-insert states
-(general-define-key
- :states '(normal motion)
- "TAB" 'outshine-kbd-TAB)
+(general-def '(normal motion)
+  "TAB" 'outshine-kbd-TAB)
 
 ;; General evil mode overrides
-(general-define-key
- :states '(normal insert)
- "M-j" 'move-text-down
- "M-k" 'move-text-up)
+(general-def '(normal insert)
+  "M-j" 'move-text-down
+  "M-k" 'move-text-up)
+
+(general-create-definer global-leader-def
+  :prefix "<SPC>"
+  :keymaps 'override)
 
 ;; Contextual leader key as comma
 ;; Generic leader key as space
 (add-hook 'after-init-hook
           (lambda ()
-            (general-define-key
-             :states '(normal motion)
-             :prefix "<SPC>"
-             :keymaps 'override
+            (global-leader-def
+             '(normal motion)
              "SPC" 'counsel-M-x
              "b" '("buffers")
              "bo" 'other-buffer
@@ -178,8 +177,21 @@
              "p" projectile-command-map
              "m" '("modes")
              "mr" 'restclient-mode
+             "mc" 'calc
              "j" '("jump")
              "jd" 'dumb-jump-go)))
+
+;;;; Mode-local keybindings
+(general-create-definer local-leader-def :prefix "\\")
+(local-leader-def 'normal org-mode-map
+                  "c" '("clocking")
+                  "ci" 'org-clock-in
+                  "co" 'org-clock-out
+                  "s" 'org-schedule
+                  "d" 'org-deadline
+                  "t" '("tables")
+                  "tih" 'org-table-insert-hline
+                  "a" 'org-agenda)
 
 ;;; Editing Convenience
 (use-package editorconfig
@@ -379,7 +391,9 @@
 ;;; Auxiliary Modes
 (use-package request)
 (use-package restclient :commands restclient-mode)
-(use-package dumb-jump :commands dumb-jump-go)
+(use-package dumb-jump
+  :config (setq dumb-jump-selector 'ivy)
+  :commands dumb-jump-go)
 
 ;;; Programming Languages
 ;;;; One liners
