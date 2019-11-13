@@ -28,7 +28,8 @@
 ;; TODO: Slight margin between line number and text. Slight vertical margin from window top to first line.
 ;; TODO: Smoother scrolling?
 
-;;; General built-in Configuration
+;;; Emacs Configuration
+;;;; GUI
 ;; (use-package better-defaults)
 (tool-bar-mode -1)
 (menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
@@ -44,8 +45,6 @@
 ;; (setq mouse-wheel-progressive-speed nil)
 ;; (setq mouse-wheel-follow-mouse t)
 ;; (setq scroll-step 1)
-;; ;;(setq frame-background-mode 'dark)
-(setq delete-by-moving-to-trash t)       ; use system trash
 
 (fringe-mode '(12 . 0))
 
@@ -62,12 +61,30 @@
 ;; Easier confirmation
 (fset 'yes-or-no-p 'y-or-n-p)
 
-;;; Give me outlines!
-(use-package outshine
-  :hook (prog-mode . outshine-mode))
+;;;; Backup settings
+(setq backup-by-copying t ; don't clobber symlinks
+      backup-directory-alist '(("." . "~/.cache/emacs")) ; no clutter!
+      auto-save-file-name-transforms '((".*" "~/.cache/emacs" t))
+      ;; TODO: Clean out ~/.cache/emacs every so often.
+      delete-old-versions t
+      create-lockfiles nil ; with emacs server there's no need for lockfiles!
+      kept-new-versions 6
+      kept-old-versions 2
+      version-control t
+      delete-by-moving-to-trash t)
+
+;;;; Autofill
+;;(setq comment-auto-fill-only-comments t)
+;;(setq-default auto-fill-function 'do-auto-fill)
 
 ;;; UI Packages
+;;;; Icons & Emojis
 (use-package all-the-icons)
+(use-package emojify
+  :config
+  (setq emojify-emoji-styles '(unicode github))
+  (global-emojify-mode t))
+
 ;; Show key combo helpers
 (use-package which-key
   :init (setq which-key-enable-extended-define-key t
@@ -76,6 +93,8 @@
 
 ;; (use-package rainbow-delimiters
 ;;   :hook (prog-mode . rainbow-delimeters-mode))
+
+
 
 ;;;; Dashboard!
 (use-package page-break-lines)
@@ -104,7 +123,45 @@
   :commands 'flyspell-correct-wrapper)
 
 
-;;; Primary Keybindings (evil)
+;;; Editing
+;;;; General
+(use-package editorconfig
+  :hook (prog-mode . editorconfig-mode))
+(use-package dtrt-indent
+  :hook (prog-mode . dtrt-indent-mode)) ; auto-detect indentation
+(use-package move-text ; TODO: replace. works weird with selected region.
+  :bind (("M-<up>" . move-text-up)
+         ("M-<down>" . move-text-down)))
+(use-package whole-line-or-region)
+
+;; Always indent, no matter what
+(use-package aggressive-indent
+  :config (global-aggressive-indent-mode t))
+
+(use-package highlight-indent-guides
+  :config (setq highlight-indent-guides-method 'fill)
+  :hook (prog-mode . highlight-indent-guides-mode))
+
+;;;; Expressions
+;; Make expression editing easier everywhere
+(use-package smartparens
+  :config (require 'smartparens-config)
+  :hook ((prog-mode . smartparens-mode)
+         ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
+
+(use-package evil-cleverparens
+  :hook (smartparens-enabled . evil-cleverparens-mode))
+
+;;;; org & outlines
+(use-package outshine
+  :hook (prog-mode . outshine-mode))
+
+;;;; niceties
+;; Highlight color codes in the buffer
+(use-package rainbow-mode
+  :hook (after-init . rainbow-mode))
+
+;;; Evil mode
 (use-package general)
 (use-package evil
   :init (setq evil-want-keybinding nil        ; let evil-collection bind keys
@@ -131,9 +188,70 @@
   :config (evil-embrace-enable-evil-surround-integration)
   :hook (org-mode . embrace-org-mode-hook))
 
+;; gotta learn somehow
+(use-package evil-tutor)
+
 ;; Default some modes to use emacs bindings
 ;;(dolist (e '(magit-mode))
 ;;(add-to-list 'evil-emacs-state-modes e))
+
+;;; Mode-specific keybindings
+;;;; setup prefixes
+(general-create-definer global-leader-def
+  :prefix "<SPC>"
+  :keymaps 'override)
+
+(general-create-definer local-leader-def :prefix "\\")
+
+;;;; global
+;; Contextual leader key as backslash
+;; Generic leader key as space
+(add-hook 'after-init-hook
+          (lambda ()
+            (global-leader-def
+              '(normal motion)
+              "SPC" 'counsel-M-x
+              "b" '("buffers")
+              "bo" 'other-buffer
+              "bb" 'counsel-switch-buffer
+              "bk" 'kill-buffer 
+              "bh" 'home
+              "f" '("files")
+              "ff" 'counsel-find-file
+              "fd" 'dired
+              "/" 'comment-line
+              "e" '("eval")
+              "ee" (kbd "C-x C-e")
+              "et" (kbd "C-M-x")
+              "w" '("windows")
+              "wo" 'other-window
+              "wk" 'delete-window
+              "wj" 'delete-other-windows
+              "w <left>" 'evil-window-left
+              "w <right>" 'evil-window-right
+              "w <up>" 'evil-window-up
+              "w <down>" 'evil-window-down
+              "t" '("text")
+              "tw" '("words")
+              "tws" '("spell-check" . flyspell-correct-wrapper)
+              "twc" 'count-words
+              "g" '("git")
+              "gs" 'magit-status
+              "n" '("narrowing")
+              "nw" 'widen
+              "ns" 'outshine-narrow-to-subtree
+              "nn" 'org-narrow-to-element
+              "nb" 'org-narrow-to-block
+              "p" projectile-command-map
+              "m" '("modes")
+              "mr" 'restclient-mode
+              "mc" 'calc
+              "j" '("jump")
+              "jd" 'dumb-jump-go
+              "jg" 'dumb-jump-go-prompt
+              "i" '("input method")
+              "is" 'set-input-method
+              "it" 'toggle-input-method)))
 
 (general-def 'normal
   "U" 'undo-tree-redo)
@@ -145,95 +263,32 @@
 ;; General evil mode overrides
 (general-def '(normal insert)
   "M-j" 'move-text-down
-  "M-k" 'move-text-up)
+  "M-k" 'move-text-up
+  "C-s" 'save-buffer
+  "C-]" 'tab-to-tab-stop)
 
-(general-create-definer global-leader-def
-  :prefix "<SPC>"
-  :keymaps 'override)
+(general-def 'insert
+  "M-SPC" 'company-complete)
 
-;; Contextual leader key as comma
-;; Generic leader key as space
-(add-hook 'after-init-hook
-          (lambda ()
-            (global-leader-def
-             '(normal motion)
-             "SPC" 'counsel-M-x
-             "b" '("buffers")
-             "bo" 'other-buffer
-             "bb" 'counsel-switch-buffer
-             "bk" 'kill-buffer 
-             "bh" 'home
-             "f" '("files")
-             "ff" 'counsel-find-file
-             "fd" 'dired
-             "/" 'comment-line
-             "e" '("eval")
-             "ee" (kbd "C-x C-e")
-             "et" (kbd "C-M-x")
-             "w" '("windows")
-             "wo" 'other-window
-             "wk" 'delete-window
-             "wj" 'delete-other-windows
-             "w <left>" 'evil-window-left
-             "w <right>" 'evil-window-right
-             "w <up>" 'evil-window-up
-             "w <down>" 'evil-window-down
-             "t" '("text")
-             "tw" '("words")
-             "tws" '("spell-check" . flyspell-correct-wrapper)
-             "twc" 'count-words
-             "g" '("git")
-             "gs" 'magit-status
-             "n" '("narrowing")
-             "nw" 'widen
-             "ns" 'outshine-narrow-to-subtree
-             "nn" 'org-narrow-to-element
-             "nb" 'org-narrow-to-block
-             "p" projectile-command-map
-             "m" '("modes")
-             "mr" 'restclient-mode
-             "mc" 'calc
-             "j" '("jump")
-             "jd" 'dumb-jump-go
-             "jg" 'dumb-jump-go-prompt
-             "i" '("input method")
-             "is" 'set-input-method
-             "it" 'toggle-input-method)))
-
-;;;; Mode-local keybindings
-(general-create-definer local-leader-def :prefix "\\")
+;;;; org-mode
 (local-leader-def 'normal org-mode-map
-                  "c" '("clocking")
-                  "ci" 'org-clock-in
-                  "co" 'org-clock-out
-                  "s" 'org-schedule
-                  "d" 'org-deadline
-                  "t" '("tables")
-                  "tih" 'org-table-insert-hline
-                  "a" 'org-agenda)
+  "c" '("clocking")
+  "ci" 'org-clock-in
+  "co" 'org-clock-out
+  "s" 'org-schedule
+  "d" 'org-deadline
+  "t" '("tables")
+  "tih" 'org-table-insert-hline
+  "a" 'org-agenda
+  "l" '("lists")
+  "lb" 'org-cycle-list-bullet)
 
-;;; Editing Convenience
-(use-package editorconfig
-  :hook (prog-mode . editorconfig-mode))
-(use-package dtrt-indent
-  :hook (prog-mode . dtrt-indent-mode)) ; auto-detect indentation
-(use-package move-text ; TODO: replace. works weird with selected region.
-  :bind (("M-<up>" . move-text-up)
-         ("M-<down>" . move-text-down)))
-(use-package whole-line-or-region)
-
-;; Make expression editing easier everywhere
-(use-package smartparens
-  :config (require 'smartparens-config)
-  :hook ((prog-mode . smartparens-mode)
-         ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
-
-(use-package evil-cleverparens
-  :hook (smartparens-enabled . evil-cleverparens-mode))
-
-;; Always indent, no matter what
-(use-package aggressive-indent
-  :config (global-aggressive-indent-mode t))
+;; Give org-mode some evil keybindings
+(use-package evil-org
+  :hook (org-mode . evil-org-mode)
+  :config (progn (evil-org-set-key-theme)
+                 (require 'evil-org-agenda)
+                 (evil-org-agenda-set-keys)))
 
 ;;; Project management
 (use-package projectile
@@ -246,29 +301,13 @@
 (use-package treemacs-projectile :after treemacs evil)
 (use-package treemacs-magit :after treemacs magit)
 
-;;; Latex
-;; latex packages have to go near the top for some reason.
-;; otherwise they just mysteriously don't load.
-;; Because 'auctex is doodled, must use straight directly here.
-(straight-use-package 'auctex)
-;; latex additions
-(add-hook 'TeX-mode-hook 'TeX-fold-mode)
-(setq-default TeX-engine 'xetex) ; enables unicode support
-
-;;; Essential packages
-(use-package yasnippet)
-(use-package emojify
-  :config
-  (setq emojify-emoji-styles '(unicode github))
-  (global-emojify-mode t))
-
 ;;; Syntax checking
 (use-package flycheck
   :config
   (global-flycheck-mode)
   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
-;;; Ivy and mini-buffer completion
+;;; mini-buffer completion
 (use-package ivy
   :hook (after-init . ivy-mode)
   :config
@@ -284,25 +323,25 @@
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :after ivy)
 
-;;; Code Completion (in-buffer)
+;;; in-buffer completion
+(use-package yasnippet)
+
 (use-package company
-  :hook (after-init . global-company-mode)
+  :hook (prog-mode . company-mode)
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 1)
   (setq company-selection-wrap-around t)
   (setq company-require-match -1))
 
+;; more fuzzy completion
 (use-package company-fuzzy
   :hook (company-mode . company-fuzzy-mode))
 
+;; GUI box to prevent interference with different font sizes
 (use-package company-box
   :hook (company-mode . company-box-mode))
-;; show docs in popup!
-;;(use-package company-quickhelp
-;;  :hook (company-mode . company-quickhelp-mode))
 
-;; Completion for LaTeX macros
 (use-package company-math :after company auctex)
 (use-package company-auctex
   :after company auctex-math
@@ -313,26 +352,8 @@
                company-auctex-macros))
     (add-to-list 'company-backends e)))
 
-;;; Language Server Protocol!
-;; lsp in conjunction with company and flycheck gives us easy auto-complete and
-;; syntax checking on-the-fly.
-(use-package lsp-mode
-  :hook (((go-mode rust-mode java-mode) . lsp-deferred)
-         ;; Format code on save
-         (lsp-mode . (lambda ()
-                       (add-hook 'before-save-hook 'lsp-format-buffer))))
-  :commands (lsp lsp-deferred))
-
-;; Show contextual code documentation pop-ups
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode))
-
-;; Auto-complete languages with LSP support
-(use-package company-lsp
-  :after lsp-mode
-  :config (push 'company-lsp company-backends))
-
 ;;; Version Control
+;;;; Git
 (use-package magit)
 ;; TODO: Rebind magit file bindings behind C-c
 
@@ -377,16 +398,6 @@
 (add-hook 'prog-mode-hook 'flyspell-prog-mode)
 (setq flyspell-issue-message-flag nil)
 
-;;; Backup settings
-(setq backup-by-copying t ; don't clobber symlinks
-      backup-directory-alist '(("." . "~/.cache/emacs")) ; no clutter!
-      ;; TODO: Clean out ~/.cache/emacs every so often.
-      delete-old-versions t
-      create-lockfiles nil ; with emacs server there's no need for lockfiles!
-      kept-new-versions 6
-      kept-old-versions 2
-      version-control t)
-
 ;;; Enable completion, pair matching, line numbers
 (add-hook 'after-init-hook (lambda ()
                              (global-subword-mode t)
@@ -405,10 +416,6 @@
   :bind (("M-=" . 'er/expand-region)
          ("M--" . 'er/contract-region)))
 
-;; Highlight color codes in the buffer
-(use-package rainbow-mode
-  :hook (after-init . rainbow-mode))
-
 ;;; Auxiliary Modes
 (use-package request)
 (use-package restclient :commands restclient-mode)
@@ -418,20 +425,15 @@
 
 ;;; Programming Languages
 ;;;; One liners
-(use-package nix-mode :commands nix-mode)
-(use-package bazel-mode :commands bazel-mode)
-(use-package yaml-mode :commands yaml-mode)
-(use-package json-mode :commands json-mode)
-(use-package go-mode :commands go-mode)
-(use-package rust-mode :commands rust-mode)
+(use-package nix-mode)
+(use-package bazel-mode)
+(use-package yaml-mode)
+(use-package json-mode)
+(use-package go-mode)
+(use-package rust-mode)
 
 ;;;; Java
-(use-package lsp-java :commands java-mode)
-
-;;;; GraphQL
-(use-package graphql-mode :commands graphql-mode)
-;; (use-package company-graphql)
-;; (add-to-list 'company-backends 'company-graphql)
+(use-package lsp-java)
 
 ;;;; javascript and typescript
 (use-package eslint-fix :commands eslint-fix)
@@ -464,50 +466,54 @@
 ;; (flycheck-add-mode 'javascript-eslint 'typescript-mode)
 
 
+;;;; Language Server Protocol!
+;; lsp in conjunction with company and flycheck gives us easy auto-complete and
+;; syntax checking on-the-fly.
+(use-package lsp-mode
+  :hook (((go-mode rust-mode java-mode) . lsp-deferred)
+         ;; Format code on save
+         (lsp-mode . (lambda ()
+                       (add-hook 'before-save-hook 'lsp-format-buffer))))
+  :commands (lsp lsp-deferred))
+
+;; Show contextual code documentation pop-ups
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode))
+
+;; Auto-complete languages with LSP support
+(use-package company-lsp
+  :after lsp-mode
+  :config (push 'company-lsp company-backends))
+
+;;;; GraphQL
+(use-package graphql-mode)
+;; (use-package company-graphql)
+;; (add-to-list 'company-backends 'company-graphql)
+
 ;;;; typesetting
-(use-package markdown-mode :commands markdown-mode)
-(use-package poly-markdown :after markdown-mode)
+(use-package markdown-mode)
+(use-package poly-markdown)
 ;; org-mode additions
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode))
-(setq org-fontify-emphasized-text t)
+(setq org-fontify-emphasized-text t
+      org-agenda-files '("~/Documents/agenda"))
 ;; (use-package org-plus-contrib)
 
-;; Give org-mode some evil keybindings
-(use-package evil-org
-  :hook (org-mode . evil-org-mode)
-  :config (progn (evil-org-set-key-theme)
-                 (require 'evil-org-agenda)
-                 (evil-org-agenda-set-keys)))
+;;;; Latex
+;; latex packages have to go near the top for some reason.
+;; otherwise they just mysteriously don't load.
+;; Because 'auctex is doodled, must use straight directly here.
+(straight-use-package 'auctex)
+;; latex additions
+(add-hook 'TeX-mode-hook 'TeX-fold-mode)
+(setq-default TeX-engine 'xetex) ; enables unicode support
 
 ;;; Custom key bindings
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
 
-(general-define-key
- "M-SPC" 'company-complete
- "C-s" 'save-buffer
- "C-]" 'tab-to-tab-stop)
-
 ;; TODO: Rebind isearch-forward
-
-;;; Considering spacemacs
-;; Spacemacs
-;; Pros: built-in SPC bindings, all modes consistent bindings via layers,
-;; everything built-in, easier config?, layers for new pkgs are optional
-;; Cons: layer abstraction, installs lots i don't use, would have to
-;; revert default theme, little direct control of config, some obsolete stuff
-;; installed, no latex biz, changing default bindings is a pain!, more shit to
-;; pull to setup on another machine.
-
-;; Pros of my own config: learning it all, vanilla file structure, only bind the
-;; commands i actually use, term colors already
-;; Cons: long-ass config file, takes time to get evil mode working with all the
-;; aux modes i'll use (but not too many aux modes!)
-
-;;; Autofill
-;;(setq comment-auto-fill-only-comments t)
-;;(setq-default auto-fill-function 'do-auto-fill)
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
