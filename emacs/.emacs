@@ -1,4 +1,5 @@
-;;; Bootstrap package manager
+;;; Emacs Configuration
+;;;; Bootstrap package manager
 ;; Fix TLS for emacs 26
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
@@ -9,12 +10,12 @@
       (bootstrap-version 5))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
-	(url-retrieve-synchronously
-	 "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-	 'silent 'inhibit-cookies)
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
+  (load bootstrap-file nil 'nomessage))
 
 (setq straight-use-package-by-default 1)
 (straight-use-package 'use-package)
@@ -27,13 +28,13 @@
 ;; TODO: Fix treemacs unable to open new projects! Has to do with terminal color sequences???
 ;; TODO: Slight margin between line number and text. Slight vertical margin from window top to first line.
 ;; TODO: Smoother scrolling?
+;; TODO: Custom definitions for vdiff colors. Need to highlight partial line changes and not clear syntax highlighting from lines.
 
-;;; Emacs Configuration
 ;;;; GUI
 ;; (use-package better-defaults)
 (tool-bar-mode -1)
-(menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
 (scroll-bar-mode -1)
+(menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
 (setq-default tab-width 4
               indent-tabs-mode nil      ; use spaces for indentation
               fill-column 80
@@ -46,7 +47,15 @@
 ;; (setq mouse-wheel-follow-mouse t)
 ;; (setq scroll-step 1)
 
-(fringe-mode '(12 . 0))
+;; Scrolling
+(setq mouse-wheel-scroll-amount '(3 ((shift) . 1) ((control) . nil))
+      mouse-wheel-progressive-speed nil)
+
+;; Window focus
+(setq focus-follows-mouse t
+      mouse-autoselect-window -.1)
+
+(fringe-mode '(10 . 0))
 
 (save-place-mode t)
 
@@ -85,16 +94,16 @@
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
 
-;; Show key combo helpers
-(use-package which-key
-  :init (setq which-key-enable-extended-define-key t
-              which-key-idle-delay 0.5)
-  :config (which-key-mode t))
+;;;; Fancy looks
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
-;; (use-package rainbow-delimiters
-;;   :hook (prog-mode . rainbow-delimeters-mode))
+;; Show marks in fringe for lines past EOF
+(setq-default indicate-empty-lines t)
 
-
+;; TODO: Bind keys to navigate TODOs
+(use-package hl-todo
+  :hook (prog-mode . hl-todo-mode))
 
 ;;;; Dashboard!
 (use-package page-break-lines)
@@ -113,7 +122,17 @@
 (use-package diminish) ; hide minor mode lines
 
 (use-package telephone-line
-  :config (telephone-line-mode t))
+  :config
+  (setq telephone-line-lhs '((evil . (telephone-line-evil-tag-segment))
+                             (accent . (telephone-line-vc-segment))
+                             (nil . (telephone-line-projectile-segment
+                                     telephone-line-erc-modified-channels-segment
+                                     telephone-line-buffer-segment)))
+        telephone-line-rhs '((nil . (telephone-line-misc-info-segment))
+                             (accent . (telephone-line-major-mode-segment))
+                             (evil . (telephone-line-airline-position-segment)))
+        telephone-line-height 16)
+  (telephone-line-mode t))
 
 ;;;; Additions to ivy
 (use-package counsel
@@ -123,20 +142,25 @@
   :commands 'flyspell-correct-wrapper)
 
 
+;;;; Better help
+(use-package helpful
+  :bind (("C-h f" . helpful-callable)
+         ("C-h v" . helpful-variable)
+         ("C-h k" . helpful-key)
+         ("C-h C" . helpful-command)))
+
 ;;; Editing
 ;;;; General
 (use-package editorconfig
   :hook (prog-mode . editorconfig-mode))
 (use-package dtrt-indent
   :hook (prog-mode . dtrt-indent-mode)) ; auto-detect indentation
-(use-package move-text ; TODO: replace. works weird with selected region.
-  :bind (("M-<up>" . move-text-up)
-         ("M-<down>" . move-text-down)))
 (use-package whole-line-or-region)
 
 ;; Always indent, no matter what
 (use-package aggressive-indent
-  :config (global-aggressive-indent-mode t))
+  :hook ((prog-mode . aggressive-indent-mode)
+         (lsp-mode . (lambda () (aggressive-indent-mode -1)))))
 
 (use-package highlight-indent-guides
   :config (setq highlight-indent-guides-method 'fill)
@@ -145,12 +169,17 @@
 ;;;; Expressions
 ;; Make expression editing easier everywhere
 (use-package smartparens
-  :config (require 'smartparens-config)
+  :config 
+  (sp-local-pair '(go-mode rust-mode java-mode) "{" nil :post-handlers '(("||\n[i]" "RET")))
+  (require 'smartparens-config)
   :hook ((prog-mode . smartparens-mode)
          ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
 
 (use-package evil-cleverparens
   :hook (smartparens-enabled . evil-cleverparens-mode))
+
+(use-package highlight-parentheses
+  :hook (prog-mode . highlight-parentheses-mode))
 
 ;;;; org & outlines
 (use-package outshine
@@ -158,11 +187,20 @@
 
 ;;;; niceties
 ;; Highlight color codes in the buffer
-(use-package rainbow-mode
-  :hook (after-init . rainbow-mode))
+;; (use-package rainbow-mode
+;;   :hook (after-init . rainbow-mode))
 
 ;;; Evil mode
+;; Show key combo helpers
+(use-package which-key
+  :init (setq which-key-enable-extended-define-key t
+              which-key-idle-delay 0.5)
+  :config (which-key-mode t))
+
+;; Easier binding definitions
 (use-package general)
+
+;; vim emulation
 (use-package evil
   :init (setq evil-want-keybinding nil        ; let evil-collection bind keys
               evil-move-beyond-eol t)
@@ -181,7 +219,11 @@
 
 ;; surround things with verb 'S'
 (use-package evil-surround
-  :config (global-evil-surround-mode t))
+  :config
+  (setq-default evil-surround-pairs-alist
+                ;; Allow surrounding with newlines
+                (cons '(13 . ("\n" . "")) evil-surround-pairs-alist))
+  (global-evil-surround-mode t))
 
 ;; add more surroundings by default
 (use-package evil-embrace
@@ -195,100 +237,13 @@
 ;;(dolist (e '(magit-mode))
 ;;(add-to-list 'evil-emacs-state-modes e))
 
-;;; Mode-specific keybindings
 ;;;; setup prefixes
 (general-create-definer global-leader-def
   :prefix "<SPC>"
   :keymaps 'override)
 
-(general-create-definer local-leader-def :prefix "\\")
-
-;;;; global
-;; Contextual leader key as backslash
-;; Generic leader key as space
-(add-hook 'after-init-hook
-          (lambda ()
-            (global-leader-def
-              '(normal motion)
-              "SPC" 'counsel-M-x
-              "b" '("buffers")
-              "bo" 'other-buffer
-              "bb" 'counsel-switch-buffer
-              "bk" 'kill-buffer 
-              "bh" 'home
-              "f" '("files")
-              "ff" 'counsel-find-file
-              "fd" 'dired
-              "/" 'comment-line
-              "e" '("eval")
-              "ee" (kbd "C-x C-e")
-              "et" (kbd "C-M-x")
-              "w" '("windows")
-              "wo" 'other-window
-              "wk" 'delete-window
-              "wj" 'delete-other-windows
-              "w <left>" 'evil-window-left
-              "w <right>" 'evil-window-right
-              "w <up>" 'evil-window-up
-              "w <down>" 'evil-window-down
-              "t" '("text")
-              "tw" '("words")
-              "tws" '("spell-check" . flyspell-correct-wrapper)
-              "twc" 'count-words
-              "g" '("git")
-              "gs" 'magit-status
-              "n" '("narrowing")
-              "nw" 'widen
-              "ns" 'outshine-narrow-to-subtree
-              "nn" 'org-narrow-to-element
-              "nb" 'org-narrow-to-block
-              "p" projectile-command-map
-              "m" '("modes")
-              "mr" 'restclient-mode
-              "mc" 'calc
-              "j" '("jump")
-              "jd" 'dumb-jump-go
-              "jg" 'dumb-jump-go-prompt
-              "i" '("input method")
-              "is" 'set-input-method
-              "it" 'toggle-input-method)))
-
-(general-def 'normal
-  "U" 'undo-tree-redo)
-
-;; Fix outline bindings in non-insert states
-(general-def '(normal motion)
-  "TAB" 'outshine-kbd-TAB)
-
-;; General evil mode overrides
-(general-def '(normal insert)
-  "M-j" 'move-text-down
-  "M-k" 'move-text-up
-  "C-s" 'save-buffer
-  "C-]" 'tab-to-tab-stop)
-
-(general-def 'insert
-  "M-SPC" 'company-complete)
-
-;;;; org-mode
-(local-leader-def 'normal org-mode-map
-  "c" '("clocking")
-  "ci" 'org-clock-in
-  "co" 'org-clock-out
-  "s" 'org-schedule
-  "d" 'org-deadline
-  "t" '("tables")
-  "tih" 'org-table-insert-hline
-  "a" 'org-agenda
-  "l" '("lists")
-  "lb" 'org-cycle-list-bullet)
-
-;; Give org-mode some evil keybindings
-(use-package evil-org
-  :hook (org-mode . evil-org-mode)
-  :config (progn (evil-org-set-key-theme)
-                 (require 'evil-org-agenda)
-                 (evil-org-agenda-set-keys)))
+(general-create-definer local-leader-def
+  :prefix "\\")
 
 ;;; Project management
 (use-package projectile
@@ -311,14 +266,13 @@
 (use-package ivy
   :hook (after-init . ivy-mode)
   :config
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  (setq ivy-re-builders-alist
-        '((ivy-switch-buffer . ivy--regex-plus)
-          (ivy-bibtex . ivy--regex-ignore-order)
-          ;; Use fuzzy matching for most cases
-          (t . ivy--regex-fuzzy)))
-  (setq projectile-completion-system 'ivy))
+  (setq ivy-use-virtual-buffers t
+        enable-recursive-minibuffers t
+        ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-plus)
+                                (ivy-bibtex . ivy--regex-ignore-order)
+                                ;; Use fuzzy matching for most cases
+                                (t . ivy--regex-fuzzy))
+        projectile-completion-system 'ivy))
 
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :after ivy)
@@ -329,10 +283,10 @@
 (use-package company
   :hook (prog-mode . company-mode)
   :config
-  (setq company-idle-delay 0.2)
-  (setq company-minimum-prefix-length 1)
-  (setq company-selection-wrap-around t)
-  (setq company-require-match -1))
+  (setq company-idle-delay 0.2
+        company-minimum-prefix-length 1
+        company-selection-wrap-around t
+        company-require-match -1))
 
 ;; more fuzzy completion
 (use-package company-fuzzy
@@ -380,9 +334,8 @@
 (use-package vdiff
   :config
   (setq vdiff-magit-stage-is-2way t)
-  (general-define-key :states 'normal
-                      :keymaps vdiff-mode-map
-                      "," vdiff-mode-prefix-map))
+  (general-def 'normal vdiff-mode-map
+    "\\" vdiff-mode-prefix-map))
 
 (use-package vdiff-magit
   :bind (:map magit-mode-map
@@ -403,7 +356,6 @@
                              (global-subword-mode t)
                              (global-prettify-symbols-mode t)
                              (global-auto-revert-mode t)
-                             ;; (electric-pair-mode t)
                              (global-visual-line-mode t)
                              (column-number-mode t)))
 
@@ -414,16 +366,39 @@
 (use-package multiple-cursors)
 (use-package expand-region
   :bind (("M-=" . 'er/expand-region)
-         ("M--" . 'er/contract-region)))
+         ("M--" . 'er/contract-region))
+  :config (general-def 'visual
+            ;; TODO: Rebind evil-indent with TAB
+            "=" 'er/expand-region
+            "-" 'er/contract-region))
 
 ;;; Auxiliary Modes
 (use-package request)
 (use-package restclient :commands restclient-mode)
 (use-package dumb-jump
-  :config (setq dumb-jump-selector 'ivy)
-  :commands dumb-jump-go)
+  :config (setq dumb-jump-selector 'ivy))
 
 ;;; Programming Languages
+;;;; Language Server Protocol!
+;; lsp in conjunction with company and flycheck gives us easy auto-complete and
+;; syntax checking on-the-fly.
+(use-package lsp-mode
+  :config (setq lsp-inhibit-message t)
+  :hook (((go-mode rust-mode java-mode) . lsp-deferred)
+         ;; Format code on save
+         (lsp-mode . (lambda ()
+                       (add-hook 'before-save-hook 'lsp-format-buffer))))
+  :commands (lsp lsp-deferred))
+
+;; Show contextual code documentation pop-ups
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode))
+
+;; Auto-complete languages with LSP support
+(use-package company-lsp
+  :after lsp-mode
+  :config (push 'company-lsp company-backends))
+
 ;;;; One liners
 (use-package nix-mode)
 (use-package bazel-mode)
@@ -466,25 +441,6 @@
 ;; (flycheck-add-mode 'javascript-eslint 'typescript-mode)
 
 
-;;;; Language Server Protocol!
-;; lsp in conjunction with company and flycheck gives us easy auto-complete and
-;; syntax checking on-the-fly.
-(use-package lsp-mode
-  :hook (((go-mode rust-mode java-mode) . lsp-deferred)
-         ;; Format code on save
-         (lsp-mode . (lambda ()
-                       (add-hook 'before-save-hook 'lsp-format-buffer))))
-  :commands (lsp lsp-deferred))
-
-;; Show contextual code documentation pop-ups
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode))
-
-;; Auto-complete languages with LSP support
-(use-package company-lsp
-  :after lsp-mode
-  :config (push 'company-lsp company-backends))
-
 ;;;; GraphQL
 (use-package graphql-mode)
 ;; (use-package company-graphql)
@@ -509,11 +465,130 @@
 (add-hook 'TeX-mode-hook 'TeX-fold-mode)
 (setq-default TeX-engine 'xetex) ; enables unicode support
 
-;;; Custom key bindings
+;;; Mode-specific keybindings
+;;;; global
+;; Cntextual leader key as backslash
+;; Gneric leader key as space
+(add-hook 'after-init-hook
+          (lambda ()
+            (global-leader-def
+              '(normal motion)
+              "SPC" 'counsel-M-x
+              "b" '("buffers")
+              "bo" 'other-buffer
+              "bb" 'counsel-switch-buffer
+              "bk" 'kill-buffer 
+              "bh" 'home
+              "f" '("files")
+              "ff" 'counsel-find-file
+              "fd" 'dired
+              "/" 'comment-line
+              "e" '("eval")
+              "ee" (kbd "C-x C-e")
+              "et" (kbd "C-M-x")
+              "w" '("windows")
+              "wo" 'other-window
+              "wk" 'delete-window
+              "wj" 'delete-other-windows
+              "w <left>" 'evil-window-left
+              "w <right>" 'evil-window-right
+              "w <up>" 'evil-window-up
+              "w <down>" 'evil-window-down
+              "t" '("text")
+              "tw" '("words")
+              "tws" '("spell-check" . flyspell-correct-wrapper)
+              "twc" 'count-words
+              "g" '("git")
+              "gs" 'magit-status
+              "n" '("narrowing")
+              "nw" 'widen
+              "ns" 'outshine-narrow-to-subtree
+              "nn" 'org-narrow-to-element
+              "nb" 'org-narrow-to-block
+              "p" projectile-command-map
+              "m" '("modes")
+              "mr" 'restclient-mode
+              "mc" 'calc
+              "j" '("jump")
+              "jd" 'dumb-jump-go
+              "jg" 'dumb-jump-go-prompt
+              "i" '("input method")
+              "is" 'set-input-method
+              "it" 'toggle-input-method)))
+
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
 
+;;;; vim
+(defun split-line-at-point ()
+  (interactive)
+  (newline)
+  (evil-previous-line)
+  (evil-end-of-line))
+
+(general-def 'normal
+  "U" 'undo-tree-redo
+  "K" (kbd "kJ")
+  ;; Useful binding for starting method call chains
+  "gs" 'split-line-at-point)
+
+;; Fx outline bindings in non-insert states
+(general-def '(normal motion)
+  "TAB" 'outshine-kbd-TAB)
+
+;; General evil mode overrides
+(general-def '(normal insert)
+  "C-s" 'save-buffer
+  "C-]" 'tab-to-tab-stop)
+
+(general-def 'insert
+  "C-SPC" 'company-complete)
+
+;;;; prog-mode
+(local-leader-def 'normal
+  "]t" 'hl-todo-next
+  "[t" 'hl-todo-previous)
+
+;;;; org-mode
+(local-leader-def 'normal org-mode-map
+  "c" '("clocking")
+  "ci" 'org-clock-in
+  "co" 'org-clock-out
+  "s" 'org-schedule
+  "d" 'org-deadline
+  "t" '("tables")
+  "th" 'org-table-insert-hline
+  "a" 'org-agenda
+  "l" '("lists")
+  "lb" 'org-cycle-list-bullet)
+
+;; Give org-mode some evil keybindings
+(use-package evil-org
+  :hook (org-mode . evil-org-mode)
+  :config (progn (evil-org-set-key-theme)
+                 (require 'evil-org-agenda)
+                 (evil-org-agenda-set-keys)))
+
+;;;; lsp-mode
+(local-leader-def 'normal lsp-mode-map
+  "d" 'lsp-describe-thing-at-point
+  "r" 'lsp-rename
+  "g" '("goto")
+  "gi" 'lsp-goto-implementation
+  "gt" 'lsp-goto-type-definition
+  "f" '("find")
+  "fd" 'lsp-find-definition
+  "fr" 'lsp-find-references
+  "b" '("buffer")
+  "bf" 'lsp-format-buffer
+  "i" '("imports")
+  "io" 'lsp-organize-imports)
+
 ;; TODO: Rebind isearch-forward
+
+;;;; go-mode
+(local-leader-def 'normal go-mode-map
+  "ia" 'go-import-add)
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
@@ -537,7 +612,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "PfEd" :family "SF Mono"))))
+ ;; '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 115 :width normal :foundry "PfEd" :family "SF Mono"))))
  '(org-document-title ((t (:weight bold :height 1.6))))
  '(org-level-1 ((t (:height 1.35))))
  '(org-level-2 ((t (:height 1.2))))
