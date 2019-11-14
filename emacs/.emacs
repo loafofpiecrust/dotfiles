@@ -22,7 +22,7 @@
 
 ;; TODO: Map opposite things to C-? and C-S where possible
 ;; TODO: Use some similar keybinds from bspwm/firefox/etc. [] for buffer nav,
-;; TODO: Bind shorter keys to stuff: dumb jump, last position (currently C-o), next position (currently C-i?), 
+;; TODO: Bind shorter keys to stuff: dumb jump, last position (currently C-o), next position (currently C-i?),
 ;; TODO: Bind swiper to a key in normal state
 ;; TODO: Make frame background translucent
 ;; TODO: Fix treemacs unable to open new projects! Has to do with terminal color sequences???
@@ -95,8 +95,8 @@
   (global-emojify-mode t))
 
 ;;;; Fancy looks
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+;; (use-package rainbow-delimiters
+;;   :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; Show marks in fringe for lines past EOF
 (setq-default indicate-empty-lines t)
@@ -108,15 +108,18 @@
 ;;;; Dashboard!
 (use-package page-break-lines)
 (use-package dashboard
+  :after evil
   :config
   (dashboard-setup-startup-hook)
+  (evil-set-initial-state 'dashboard-mode 'motion)
   ;; Load in both independent and client windows.
-  (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
-  (setq dashboard-items '((recents . 5)
+  (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
+        dashboard-startup-banner 'logo
+        dashboard-set-heading-icons t
+        dashboard-center-content t
+        dashboard-items '((recents . 5)
                           (projects . 5)
-                          (agenda . 5)))
-  (setq dashboard-startup-banner 'logo)
-  (setq dashboard-set-heading-icons t))
+                          (agenda . 5))))
 
 ;;;; Mode line
 (use-package diminish) ; hide minor mode lines
@@ -128,7 +131,8 @@
                              (nil . (telephone-line-projectile-segment
                                      telephone-line-erc-modified-channels-segment
                                      telephone-line-buffer-segment)))
-        telephone-line-rhs '((nil . (telephone-line-misc-info-segment))
+        telephone-line-rhs '((nil . (telephone-line-input-info-segment
+                                     telephone-line-misc-info-segment))
                              (accent . (telephone-line-major-mode-segment))
                              (evil . (telephone-line-airline-position-segment)))
         telephone-line-height 16)
@@ -138,9 +142,7 @@
 (use-package counsel
   :hook (after-init . counsel-mode))
 
-(use-package flyspell-correct-ivy
-  :commands 'flyspell-correct-wrapper)
-
+(use-package flyspell-correct-ivy)
 
 ;;;; Better help
 (use-package helpful
@@ -169,7 +171,7 @@
 ;;;; Expressions
 ;; Make expression editing easier everywhere
 (use-package smartparens
-  :config 
+  :config
   (sp-local-pair '(go-mode rust-mode java-mode) "{" nil :post-handlers '(("||\n[i]" "RET")))
   (require 'smartparens-config)
   :hook ((prog-mode . smartparens-mode)
@@ -202,8 +204,9 @@
 
 ;; vim emulation
 (use-package evil
-  :init (setq evil-want-keybinding nil        ; let evil-collection bind keys
-              evil-move-beyond-eol t)
+  :init (setq evil-want-keybinding nil  ; let evil-collection bind keys
+              evil-move-beyond-eol t
+              evil-want-C-i-jump nil)
   :config (evil-mode t))
 
 ;; bind keys for many modes with better evil compatibility
@@ -238,9 +241,11 @@
 ;;(add-to-list 'evil-emacs-state-modes e))
 
 ;;;; setup prefixes
+;; We're going to want two different prefixes
+;; SPC: global commands for managing emacs
+;; \  : mode-local keybindings
 (general-create-definer global-leader-def
-  :prefix "<SPC>"
-  :keymaps 'override)
+  :prefix "<SPC>")
 
 (general-create-definer local-leader-def
   :prefix "\\")
@@ -325,7 +330,9 @@
 (use-package diff-hl
   :config
   (global-diff-hl-mode)
-  (diff-hl-dired-mode t))
+  (diff-hl-dired-mode t)
+  (diff-hl-flydiff-mode t)
+  (setq-default diff-hl-flydiff-delay 0.2))
 
 (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
 
@@ -333,9 +340,10 @@
 ;; Replace ediff with vdiff for synced scrolling and more...
 (use-package vdiff
   :config
-  (setq vdiff-magit-stage-is-2way t)
-  (general-def 'normal vdiff-mode-map
-    "\\" vdiff-mode-prefix-map))
+  (setq vdiff-magit-stage-is-2way t))
+
+(general-def 'normal vdiff-mode-map
+  "\\" vdiff-mode-prefix-map)
 
 (use-package vdiff-magit
   :bind (:map magit-mode-map
@@ -374,7 +382,7 @@
 
 ;;; Auxiliary Modes
 (use-package request)
-(use-package restclient :commands restclient-mode)
+(use-package restclient)
 (use-package dumb-jump
   :config (setq dumb-jump-selector 'ivy))
 
@@ -471,18 +479,15 @@
 ;; Gneric leader key as space
 (add-hook 'after-init-hook
           (lambda ()
-            (global-leader-def
-              '(normal motion)
+            (global-leader-def '(motion normal) override
               "SPC" 'counsel-M-x
+              "x" (kbd "C-u C-x")
               "b" '("buffers")
-              "bo" 'other-buffer
-              "bb" 'counsel-switch-buffer
-              "bk" 'kill-buffer 
-              "bh" 'home
+              "bb" 'ivy-switch-buffer
+              "bk" 'kill-buffer
               "f" '("files")
               "ff" 'counsel-find-file
               "fd" 'dired
-              "/" 'comment-line
               "e" '("eval")
               "ee" (kbd "C-x C-e")
               "et" (kbd "C-M-x")
@@ -500,65 +505,78 @@
               "twc" 'count-words
               "g" '("git")
               "gs" 'magit-status
-              "n" '("narrowing")
-              "nw" 'widen
-              "ns" 'outshine-narrow-to-subtree
-              "nn" 'org-narrow-to-element
-              "nb" 'org-narrow-to-block
-              "p" projectile-command-map
+              "gd" 'vdiff-magit-stage
+              "n" '("narrowing" . ,(kbd "C-x n"))
+              "p" '("projects" . ,projectile-command-map)
+              "a" '("apps")
+              "aa" 'org-agenda
+              "ac" 'calc
               "m" '("modes")
               "mr" 'restclient-mode
-              "mc" 'calc
-              "j" '("jump")
-              "jd" 'dumb-jump-go
-              "jg" 'dumb-jump-go-prompt
+              "mp" 'artist-mode
+              "u" 'undo-tree-visualize
               "i" '("input method")
               "is" 'set-input-method
-              "it" 'toggle-input-method)))
+              "it" 'toggle-input-method
+              "h" '("help")
+              "hkm" 'which-key-show-keymap)))
 
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
 
 ;;;; vim
-(defun split-line-at-point ()
-  (interactive)
-  (newline)
-  (evil-previous-line)
-  (evil-end-of-line))
-
+;; Letters I can remap: =, 0/^,
 (general-def 'normal
   "U" 'undo-tree-redo
-  "K" (kbd "kJ")
-  ;; Useful binding for starting method call chains
-  "gs" 'split-line-at-point)
+  ;; Useful bindings for managing method call chains
+  "K" 'join-line
+  "J" 'newline
+  "C-{" 'evil-jump-backward
+  "C-}" 'evil-jump-forward)
 
-;; Fx outline bindings in non-insert states
-(general-def '(normal motion)
+(general-def '(normal motion visual)
+  "0" (kbd "^"))
+
+;; Fix outline bindings in non-insert states
+(general-def '(normal motion) outshine-mode-map
   "TAB" 'outshine-kbd-TAB)
 
 ;; General evil mode overrides
 (general-def '(normal insert)
-  "C-s" 'save-buffer
+  "C-s" (kbd "C-x C-s")
   "C-]" 'tab-to-tab-stop)
 
 (general-def 'insert
   "C-SPC" 'company-complete)
 
+(general-def 'normal
+  "C-h K" 'which-key-show-top-level)
+
 ;;;; prog-mode
-(local-leader-def 'normal
+(local-leader-def 'normal prog-mode-map
+  "[" '("previous")
+  "]" '("next")
   "]t" 'hl-todo-next
-  "[t" 'hl-todo-previous)
+  "[t" 'hl-todo-previous
+  "f" '("find")
+  "fd" 'dumb-jump-go
+  "f/" 'dumb-jump-go-prompt)
+
+(general-def '(normal insert) prog-mode-map
+  "M-RET" 'comment-indent-new-line)
 
 ;;;; org-mode
 (local-leader-def 'normal org-mode-map
+  "s" 'org-schedule
+  "d" 'org-deadline
   "c" '("clocking")
   "ci" 'org-clock-in
   "co" 'org-clock-out
-  "s" 'org-schedule
-  "d" 'org-deadline
-  "t" '("tables")
-  "th" 'org-table-insert-hline
-  "a" 'org-agenda
+  "i" '("insert")
+  "ih" 'org-table-insert-hline
+  "t" '("todos")
+  "tt" 'org-show-todo-tree
+  "tl" 'org-todo-list
   "l" '("lists")
   "lb" 'org-cycle-list-bullet)
 
@@ -603,16 +621,23 @@
  '(custom-safe-themes
    (quote
     ("a43cda2f075da1534eb50d7dce3ca559276a49c623321d55f68ad8ee218f420e" "5b77b74104748f954929fa3156201a95af9f0f6beb4860e2435cfd00db0219dc" "dbed1a5cfa6470f7a7338a3d9183c6d9439ea3f03fdd73879f60cd128b5ed05e" "b7388ac03767752ade970303768d65dd5d1b47a860308866a56df30ed1a16c2f" "eabaa2ba26896ab0253f87c1a3ba62fe137a44f22965ccd04f89644bead32e75" "4f87a907299c237ec58c634647b44aca5ee636fb7861da19a9defa0b0658b26e" default)))
+ '(diff-hl-flydiff-delay 0.2)
+ '(diff-hl-flydiff-mode t)
  '(evil-collection-company-use-tng nil)
  '(evil-collection-outline-bind-tab-p t)
- '(lsp-rust-server (quote rust-analyzer)))
+ '(global-diff-hl-mode t)
+ '(lsp-rust-server (quote rust-analyzer))
+ '(vdiff-magit-stage-is-2way t))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- ;; '(default ((t (:inherit nil :stipple nil :background "#12131f" :foreground "#cfffff" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 115 :width normal :foundry "PfEd" :family "SF Mono"))))
+ ;; '(diff-added ((t (:background ,(color-darken-name "dark olive green" 20) :foreground nil))))
+ ;; '(diff-changed ((t (:background "dark slate grey" :foreground nil))))
+ ;; '(diff-hl-insert ((t (:inherit diff-added :background nil))))
+ ;; '(diff-hl-change ((t (:inherit diff-changed :background nil))))
  '(org-document-title ((t (:weight bold :height 1.6))))
  '(org-level-1 ((t (:height 1.35))))
  '(org-level-2 ((t (:height 1.2))))
@@ -624,9 +649,33 @@
  '(outline-5 ((t (:inherit org-level-5))))
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
- '(outline-8 ((t (:inherit org-level-8)))))
+ '(outline-8 ((t (:inherit org-level-8))))
+ '(vdiff-addition-face ((t (:inherit diff-added)))))
 
-(use-package doom-themes)
-;; (load-theme 'doom-Iosvkem t)
 (use-package gruvbox-theme)
 (load-theme 'gruvbox t)
+
+(set-face-attribute 'default nil
+                    :family "SF Mono"
+                    :height 100
+                    :weight 'medium
+                    :width 'normal)
+
+(set-face-attribute 'diff-added nil
+                    :background (color-darken-name "dark olive green" 10)
+                    :foreground nil)
+
+(set-face-attribute 'diff-changed nil
+                    :background "dark slate grey"
+                    :foreground nil)
+
+;; TODO: Change how vdiff colors work
+;; (set-face-attribute 'vdiff-addition-face nil
+;;                     :background "pale green"
+;;                     :foreground nil)
+;; (set-face-attribute 'vdiff-change-face nil
+;;                     :background "plum"
+;;                     :foreground nil)
+
+;; (use-package doom-themes)
+;; (load-theme 'doom-Iosvkem t)
