@@ -172,13 +172,45 @@
 ;; Make expression editing easier everywhere
 (use-package smartparens
   :config
-  (sp-local-pair '(go-mode rust-mode java-mode) "{" nil :post-handlers '(("||\n[i]" "RET")))
+  (dolist (delim '("{" "(" "["))
+    (sp-local-pair '(go-mode rust-mode c-mode javascript-mode)
+                   delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :hook ((prog-mode . smartparens-mode)
          ((emacs-lisp-mode lisp-mode) . smartparens-strict-mode)))
 
 (use-package evil-cleverparens
   :hook (smartparens-enabled . evil-cleverparens-mode))
+
+(defun sp-raise-hybrid-sexp (&optional arg)
+  (interactive "P")
+  (let* ((current (save-excursion
+                    (sp-forward-sexp)
+                    (sp-backward-sexp)
+                    (sp-get-hybrid-sexp)))
+         (end (save-excursion
+                (goto-char (sp-get current :beg))
+                (let ((block-column (current-column)))		   
+                  (while (>= (current-column) block-column)
+                    (next-line)
+                    (beginning-of-line)
+                    (sp-forward-sexp)
+                    (sp-backward-sexp)))
+                (sp-backward-sexp)
+                (sp-get-hybrid-sexp)))
+         (prev (save-excursion
+                 (goto-char (sp-get current :beg))
+                 (sp-backward-sexp)
+                 (sp-get-hybrid-sexp))))
+    (if (sp-compare-sexps prev current > :end)
+        (sp-message :invalid-context-prev)
+      (sp-backward-sexp)
+      ;; (python-indent-shift-left (sp-get current :beg) (sp-get end :end))
+      )
+    (delete-region (sp-get prev :beg) (sp-get current :beg))
+    (when (looking-at "[\n\t ]+")
+      (forward-line)
+      (back-to-indentation))))
 
 (use-package highlight-parentheses
   :hook (prog-mode . highlight-parentheses-mode))
@@ -212,6 +244,8 @@
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection :after evil
   :custom
+  (dolist (m '(go-mode))
+    (delete m evil-collection--supported-modes))
   (evil-collection-outline-bind-tab-p t)
   (evil-collection-company-use-tng nil)
   :config (evil-collection-init))
@@ -294,8 +328,8 @@
         company-require-match -1))
 
 ;; more fuzzy completion
-(use-package company-fuzzy
-  :hook (company-mode . company-fuzzy-mode))
+;; (use-package company-fuzzy
+;;   :hook (company-mode . company-fuzzy-mode))
 
 ;; GUI box to prevent interference with different font sizes
 (use-package company-box
@@ -395,16 +429,16 @@
   :hook (((go-mode rust-mode java-mode) . lsp-deferred)
          ;; Format code on save
          (lsp-mode . (lambda ()
-                       (add-hook 'before-save-hook 'lsp-format-buffer))))
+                       (add-hook 'before-save-hook 'lsp-format-buffer nil t))))
   :commands (lsp lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode))
+  :hook ((lsp-after-open . (lambda () (lsp-ui-flycheck-enable 1)))
+         (lsp-mode . lsp-ui-mode)))
 
 ;; Auto-complete languages with LSP support
 (use-package company-lsp
-  :after lsp-mode
   :config (push 'company-lsp company-backends))
 
 ;;;; One liners
@@ -475,6 +509,12 @@
 
 ;;; Mode-specific keybindings
 ;;;; global
+(defun switch-to-alternate-buffer ()
+  "Switch to previously open buffer.
+Repeated invocations toggle between the two most recently open buffers."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
 ;; Cntextual leader key as backslash
 ;; Gneric leader key as space
 (add-hook 'after-init-hook
@@ -485,6 +525,8 @@
               "b" '("buffers")
               "bb" 'ivy-switch-buffer
               "bk" 'kill-buffer
+              "bw" 'kill-this-buffer
+              "b TAB" 'switch-to-alternate-buffer
               "f" '("files")
               "ff" 'counsel-find-file
               "fd" 'dired
@@ -492,9 +534,9 @@
               "ee" (kbd "C-x C-e")
               "et" (kbd "C-M-x")
               "w" '("windows")
-              "wo" 'other-window
-              "wk" 'delete-window
-              "wj" 'delete-other-windows
+              "w TAB" 'other-window
+              "ww" 'delete-window
+              "wk" 'delete-other-windows
               "w <left>" 'evil-window-left
               "w <right>" 'evil-window-right
               "w <up>" 'evil-window-up
@@ -507,7 +549,7 @@
               "gs" 'magit-status
               "gd" 'vdiff-magit-stage
               "n" '("narrowing" . ,(kbd "C-x n"))
-              "p" '("projects" . ,projectile-command-map)
+              "p" projectile-command-map
               "a" '("apps")
               "aa" 'org-agenda
               "ac" 'calc
@@ -515,11 +557,10 @@
               "mr" 'restclient-mode
               "mp" 'artist-mode
               "u" 'undo-tree-visualize
-              "i" '("input method")
+              "i" '("input-method")
               "is" 'set-input-method
               "it" 'toggle-input-method
-              "h" '("help")
-              "hkm" 'which-key-show-keymap)))
+              "h" help-map)))
 
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
@@ -528,11 +569,20 @@
 ;; Letters I can remap: =, 0/^,
 (general-def 'normal
   "U" 'undo-tree-redo
-  ;; Useful bindings for managing method call chains
-  "K" 'join-line
-  "J" 'newline
-  "C-{" 'evil-jump-backward
-  "C-}" 'evil-jump-forward)
+  ;; Useful binding for managing method call chains
+  "K" 'newline
+  "[" '("previous")
+  "]" '("next")
+  "[p" 'evil-jump-backward
+  "]p" 'evil-jump-forward
+  "]t" 'hl-todo-next
+  "[t" 'hl-todo-previous)
+
+(general-def 'normal evil-cleverparens-mode-map
+  "[" nil
+  "]" nil
+  "[[" 'evil-cp-previous-closing
+  "]]" 'evil-cp-next-closing)
 
 (general-def '(normal motion visual)
   "0" (kbd "^"))
@@ -554,16 +604,18 @@
 
 ;;;; prog-mode
 (local-leader-def 'normal prog-mode-map
-  "[" '("previous")
-  "]" '("next")
-  "]t" 'hl-todo-next
-  "[t" 'hl-todo-previous
+  "g" '("goto")
+  "r" '("refactor")
   "f" '("find")
   "fd" 'dumb-jump-go
   "f/" 'dumb-jump-go-prompt)
 
 (general-def '(normal insert) prog-mode-map
   "M-RET" 'comment-indent-new-line)
+
+(local-leader-def 'normal flycheck-mode-map
+  "[e" 'flycheck-previous-error
+  "]e" 'flycheck-next-error)
 
 ;;;; org-mode
 (local-leader-def 'normal org-mode-map
@@ -590,23 +642,30 @@
 ;;;; lsp-mode
 (local-leader-def 'normal lsp-mode-map
   "d" 'lsp-describe-thing-at-point
-  "r" 'lsp-rename
-  "g" '("goto")
-  "gi" 'lsp-goto-implementation
-  "gt" 'lsp-goto-type-definition
-  "f" '("find")
-  "fd" 'lsp-find-definition
-  "fr" 'lsp-find-references
-  "b" '("buffer")
-  "bf" 'lsp-format-buffer
+  "rr" 'lsp-rename
+  "rf" 'lsp-format-buffer
   "i" '("imports")
-  "io" 'lsp-organize-imports)
+  "io" 'lsp-organize-imports
+  "fi" 'lsp-goto-implementation
+  "ft" 'lsp-goto-type-definition
+  "fd" 'lsp-find-definition
+  "fr" 'lsp-find-references)
 
 ;; TODO: Rebind isearch-forward
 
 ;;;; go-mode
 (local-leader-def 'normal go-mode-map
-  "ia" 'go-import-add)
+  "ia" 'go-import-add
+  "ga" 'go-goto-arguments
+  "gd" 'go-goto-docstring
+  "gn" 'go-goto-function-name
+  "gi" 'go-goto-imports)
+
+;; TODO: Come up with a scheme to reconcile plain "g" and "\g"
+;; (general-def 'normal go-mode-map
+;;   "gfa" 'go-goto-arguments
+;;   "gfn" 'go-goto-function-name
+;;   "gai" 'go-goto-imports)
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
@@ -657,7 +716,7 @@
 
 (set-face-attribute 'default nil
                     :family "SF Mono"
-                    :height 100
+                    :height 110
                     :weight 'medium
                     :width 'normal)
 
