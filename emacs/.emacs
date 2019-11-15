@@ -166,7 +166,7 @@
 
 (use-package highlight-indent-guides
   :config (setq highlight-indent-guides-method 'fill)
-  :hook (prog-mode . highlight-indent-guides-mode))
+  :hook ((prog-mode org-mode) . highlight-indent-guides-mode))
 
 ;;;; Expressions
 ;; Make expression editing easier everywhere
@@ -244,11 +244,12 @@
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection :after evil
   :custom
-  (dolist (m '(go-mode))
-    (delete m evil-collection--supported-modes))
   (evil-collection-outline-bind-tab-p t)
   (evil-collection-company-use-tng nil)
-  :config (evil-collection-init))
+  :config
+  (dolist (m '(go-mode))
+    (delete m evil-collection--supported-modes))
+  (evil-collection-init))
 
 ;; commenting lines with verb 'g'
 (use-package evil-commentary :after evil
@@ -576,7 +577,8 @@ Repeated invocations toggle between the two most recently open buffers."
   "[p" 'evil-jump-backward
   "]p" 'evil-jump-forward
   "]t" 'hl-todo-next
-  "[t" 'hl-todo-previous)
+  "[t" 'hl-todo-previous
+  "C-h K" 'which-key-show-top-level)
 
 (general-def 'normal evil-cleverparens-mode-map
   "[" nil
@@ -596,11 +598,14 @@ Repeated invocations toggle between the two most recently open buffers."
   "C-s" (kbd "C-x C-s")
   "C-]" 'tab-to-tab-stop)
 
-(general-def 'insert
-  "C-SPC" 'company-complete)
+;; (use-package key-chord
+;;   :config 
+;;   (key-chord-mode t)
+;;   (key-chord-define-global "  " 'evil-normal-state))
 
-(general-def 'normal
-  "C-h K" 'which-key-show-top-level)
+(general-def 'insert
+  "RET" 'evil-normal-state
+  "C-SPC" 'company-complete)
 
 ;;;; prog-mode
 (local-leader-def 'normal prog-mode-map
@@ -714,10 +719,11 @@ Repeated invocations toggle between the two most recently open buffers."
 (use-package gruvbox-theme)
 (load-theme 'gruvbox t)
 
+;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
                     :family "SF Mono"
                     :height 110
-                    :weight 'medium
+                    :weight 'normal
                     :width 'normal)
 
 (set-face-attribute 'diff-added nil
@@ -728,13 +734,10 @@ Repeated invocations toggle between the two most recently open buffers."
                     :background "dark slate grey"
                     :foreground nil)
 
-;; TODO: Change how vdiff colors work
-;; (set-face-attribute 'vdiff-addition-face nil
-;;                     :background "pale green"
-;;                     :foreground nil)
-;; (set-face-attribute 'vdiff-change-face nil
-;;                     :background "plum"
-;;                     :foreground nil)
-
+;; Use a symbol for collapsed headings
+(setq org-ellipsis " ▼")
+(set-display-table-slot standard-display-table
+                        'selective-display
+                        (string-to-vector (symbol-value 'org-ellipsis)))
 ;; (use-package doom-themes)
 ;; (load-theme 'doom-Iosvkem t)
