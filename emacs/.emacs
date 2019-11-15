@@ -21,54 +21,55 @@
 (straight-use-package 'use-package)
 
 ;; TODO: Map opposite things to C-? and C-S where possible
-;; TODO: Use some similar keybinds from bspwm/firefox/etc. [] for buffer nav,
-;; TODO: Bind shorter keys to stuff: dumb jump, last position (currently C-o), next position (currently C-i?),
 ;; TODO: Bind swiper to a key in normal state
 ;; TODO: Make frame background translucent
-;; TODO: Fix treemacs unable to open new projects! Has to do with terminal color sequences???
 ;; TODO: Slight margin between line number and text. Slight vertical margin from window top to first line.
-;; TODO: Smoother scrolling?
-;; TODO: Custom definitions for vdiff colors. Need to highlight partial line changes and not clear syntax highlighting from lines.
+;; TODO: Custom colors for refined vdiff chunks, letting us visualize
+;; partial-line changes.
+;; TODO: totally disable scroll?!
 
 ;;;; GUI
-;; (use-package better-defaults)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (menu-bar-mode (if (string-equal system-type "darwin") 1 -1))
-(setq-default tab-width 4
+(show-paren-mode 1)
+(fringe-mode '(10 . 0))
+(save-place-mode t)
+
+;; Setup basic settings
+(setq-default mouse-wheel-scroll-amount '(3 ((shift) . 1) ((control) . nil))
+              mouse-wheel-progressive-speed nil
+              ;; Window focus
+              focus-follows-mouse t
+              mouse-autoselect-window -.1
+              ;; Text display
+              line-spacing 0
+              display-line-numbers-width 3
+              ;; Indentation and wrapping
+              tab-width 4
               indent-tabs-mode nil      ; use spaces for indentation
               fill-column 80
-              display-line-numbers-width 3)
-(show-paren-mode 1)
-(add-hook 'text-mode-hook 'auto-fill-mode)
-;; Attempt to scroll less jarringly
-;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-;; (setq mouse-wheel-progressive-speed nil)
-;; (setq mouse-wheel-follow-mouse t)
-;; (setq scroll-step 1)
-
-;; Scrolling
-(setq mouse-wheel-scroll-amount '(3 ((shift) . 1) ((control) . nil))
-      mouse-wheel-progressive-speed nil)
-
-;; Window focus
-(setq focus-follows-mouse t
-      mouse-autoselect-window -.1)
-
-(fringe-mode '(10 . 0))
-
-(save-place-mode t)
+              ;; misc settings
+              apropos-do-all t
+              require-final-newline t
+              load-prefer-newer t)
 
 (use-package exec-path-from-shell
   :config (exec-path-from-shell-initialize))
 
-;;(use-package smooth-scrolling)
-;;(smooth-scrolling-mode 1)
-
 ;; Empty scratch buffers
 (setq initial-scratch-message "")
+
 ;; Easier confirmation
 (fset 'yes-or-no-p 'y-or-n-p)
+
+;;;; Autofill
+;; Only automatically wrap comments.
+(setq-default comment-auto-fill-only-comments t
+              auto-fill-function 'do-auto-fill)
+(add-hook 'prog-mode-hook 'auto-fill-mode)
+(add-hook 'prog-mode-hook (lambda ()
+                            (add-hook 'after-save-hook 'delete-trailing-whitespace nil t)))
 
 ;;;; Backup settings
 (setq backup-by-copying t ; don't clobber symlinks
@@ -81,10 +82,6 @@
       kept-old-versions 2
       version-control t
       delete-by-moving-to-trash t)
-
-;;;; Autofill
-;;(setq comment-auto-fill-only-comments t)
-;;(setq-default auto-fill-function 'do-auto-fill)
 
 ;;; UI Packages
 ;;;; Icons & Emojis
@@ -101,7 +98,6 @@
 ;; Show marks in fringe for lines past EOF
 (setq-default indicate-empty-lines t)
 
-;; TODO: Bind keys to navigate TODOs
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode))
 
@@ -151,6 +147,9 @@
          ("C-h k" . helpful-key)
          ("C-h C" . helpful-command)))
 
+;;;; Navigation
+(use-package avy)
+
 ;;; Editing
 ;;;; General
 (use-package editorconfig
@@ -190,7 +189,7 @@
                     (sp-get-hybrid-sexp)))
          (end (save-excursion
                 (goto-char (sp-get current :beg))
-                (let ((block-column (current-column)))		   
+                (let ((block-column (current-column)))
                   (while (>= (current-column) block-column)
                     (next-line)
                     (beginning-of-line)
@@ -318,7 +317,8 @@
 (use-package ivy-bibtex :after ivy)
 
 ;;; in-buffer completion
-(use-package yasnippet)
+(use-package yasnippet
+  :config (yas-global-mode 1))
 
 (use-package company
   :hook (prog-mode . company-mode)
@@ -395,6 +395,10 @@
 (setq flyspell-issue-message-flag nil)
 
 ;;; Enable completion, pair matching, line numbers
+;; TODO: Fix this for lsp-ui sideline stuff.
+;; (use-package visual-fill-column
+;;   :hook (visual-line-mode . visual-fill-column-mode))
+
 (add-hook 'after-init-hook (lambda ()
                              (global-subword-mode t)
                              (global-prettify-symbols-mode t)
@@ -404,6 +408,12 @@
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 (add-hook 'text-mode-hook 'display-line-numbers-mode)
+
+(defun cycle-line-numbers ()
+  (interactive)
+  (setq display-line-numbers
+        (if (eq (symbol-value 'display-line-numbers) t)
+            'relative t)))
 
 ;; TODO: Bind multiple cursors to some keys. Follow VSCode/Sublime convention?
 (use-package multiple-cursors)
@@ -561,6 +571,8 @@ Repeated invocations toggle between the two most recently open buffers."
               "i" '("input-method")
               "is" 'set-input-method
               "it" 'toggle-input-method
+              "s" '("settings")
+              "sl" 'cycle-line-numbers
               "h" help-map)))
 
 (use-package hungry-delete
@@ -572,6 +584,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "U" 'undo-tree-redo
   ;; Useful binding for managing method call chains
   "K" 'newline
+  "ga" 'avy-goto-char
   "[" '("previous")
   "]" '("next")
   "[p" 'evil-jump-backward
@@ -598,14 +611,17 @@ Repeated invocations toggle between the two most recently open buffers."
   "C-s" (kbd "C-x C-s")
   "C-]" 'tab-to-tab-stop)
 
-;; (use-package key-chord
-;;   :config 
-;;   (key-chord-mode t)
-;;   (key-chord-define-global "  " 'evil-normal-state))
+;; (use-package evil-escape
+;;   :config (progn (setq-default evil-escape-key-sequence (kbd "TAB TAB")
+;;                                evil-escape-delay 0.2)
+;;                  (evil-escape-mode t)))
 
 (general-def 'insert
   "RET" 'evil-normal-state
   "C-SPC" 'company-complete)
+
+(general-def company-active-map
+  "TAB" 'company-complete)
 
 ;;;; prog-mode
 (local-leader-def 'normal prog-mode-map
@@ -617,10 +633,6 @@ Repeated invocations toggle between the two most recently open buffers."
 
 (general-def '(normal insert) prog-mode-map
   "M-RET" 'comment-indent-new-line)
-
-(local-leader-def 'normal flycheck-mode-map
-  "[e" 'flycheck-previous-error
-  "]e" 'flycheck-next-error)
 
 ;;;; org-mode
 (local-leader-def 'normal org-mode-map
@@ -649,6 +661,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "d" 'lsp-describe-thing-at-point
   "rr" 'lsp-rename
   "rf" 'lsp-format-buffer
+  "re" 'lsp-execute-code-action
   "i" '("imports")
   "io" 'lsp-organize-imports
   "fi" 'lsp-goto-implementation
@@ -741,3 +754,20 @@ Repeated invocations toggle between the two most recently open buffers."
                         (string-to-vector (symbol-value 'org-ellipsis)))
 ;; (use-package doom-themes)
 ;; (load-theme 'doom-Iosvkem t)
+
+;; Swap flymake out for flycheck, ALWAYS
+(add-hook 'flymake-mode-hook (lambda ()
+                               (flymake-mode -1)
+                               (flycheck-mode t)))
+
+;; Disable mouse for all buffers!
+;; Only use the mouse for switching between buffers.
+(use-package disable-mouse
+  :after evil
+  :config
+  (global-disable-mouse-mode)
+  (mapc #'disable-mouse-in-keymap
+        (list evil-motion-state-map
+              evil-normal-state-map
+              evil-visual-state-map
+              evil-insert-state-map)))
