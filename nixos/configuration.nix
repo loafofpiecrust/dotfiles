@@ -39,7 +39,7 @@
   hardware.pulseaudio.enable = true;
 
   networking.networkmanager.enable = true;
-  
+
   # Display management!
   services = {
     xserver = {
@@ -47,6 +47,8 @@
       layout = "us";
       enableCtrlAltBackspace = true;
       autoRepeatInterval = 25; # ms between key repeats
+      # I don't use caps lock enough, swap it with escape!
+      xkbOptions = "caps:swapescape";
 
       videoDrivers = ["intel"]; # TODO: Pick gpu drivers
       libinput = {
@@ -71,7 +73,7 @@
       windowManager.bspwm = {
         enable = true;
       };
-      
+
       displayManager.lightdm = {
         enable = true;
         greeters.gtk = {
@@ -90,7 +92,7 @@
       enable = true;
       defaultEditor = true;
     };
-    
+
     # Window compositing effects.
     compton = {
       enable = true;
@@ -107,7 +109,7 @@
       SystemMaxUse=512M
     '';
   };
-  
+
   users = {
     users.snead = {
       isNormalUser = true;
@@ -134,7 +136,7 @@
 
   # Do we really need docker always running?
   # virtualisation.docker.enable = true;
-  
+
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;

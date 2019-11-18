@@ -17,6 +17,9 @@ super + grave
 super + n
 	alacritty -e fish -c nnn
 
+super + e
+	emacsclient -c
+
 super + F7
 	networkmanager_dmenu
 
