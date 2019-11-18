@@ -35,14 +35,17 @@
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
 ;; partial-line changes.
 ;; TODO: totally disable scroll?!
-;; TODO: Decide on bindings for window and buffer management. "b TAB" and "w
-;; TAB" are a bit awkward. It's better if adjacent keystrokes are on opposite
-;; sides of the keyboard so I can use both hands at once. "b o" and "w o" do this.
 
 ;;;; GUI
 ;; Load theme early to prevent flickering
-(use-package gruvbox-theme
-  :config (load-theme 'gruvbox t))
+;; (use-package gruvbox-theme
+;;   :config (load-theme 'gruvbox t))
+(use-package moe-theme
+  :config
+  (moe-theme-set-color 'orange)
+  (moe-dark)
+  ;; (require 'moe-theme-switcher)
+  )
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
@@ -71,6 +74,7 @@
               ;; Text display
               line-spacing 0
               display-line-numbers-width 3
+              show-paren-style 'expression
               ;; Indentation and wrapping
               tab-width 4
               indent-tabs-mode nil      ; use spaces for indentation
@@ -416,48 +420,55 @@
 ;;; Version Control
 ;;;; Git
 (use-package magit :defer t)
-;; TODO: Rebind magit file bindings behind C-c
+;; TODO: Rebind magit file bindings behind SPC g
+;; I only use magit and vdiff, no vc
+(setq vc-handled-backends (delq 'Git vc-handled-backends))
 
 ;; Provides evil friendly git bindings
 (use-package evil-magit
-  :after evil magit
-  :commands magit-mode)
-(use-package forge
-  :commands magit-mode) ; connects to GitHub
-(use-package github-review
-  ;; Only load GitHub review in magit
-  :commands magit-mode)
-
-(use-package git-timemachine :defer t)
+  :after evil magit)
+(use-package forge :after magit)
+(use-package github-review :after magit)
+(use-package git-timemachine :defer t
+  :config
+  (evil-make-overriding-map git-timemachine-mode-map 'normal)
+  (general-def '(normal motion) git-timemachine-mode-map
+    "[r" 'git-timemachine-show-previous-revision
+    "]r" 'git-timemachine-show-next-revision))
 
 ;; Show changed lines in the margin
 (use-package diff-hl
+  :ghook ('after-init-hook #'global-diff-hl-mode)
+  :gfhook ('magit-post-refresh-hook #'diff-hl-magit-post-refresh)
   :config
+  (diff-hl-margin-mode t)
   (diff-hl-dired-mode t)
   (diff-hl-flydiff-mode t)
   (setq-default diff-hl-flydiff-delay 0.2)
-  :ghook ('after-init-hook #'global-diff-hl-mode)
-  :gfhook ('magit-post-refresh-hook #'diff-hl-magit-post-refresh))
+  (general-def 'normal diff-hl-mode-map
+    "[c" #'diff-hl-previous-hunk
+    "]c" #'diff-hl-next-hunk))
 
 ;;;; Diff configuration
 ;; Replace ediff with vdiff for synced scrolling and more...
 (use-package vdiff
-  :config (setq vdiff-magit-stage-is-2way t)
-  :general ('normal vdiff-mode-map
-                    "\\" '(:keymap vdiff-mode-prefix-map)))
+  :config
+  (setq vdiff-magit-stage-is-2way t)
+  (general-def 'normal vdiff-mode-map
+    "\\" '(:keymap vdiff-mode-prefix-map)))
 
 (use-package vdiff-magit
   :general (magit-mode-map
-            "e" 'vdiff-magit-dwim
-            "E" 'vdiff-magit))
+            "e" #'vdiff-magit-dwim
+            "E" #'vdiff-magit))
 
 ;; Email!
 ;; (use-package wanderlust)
 
 ;;; Spellcheck
 ;; Enable spellcheck in comments and strings (requires ispell)
-(add-hook 'text-mode-hook 'flyspell-mode)
-(add-hook 'prog-mode-hook 'flyspell-prog-mode)
+(add-hook 'text-mode-hook #'flyspell-mode)
+(add-hook 'prog-mode-hook #'flyspell-prog-mode)
 (setq flyspell-issue-message-flag nil)
 
 ;;; Enable completion, pair matching, line numbers
@@ -473,8 +484,8 @@
                              (global-hl-line-mode)
                              (column-number-mode t)))
 
-(add-hook 'prog-mode-hook 'display-line-numbers-mode)
-(add-hook 'text-mode-hook 'display-line-numbers-mode)
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(add-hook 'text-mode-hook #'display-line-numbers-mode)
 
 (defun cycle-line-numbers ()
   (interactive)
@@ -482,12 +493,10 @@
         (if (eq (symbol-value 'display-line-numbers) t)
             'relative t)))
 
-;; TODO: Bind multiple cursors to some keys. Follow VSCode/Sublime convention?
-;; (use-package multiple-cursors :defer t)
 (use-package expand-region
   :general ('visual
-            "=" 'er/expand-region
-            "-" 'er/contract-region))
+            "=" #'er/expand-region
+            "-" #'er/contract-region))
 
 ;;; Auxiliary Modes
 (use-package request :defer t)
@@ -506,29 +515,28 @@
         lsp-prefer-flymake nil
         lsp-enable-on-type-formatting t)
   (local-leader-def 'normal lsp-mode-map
-    "d" 'lsp-describe-thing-at-point
-    "rr" 'lsp-rename
-    "rf" 'lsp-format-buffer
-    "re" 'lsp-execute-code-action
+    "rr" #'lsp-rename
+    "rf" #'lsp-format-buffer
+    "re" #'lsp-execute-code-action
     "i" '("imports")
-    "io" 'lsp-organize-imports
-    "fi" 'lsp-goto-implementation
-    "ft" 'lsp-goto-type-definition
-    "fd" 'lsp-find-definition
-    "fr" 'lsp-find-references)
+    "io" #'lsp-organize-imports
+    "fi" #'lsp-goto-implementation
+    "ft" #'lsp-goto-type-definition
+    "fd" #'lsp-find-definition
+    "fr" #'lsp-find-references)
+  ;; Format code on save
+  (add-hook 'before-save-hook #'lsp-format-buffer nil t)
   :custom (lsp-rust-server 'rust-analyzer)
   :commands (lsp lsp-deferred)
   :ghook ('(go-mode-hook
             rust-mode-hook
             java-mode-hook
-            kotlin-mode-hook) #'lsp-deferred)
-  ;; Format code on save
-  :gfhook (nil (add-hook 'before-save-hook 'lsp-format-buffer nil t)))
+            kotlin-mode-hook) #'lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
-  :ghook 'lsp-mode-hook
-  ('lsp-after-open-hook #'lsp-ui-flycheck-enable))
+  :custom (lsp-ui-flycheck-enable t)
+  :ghook 'lsp-mode-hook)
 
 ;; Auto-complete languages with LSP support
 (use-package company-lsp
@@ -544,11 +552,11 @@
 (use-package go-mode
   :defer 1
   :config (local-leader-def 'normal go-mode-map
-            "ia" 'go-import-add
-            "ga" 'go-goto-arguments
-            "gd" 'go-goto-docstring
-            "gn" 'go-goto-function-name
-            "gi" 'go-goto-imports))
+            "ia" #'go-import-add
+            "ga" #'go-goto-arguments
+            "gd" #'go-goto-docstring
+            "gn" #'go-goto-function-name
+            "gi" #'go-goto-imports))
 
 ;;;; Java
 (use-package lsp-java :defer 1)
@@ -613,7 +621,7 @@
 ;; Because 'auctex is doodled, must use straight directly here.
 (straight-use-package 'auctex)
 ;; latex additions
-(add-hook 'TeX-mode-hook 'TeX-fold-mode)
+(add-hook 'TeX-mode-hook #'TeX-fold-mode)
 (setq-default TeX-engine 'xetex) ; enables unicode support
 
 ;;; Mode-specific keybindings
@@ -629,47 +637,52 @@ Repeated invocations toggle between the two most recently open buffers."
 (add-hook 'after-init-hook
           (lambda ()
             (global-leader-def '(motion normal) override
-              "SPC" 'counsel-M-x
-              "c" 'org-capture
+              "SPC" #'counsel-M-x
+              "o" '("org")
+              "oc" #'org-capture
+              "oa" #'org-agenda
               "b" '("buffers")
-              "bb" 'ivy-switch-buffer
-              "bk" 'kill-buffer
-              "bq" 'kill-this-buffer
-              "bo" 'switch-to-alternate-buffer
-              "bf" 'counsel-find-file
-              "bd" 'dired
+              "bb" #'ivy-switch-buffer
+              "bk" #'kill-buffer
+              "bq" #'kill-this-buffer
+              "bo" #'switch-to-alternate-buffer
+              "bf" #'counsel-find-file
+              "bd" #'dired
               "e" '("eval")
               "ee" (kbd "C-x C-e")
               "et" (kbd "C-M-x")
               "w" '("windows")
-              "wo" 'other-window
-              "wq" 'delete-window
-              "wk" 'delete-other-windows
-              "w <left>" 'evil-window-left
-              "w <right>" 'evil-window-right
-              "w <up>" 'evil-window-up
-              "w <down>" 'evil-window-down
+              "wo" #'other-window
+              "wq" #'delete-window
+              "wk" #'delete-other-windows
+              "w <left>" #'evil-window-left
+              "w <right>" #'evil-window-right
+              "w <up>" #'evil-window-up
+              "w <down>" #'evil-window-down
               "t" '("text")
               "tw" '("words")
               "tws" '("spell-check" . flyspell-correct-wrapper)
-              "twc" 'count-words
+              "twc" #'count-words
               "g" '("git")
-              "gs" 'magit-status
-              "gd" 'vdiff-magit-stage
+              "gs" #'magit-status
+              "gd" #'vdiff-magit-stage
+              "gb" #'magit-blame
               "n" '(:keymap narrow-map)
               "p" '(:keymap projectile-command-map)
               "a" '("apps")
-              "aa" 'org-agenda
-              "ac" 'calc
+              "ac" #'calc
+              "ae" #'flycheck-list-errors
+              ;; TODO: Add debugger here under "ad"
               "m" '("modes")
-              "mr" 'restclient-mode
-              "ma" 'artist-mode
-              "u" 'undo-tree-visualize
+              "mr" #'restclient-mode
+              "ma" #'artist-mode
+              "u" #'undo-tree-visualize
               "i" '("input-method")
-              "is" 'set-input-method
-              "it" 'toggle-input-method
+              "is" #'set-input-method
+              "it" #'toggle-input-method
               "s" '("settings")
-              "sl" 'cycle-line-numbers
+              "sl" #'cycle-line-numbers
+              "sw" #'treemacs-switch-workspace
               "h" '(:keymap help-map))))
 
 (use-package hungry-delete
@@ -678,79 +691,88 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;;; vim
 ;; Letters I can remap: =, 0/^, gd, maybe _, +, maybe ~
 (general-def 'normal
-  "U" 'undo-tree-redo
+  "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
-  "K" 'newline
-  "?" 'swiper
-  "z=" 'flyspell-correct-at-point
+  "K" #'newline
+  "?" #'swiper
+  "z=" #'flyspell-correct-at-point
   "M-;" (lambda ()
           (interactive)
           (call-interactively 'comment-dwim)
           (evil-insert-state))
   "[" '("previous")
   "]" '("next")
-  "[p" 'evil-jump-backward
-  "]p" 'evil-jump-forward
-  "]t" 'hl-todo-next
-  "[t" 'hl-todo-previous)
+  "[p" #'evil-jump-backward
+  "]p" #'evil-jump-forward
+  "]t" #'hl-todo-next
+  "[t" #'hl-todo-previous)
 
 (general-def help-map
-  "K" 'which-key-show-top-level)
+  "K" #'which-key-show-top-level)
 
 (general-def 'normal evil-cleverparens-mode-map
   "[" nil
   "]" nil
-  "[[" 'evil-cp-previous-closing
-  "]]" 'evil-cp-next-closing)
+  "[[" #'evil-cp-previous-closing
+  "]]" #'evil-cp-next-closing)
 
 (general-def '(normal motion visual)
   "0" (kbd "^"))
 
 ;; Fix outline bindings in non-insert states
 (general-def '(normal motion) outshine-mode-map
-  "TAB" 'outshine-kbd-TAB)
+  "TAB" #'outshine-kbd-TAB)
 
 ;; General evil mode overrides
 (general-def '(normal insert)
   "C-s" (kbd "C-x C-s")
-  "C-]" 'tab-to-tab-stop)
+  "C-]" #'tab-to-tab-stop)
 
 (general-def 'insert
-  "C-SPC" 'company-complete)
+  "C-SPC" #'company-complete)
 
 ;;;; prog-mode
 (local-leader-def 'normal prog-mode-map
   "g" '("goto")
   "r" '("refactor")
   "f" '("find")
-  "fd" 'dumb-jump-go
-  "f/" 'dumb-jump-go-prompt)
+  "fd" #'dumb-jump-go
+  "f/" #'dumb-jump-go-prompt)
 
 (general-def '(normal insert) prog-mode-map
-  "M-RET" 'comment-indent-new-line)
+  "M-RET" #'comment-indent-new-line)
+
+(general-def
+  :states '(normal visual)
+  :keymaps '(go-mode-map rust-mode-map c-mode-map)
+  "M-t" #'sp-transpose-hybrid-sexp
+  "D" #'sp-kill-hybrid-sexp
+  "M-r" #'sp-raise-hybrid-sexp
+  "M-j" #'sp-push-hybrid-sexp
+  "M->" #'sp-slurp-hybrid-sexp)
 
 ;;;; org-mode
 (local-leader-def 'normal org-mode-map
   ;; Mirror some evil agenda commands here for symmetry.
   "c" '("change")
-  "cs" 'org-schedule
-  "cd" 'org-deadline
-  "ct" 'org-set-tags-command
-  "ce" 'org-set-effort
-  "I" 'org-clock-in
-  "O" 'org-clock-out
+  "cs" #'org-schedule
+  "cd" #'org-deadline
+  "ct" #'org-set-tags-command
+  "ce" #'org-set-effort
+  "I" #'org-clock-in
+  "O" #'org-clock-out
   "s" '("sorting")
-  "ss" 'org-sort
-  "da" 'org-archive-subtree-default
-  "r" 'org-refile
-  "a" 'org-agenda
+  "ss" #'org-sort
+  "da" #'org-archive-subtree-default
+  "r" #'org-refile
+  "a" #'org-agenda
   "i" '("insert")
-  "ih" 'org-table-insert-hline
-  "il" 'org-insert-link
-  "t" 'org-todo)
+  "ih" #'org-table-insert-hline
+  "il" #'org-insert-link
+  "t" #'org-todo)
 
 (general-def 'normal org-mode-map
-  "zt" 'org-show-todo-tree)
+  "zt" #'org-show-todo-tree)
 
 ;; Give org-mode some evil keybindings
 (use-package evil-org
@@ -760,9 +782,9 @@ Repeated invocations toggle between the two most recently open buffers."
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys)
   (general-def 'motion org-agenda-mode-map
-    "r" 'org-agenda-refile
-    "cs" 'org-agenda-schedule
-    "cd" 'org-agenda-deadline))
+    "r" #'org-agenda-refile
+    "cs" #'org-agenda-schedule
+    "cd" #'org-agenda-deadline))
 
 ;;;; lsp-mode
 
@@ -774,6 +796,10 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;   "gfa" 'go-goto-arguments
 ;;   "gfn" 'go-goto-function-name
 ;;   "gai" 'go-goto-imports)
+
+;; TODO: Figure out mode-local artist-mode bindings?
+;; (local-leader-def 'normal artist-mode-map
+;;   "a" (kbd "C-c C-a"))
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
@@ -831,18 +857,18 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; Disable mouse for all buffers!
 ;; Only use the mouse for switching between buffers.
-(use-package disable-mouse
-  :after evil
-  :config
-  (global-disable-mouse-mode)
-  (mapc #'disable-mouse-in-keymap
-        (list evil-motion-state-map
-              evil-normal-state-map
-              evil-visual-state-map
-              evil-insert-state-map)))
+;; (use-package disable-mouse
+;;   :after evil
+;;   :config
+;;   (global-disable-mouse-mode)
+;;   (mapc #'disable-mouse-in-keymap
+;;         (list evil-motion-state-map
+;;               evil-normal-state-map
+;;               evil-visual-state-map
+;;               evil-insert-state-map)))
 
 ;; Normalize evil keymaps for all modes that specify mode-local bindings
-(general-add-hook '(vdiff-mode-hook lsp-mode-hook)
+(general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
                   #'evil-normalize-keymaps)
 
 ;; Make gc pauses faster by decreasing the threshold.
