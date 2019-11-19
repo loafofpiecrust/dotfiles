@@ -40,12 +40,21 @@
 ;; Load theme early to prevent flickering
 ;; (use-package gruvbox-theme
 ;;   :config (load-theme 'gruvbox t))
-(use-package moe-theme
+
+;; (use-package moe-theme
+;;   :config
+;;   (moe-dark)
+;;   (moe-theme-set-color nil)
+;;   ;; (require 'moe-theme-switcher)
+;;   )
+
+(use-package doom-themes
   :config
-  (moe-theme-set-color 'orange)
-  (moe-dark)
-  ;; (require 'moe-theme-switcher)
-  )
+  (setq doom-themes-treemacs-enable-variable-pitch nil
+        doom-themes-treemacs-theme "doom-colors")
+  (load-theme 'doom-dracula t)
+  (doom-themes-org-config)
+  (doom-themes-treemacs-config))
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
@@ -74,7 +83,7 @@
               ;; Text display
               line-spacing 0
               display-line-numbers-width 3
-              show-paren-style 'expression
+              ;; show-paren-style 'expression
               ;; Indentation and wrapping
               tab-width 4
               indent-tabs-mode nil      ; use spaces for indentation
@@ -181,9 +190,12 @@
 ;;(add-to-list 'evil-emacs-state-modes e))
 
 ;;;; setup prefixes
-;; We're going to want two different prefixes
-;; SPC: global commands for managing emacs
-;; \  : mode-local keybindings
+;; We're going to want a few different prefixes
+;; SPC :: global commands for managing emacs
+;; \   :: major mode key bindings
+;; ,   :: minor mode key bindings
+;; g   :: other vim commands/go to...
+;; z   :: change display
 (defconst global-leader "<SPC>")
 (general-create-definer global-leader-def
   :prefix global-leader)
@@ -236,13 +248,16 @@
 (use-package diminish) ; hide minor mode lines
 
 (use-package telephone-line
+  :after evil-anzu
   :config
+  (telephone-line-defsegment* telephone-line-anzu-segment ()
+    '(:eval (anzu--update-mode-line)))
   (setq telephone-line-lhs '((evil . (telephone-line-evil-tag-segment))
-                             (accent . (telephone-line-vc-segment))
-                             (nil . (telephone-line-projectile-segment
-                                     telephone-line-erc-modified-channels-segment
+                             (accent . (telephone-line-vc-segment
+                                        telephone-line-projectile-segment))
+                             (nil . (telephone-line-erc-modified-channels-segment
                                      telephone-line-buffer-segment)))
-        telephone-line-rhs '((nil . (telephone-line-input-info-segment
+        telephone-line-rhs '((nil . (telephone-line-anzu-segment
                                      telephone-line-misc-info-segment))
                              (accent . (telephone-line-major-mode-segment))
                              (evil . (telephone-line-airline-position-segment)))
@@ -252,7 +267,8 @@
 ;; Show search candidate counts in the mode-line
 (use-package anzu
   :ghook ('after-init-hook #'global-anzu-mode))
-(use-package evil-anzu :after evil anzu)
+(use-package evil-anzu :after evil anzu
+  :config (setq anzu-cons-mode-line-p nil))
 
 ;;;; Better help
 (use-package helpful
@@ -514,6 +530,8 @@
   (setq lsp-inhibit-message t
         lsp-prefer-flymake nil
         lsp-enable-on-type-formatting t)
+  (general-def '(motion normal) lsp-mode-map
+    "gd" #'lsp-find-definition)
   (local-leader-def 'normal lsp-mode-map
     "rr" #'lsp-rename
     "rf" #'lsp-format-buffer
@@ -612,7 +630,13 @@
       org-agenda-skip-deadline-if-done t
       org-agenda-start-on-weekday nil
       org-reverse-note-order t
-      org-fast-tag-selection-single-key t)
+      org-fast-tag-selection-single-key t
+      org-use-property-inheritance t
+      org-agenda-custom-commands '(("u" "Unscheduled TODOs"
+                                    ((todo ""
+                                           ((org-agenda-overriding-header "Unscheduled TODOs")
+                                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
+                                    nil nil)))
 ;; (use-package org-plus-contrib)
 
 ;;;; Latex
