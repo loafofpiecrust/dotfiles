@@ -700,6 +700,7 @@ Repeated invocations toggle between the two most recently open buffers."
               "gs" #'magit-status
               "gd" #'vdiff-magit-stage
               "gb" #'magit-blame
+              "gt" #'git-timemachine
               "n" '(:keymap narrow-map)
               "p" '(:keymap projectile-command-map)
               "a" '("apps")
