@@ -51,30 +51,40 @@
 (use-package doom-themes
   :config
   (setq doom-themes-treemacs-enable-variable-pitch nil
-        doom-themes-treemacs-theme "doom-colors")
-  (load-theme 'doom-dracula t)
+        doom-themes-treemacs-theme "doom-colors"
+        doom-gruvbox-brighter-comments t
+        doom-dracula-brighter-comments t)
+  (load-theme 'doom-gruvbox t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
-                    :family "SF Mono"
+                    :family "Fira Code"
                     ;; :family "Cascadia Code"
-                    :height 110
-                    :weight 'normal
+                    :height 120
+                    :weight 'medium
                     :width 'normal)
 
 ;; Disable tool-bar and menu-bar
 ;; (tool-bar-mode -1)
-(unless (string-equal system-type "darwin")
-  (push '(menu-bar-lines . 0) default-frame-alist))
-(push '(tool-bar-lines . 0) default-frame-alist)
+(if (string-equal system-type "darwin")
+    (progn (mac-auto-operator-composition-mode))
+  (progn ;; (push '(menu-bar-lines . 0) default-frame-alist)
+    (menu-bar-mode -1)
+         ))
+;; (push '(tool-bar-lines . 0) default-frame-alist)
+(tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode '(10 . 0))
-(show-paren-mode t)
+(add-hook 'after-init-hook #'show-paren-mode)
 (save-place-mode t)
 
+;; I only use magit and vdiff, no vc
+(setq vc-handled-backends nil)
+
 ;; Setup basic settings
+;; TODO: Move scroll stuff to only not on MacOS
 (setq-default mouse-wheel-scroll-amount '(3 ((shift) . 1) ((control) . nil))
               mouse-wheel-progressive-speed nil
               ;; Window focus
@@ -89,6 +99,7 @@
               indent-tabs-mode nil      ; use spaces for indentation
               fill-column 80
               ;; misc settings
+              prettify-symbols-unprettify-at-point 'right-edge
               apropos-do-all t
               require-final-newline t
               load-prefer-newer t)
@@ -134,7 +145,7 @@
 (use-package evil
   :init (setq evil-want-keybinding nil  ; let evil-collection bind keys
               evil-move-beyond-eol t
-              evil-move-cursor-back nil
+              ;; evil-move-cursor-back nil
               evil-want-C-i-jump nil)
   :config (evil-mode t))
 
@@ -253,8 +264,7 @@
   (telephone-line-defsegment* telephone-line-anzu-segment ()
     '(:eval (anzu--update-mode-line)))
   (setq telephone-line-lhs '((evil . (telephone-line-evil-tag-segment))
-                             (accent . (telephone-line-vc-segment
-                                        telephone-line-projectile-segment))
+                             (accent . (telephone-line-projectile-segment))
                              (nil . (telephone-line-erc-modified-channels-segment
                                      telephone-line-buffer-segment)))
         telephone-line-rhs '((nil . (telephone-line-anzu-segment
@@ -437,8 +447,6 @@
 ;;;; Git
 (use-package magit :defer t)
 ;; TODO: Rebind magit file bindings behind SPC g
-;; I only use magit and vdiff, no vc
-(setq vc-handled-backends (delq 'Git vc-handled-backends))
 
 ;; Provides evil friendly git bindings
 (use-package evil-magit
@@ -543,7 +551,8 @@
     "fd" #'lsp-find-definition
     "fr" #'lsp-find-references)
   ;; Format code on save
-  (add-hook 'before-save-hook #'lsp-format-buffer nil t)
+  (add-hook 'lsp-mode-hook (lambda ()
+                             (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
   :custom (lsp-rust-server 'rust-analyzer)
   :commands (lsp lsp-deferred)
   :ghook ('(go-mode-hook
@@ -673,8 +682,8 @@ Repeated invocations toggle between the two most recently open buffers."
               "bf" #'counsel-find-file
               "bd" #'dired
               "e" '("eval")
-              "ee" (kbd "C-x C-e")
-              "et" (kbd "C-M-x")
+              "ee" (general-key "C-x C-e")
+              "et" (general-key "C-M-x")
               "w" '("windows")
               "wo" #'other-window
               "wq" #'delete-window
@@ -715,6 +724,8 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;;; vim
 ;; Letters I can remap: =, 0/^, gd, maybe _, +, maybe ~
 (general-def 'normal
+  ;; By default, use "gr" to refresh and DWIM
+  "gr" (general-key "C-c C-c")
   "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
   "K" #'newline
@@ -741,7 +752,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "]]" #'evil-cp-next-closing)
 
 (general-def '(normal motion visual)
-  "0" (kbd "^"))
+  "0" (general-key "^"))
 
 ;; Fix outline bindings in non-insert states
 (general-def '(normal motion) outshine-mode-map
@@ -749,7 +760,7 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; General evil mode overrides
 (general-def '(normal insert)
-  "C-s" (kbd "C-x C-s")
+  "C-s" (general-key "C-x C-s")
   "C-]" #'tab-to-tab-stop)
 
 (general-def 'insert
@@ -822,8 +833,8 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;   "gai" 'go-goto-imports)
 
 ;; TODO: Figure out mode-local artist-mode bindings?
-;; (local-leader-def 'normal artist-mode-map
-;;   "a" (kbd "C-c C-a"))
+(local-leader-def 'normal artist-mode-map
+  "a" (general-simulate-key "C-c C-a"))
 
 ;;; Custom theme
 ;; Custom theme to use terminal colors best
@@ -843,10 +854,10 @@ Repeated invocations toggle between the two most recently open buffers."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-document-title ((t (:weight bold :height 1.6))))
- '(org-level-1 ((t (:height 1.35))))
- '(org-level-2 ((t (:height 1.2))))
- '(org-level-3 ((t (:height 1.1))))
+ ;; '(org-document-title ((t (:weight bold :height 1.6))))
+ ;; '(org-level-1 ((t (:height 1.35))))
+ ;; '(org-level-2 ((t (:height 1.2))))
+ ;; '(org-level-3 ((t (:height 1.1))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
  '(outline-3 ((t (:inherit org-level-3))))
@@ -896,5 +907,8 @@ Repeated invocations toggle between the two most recently open buffers."
                   #'evil-normalize-keymaps)
 
 ;; Make gc pauses faster by decreasing the threshold.
-(setq gc-cons-threshold (* 2 1000 1000))
+(setq gc-cons-threshold 16000000)
+(setq gc-cons-percentage 0.3)
+;; (setq garbage-collection-messages t)
+(run-with-idle-timer 2 t (lambda () (garbage-collect)))
 (put 'narrow-to-region 'disabled nil)
