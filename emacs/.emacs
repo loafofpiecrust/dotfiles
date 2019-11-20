@@ -54,7 +54,7 @@
         doom-themes-treemacs-theme "doom-colors"
         doom-gruvbox-brighter-comments t
         doom-dracula-brighter-comments t)
-  (load-theme 'doom-gruvbox t)
+  (load-theme 'doom-dracula t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
@@ -62,7 +62,7 @@
 (set-face-attribute 'default nil
                     :family "Fira Code"
                     ;; :family "Cascadia Code"
-                    :height 120
+                    :height 115
                     :weight 'medium
                     :width 'normal)
 
@@ -77,32 +77,34 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode '(10 . 0))
-(add-hook 'after-init-hook #'show-paren-mode)
-(save-place-mode t)
+(show-paren-mode)
+(save-place-mode)
 
 ;; I only use magit and vdiff, no vc
 (setq vc-handled-backends nil)
 
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
-(setq-default mouse-wheel-scroll-amount '(3 ((shift) . 1) ((control) . nil))
-              mouse-wheel-progressive-speed nil
-              ;; Window focus
-              ;; focus-follows-mouse t
-              ;; mouse-autoselect-window -.1
-              ;; Text display
-              line-spacing 0
-              display-line-numbers-width 3
-              ;; show-paren-style 'expression
-              ;; Indentation and wrapping
-              tab-width 4
-              indent-tabs-mode nil      ; use spaces for indentation
-              fill-column 80
-              ;; misc settings
-              prettify-symbols-unprettify-at-point 'right-edge
-              apropos-do-all t
-              require-final-newline t
-              load-prefer-newer t)
+(setq-default
+ mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
+ mouse-wheel-progressive-speed nil
+ ;; Window focus
+ ;; focus-follows-mouse t
+ ;; mouse-autoselect-window -.1
+ ;; Text display
+ line-spacing 0
+ display-line-numbers-width 3
+ show-paren-style 'expression
+ ;; Indentation and wrapping
+ tab-width 4
+ indent-tabs-mode nil      ; use spaces for indentation
+ fill-column 80
+ ;; tab-always-indent 'complete
+ ;; misc settings
+ prettify-symbols-unprettify-at-point 'right-edge
+ apropos-do-all t
+ require-final-newline t
+ load-prefer-newer t)
 
 (use-package exec-path-from-shell
   :defer 0.1
@@ -183,7 +185,7 @@
 
 ;; Show marks visually
 (use-package evil-visual-mark-mode :after evil
-  :ghook 'after-init-hook)
+  :config (evil-visual-mark-mode))
 
 ;; Exchange selections easily with
 (use-package evil-exchange :after evil
@@ -237,7 +239,8 @@
 
 ;; Temporarily highlight large insertions of text
 (use-package volatile-highlights
-  :ghook 'after-init-hook)
+  :defer 1
+  :config (volatile-highlights-mode))
 
 ;;;; Dashboard!
 (use-package page-break-lines)
@@ -256,7 +259,15 @@
                           (agenda . 5))))
 
 ;;;; Mode line
-(use-package diminish) ; hide minor mode lines
+;; hide minor mode lines
+(use-package diminish)
+
+;; Show search candidate counts in the mode-line
+(use-package anzu
+  ;; :defer 1
+  :config (global-anzu-mode))
+(use-package evil-anzu :after evil anzu
+  :config (setq anzu-cons-mode-line-p nil))
 
 (use-package telephone-line
   :after evil-anzu
@@ -273,12 +284,6 @@
                              (evil . (telephone-line-airline-position-segment)))
         telephone-line-height 16)
   (telephone-line-mode t))
-
-;; Show search candidate counts in the mode-line
-(use-package anzu
-  :ghook ('after-init-hook #'global-anzu-mode))
-(use-package evil-anzu :after evil anzu
-  :config (setq anzu-cons-mode-line-p nil))
 
 ;;;; Better help
 (use-package helpful
@@ -367,7 +372,8 @@
 ;;;; niceties
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
-  :ghook 'after-init-hook)
+  :defer 1
+  :config (rainbow-mode))
 
 ;;; Project management
 (use-package projectile
@@ -406,10 +412,22 @@
 (use-package flyspell-correct-ivy :after ivy)
 
 ;;; in-buffer completion
-(use-package yasnippet-snippets :defer 0.1)
+(use-package yasnippet-snippets :defer 1)
 (use-package yasnippet
-  :after yasnippet-snippets
-  :config (yas-global-mode 1))
+  :after yasnippet-snippets company
+  :config (yas-global-mode 1)
+  ;; Disable auto completion of snippets. Instead rely on the completion dialog.
+  (general-def yas-minor-mode-map
+    "TAB" nil
+    "<tab>" nil
+    [(tab)] nil)
+  ;; Add yasnippet support to every company backend
+  (defun company-mode/backend-with-yas (backend)
+    (if (and (listp backend) (member 'company-yasnippet backend))
+        backend
+      (append (if (consp backend) backend (list backend))
+              '(:with company-yasnippet))))
+  (setq company-backends (mapcar #'company-mode/backend-with-yas company-backends)))
 
 ;; TODO: Bind keys to aya-create and aya-expand
 (use-package auto-yasnippet :after yasnippet)
@@ -417,6 +435,15 @@
 (use-package company
   :ghook 'prog-mode-hook
   :config
+  ;; Press tab/shift-tab to start/stop completion in insert mode
+  (general-def 'insert company-mode-map
+    [remap indent-for-tab-command] #'company-indent-or-complete-common)
+  ;; Press tab once in the dialog to complete the common prefix
+  ;; Press tab twice in the dialog to complete with the selection
+  (general-def company-active-map
+    "<tab>" 'company-complete
+    "<backtab>" 'company-abort)
+  ;; Show completion automatically upon typing anything
   (setq company-idle-delay 0.1
         company-minimum-prefix-length 1
         company-selection-wrap-around nil
@@ -500,13 +527,11 @@
 ;; (use-package visual-fill-column
 ;;   :hook (visual-line-mode . visual-fill-column-mode))
 
-(add-hook 'after-init-hook (lambda ()
-                             (global-subword-mode t)
-                             (global-prettify-symbols-mode t)
-                             (global-auto-revert-mode t)
-                             (global-visual-line-mode t)
-                             (global-hl-line-mode)
-                             (column-number-mode t)))
+(global-subword-mode t)
+(global-prettify-symbols-mode t)
+(global-auto-revert-mode t)
+(global-visual-line-mode t)
+(column-number-mode t)
 
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 (add-hook 'text-mode-hook #'display-line-numbers-mode)
@@ -584,6 +609,8 @@
             "gd" #'go-goto-docstring
             "gn" #'go-goto-function-name
             "gi" #'go-goto-imports))
+
+(use-package racket-mode)
 
 ;;;; Java
 (use-package lsp-java :defer 1)
@@ -684,6 +711,7 @@ Repeated invocations toggle between the two most recently open buffers."
               "e" '("eval")
               "ee" (general-key "C-x C-e")
               "et" (general-key "C-M-x")
+              "eb" 'eval-buffer
               "w" '("windows")
               "wo" #'other-window
               "wq" #'delete-window
@@ -722,10 +750,12 @@ Repeated invocations toggle between the two most recently open buffers."
 (use-package hungry-delete
   :ghook ('after-init-hook #'global-hungry-delete-mode))
 
+
 ;;;; vim
 ;; Letters I can remap: =, 0/^, gd, maybe _, +, maybe ~
 (general-def 'normal
-  ;; By default, use "gr" to refresh and DWIM
+  ;; "gr" stands for "go run this"
+  ;; By default, use "gr" to refresh and run what's at point
   "gr" (general-key "C-c C-c")
   "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
@@ -757,15 +787,21 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; Fix outline bindings in non-insert states
 (general-def '(normal motion) outshine-mode-map
-  "TAB" #'outshine-kbd-TAB)
+  "<tab>" #'outshine-kbd-TAB)
 
 ;; General evil mode overrides
 (general-def '(normal insert)
   "C-s" (general-key "C-x C-s")
   "C-]" #'tab-to-tab-stop)
 
+;; Use return to exit insert mode, but provide S-return if you want to continue.
+;; Alternative: Keep return functionality but adjust to caps-lock as escape
 (general-def 'insert
-  "C-SPC" #'company-complete)
+  "S-<return>" 'newline
+  "<return>" (lambda ()
+               (interactive)
+               (evil-normal-state)
+               (evil-forward-char)))
 
 ;;;; prog-mode
 (local-leader-def 'normal prog-mode-map
@@ -855,10 +891,11 @@ Repeated invocations toggle between the two most recently open buffers."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- ;; '(org-document-title ((t (:weight bold :height 1.6))))
- ;; '(org-level-1 ((t (:height 1.35))))
- ;; '(org-level-2 ((t (:height 1.2))))
- ;; '(org-level-3 ((t (:height 1.1))))
+ '(hl-paren-face ((t (:weight bold))) t)
+ '(org-document-title ((t (:weight bold :height 1.6))))
+ '(org-level-1 ((t (:height 1.35 :inherit nil))))
+ '(org-level-2 ((t (:height 1.2 :inherit nil))))
+ '(org-level-3 ((t (:height 1.1 :inherit nil))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
  '(outline-3 ((t (:inherit org-level-3))))
@@ -867,12 +904,15 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(vdiff-addition-face ((t (:inherit diff-added))))
- '(hl-paren-face ((t (:weight bold)))))
+ '(vdiff-addition-face ((t (:inherit diff-added)))))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
                     :foreground nil)
+
+(set-face-attribute 'show-paren-match-expression nil
+                    :inherit 'hl-line
+                    :weight 'bold)
 
 (set-face-attribute 'diff-changed nil
                     :background "dark slate grey"
@@ -891,17 +931,7 @@ Repeated invocations toggle between the two most recently open buffers."
                                (flymake-mode -1)
                                (flycheck-mode t)))
 
-;; Disable mouse for all buffers!
-;; Only use the mouse for switching between buffers.
-;; (use-package disable-mouse
-;;   :after evil
-;;   :config
-;;   (global-disable-mouse-mode)
-;;   (mapc #'disable-mouse-in-keymap
-;;         (list evil-motion-state-map
-;;               evil-normal-state-map
-;;               evil-visual-state-map
-;;               evil-insert-state-map)))
+;; TODO: Consider selectively removing mouse bindings (i.e. mouse => visual mode)
 
 ;; Normalize evil keymaps for all modes that specify mode-local bindings
 (general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
