@@ -9,7 +9,7 @@
 
 ;; I'm not planning to modify packages directly, so only rebuild on newly
 ;; published versions
-(setq straight-check-for-modifications nil)
+(setq straight-check-for-modifications '(find-at-startup))
 
 ;; bootstrap package manager (straight.el)
 (defvar bootstrap-version)
@@ -28,6 +28,8 @@
 (setq straight-use-package-by-default 1)
 (straight-use-package 'use-package)
 
+(use-package org)
+
 ;; Easier binding definitions
 (use-package general)
 
@@ -42,17 +44,18 @@
   :config
   (setq doom-themes-treemacs-enable-variable-pitch nil
         doom-themes-treemacs-theme "doom-colors"
-        doom-gruvbox-brighter-comments t
-        doom-challenger-deep-brighter-comments t
-        doom-dracula-brighter-comments t)
+        ;; doom-gruvbox-brighter-comments t
+        ;; doom-challenger-deep-brighter-comments t
+        ;; doom-dracula-brighter-comments t
+        )
   (load-theme 'doom-dracula t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
-                    :family "Fira Code"
-                    :height 120
+                    :family "SF Mono"
+                    :height 115
                     :weight 'medium
                     :width 'normal)
 
@@ -99,6 +102,17 @@
 
 ;; Easier confirmation
 (fset 'yes-or-no-p 'y-or-n-p)
+
+;;;; Periodically clean buffers
+(require 'midnight)
+(setq clean-buffer-list-kill-regexps '("\\`\\*Man "
+                                       "\\*helpful "
+                                       "\\*Calc"
+                                       "\\*eshell"
+                                       "Aweshell:")
+      ;; Clean out potentially old buffers every hour
+      midnight-period (* 60 60))
+(midnight-mode)
 
 ;;;; Autofill
 ;; Only automatically wrap comments.
@@ -179,6 +193,11 @@
   (:keymaps 'evil-outer-text-objects-map
             "a" 'evil-outer-arg))
 
+(use-package evil-mc :after evil
+  :general ('visual evil-mc-key-map
+                    "A" #'evil-mc-make-cursor-in-visual-selection-end
+                    "I" #'evil-mc-make-cursor-in-visual-selection-beg))
+
 ;;;; setup prefixes
 ;; We're going to want a few different prefixes
 ;; SPC :: global commands for managing emacs
@@ -231,9 +250,8 @@
         dashboard-startup-banner 'logo
         dashboard-set-heading-icons t
         dashboard-center-content t
-        dashboard-items '((recents . 5)
-                          (projects . 5)
-                          (agenda . 5))))
+        dashboard-items '((recents . 10)
+                          (projects . 10))))
 
 ;;;; Mode line
 ;; hide minor mode lines
@@ -362,6 +380,11 @@
 
 (use-package flyspell-correct-ivy)
 
+;;;; Helm
+;; Helm is really good at certain things, like inserting references with
+;; org-ref. We should explore using it for more stuff, and getting proper setup.
+(use-package helm)
+
 ;;; in-buffer completion
 (use-package yasnippet-snippets :defer 1)
 (use-package yasnippet
@@ -384,7 +407,7 @@
 ;; (use-package auto-yasnippet :after yasnippet)
 
 (use-package company
-  :ghook 'prog-mode-hook
+  :ghook '(prog-mode-hook eshell-mode-hook)
   :config
   ;; Press tab/shift-tab to start/stop completion in insert mode
   (general-def 'insert company-mode-map
@@ -407,11 +430,10 @@
 ;;   :hook (company-mode . company-fuzzy-mode))
 
 ;; GUI box to prevent interference with different font sizes
-(when (display-graphic-p)
-  (use-package company-box
-    :custom
-    (company-box-icons-alist 'company-box-icons-all-the-icons)
-    :ghook 'company-mode-hook))
+(use-package company-box
+  :custom
+  (company-box-icons-alist 'company-box-icons-all-the-icons)
+  :ghook 'company-mode-hook)
 
 ;;; Version Control
 ;;;; Git
@@ -469,8 +491,8 @@
 
 ;;; Enable completion, pair matching, line numbers
 ;; TODO: Fix this for lsp-ui sideline stuff.
-(use-package visual-fill-column
-  :hook (text-mode . visual-fill-column-mode))
+;; (use-package visual-fill-column
+;;   :hook (text-mode . visual-fill-column-mode))
 
 (global-subword-mode)
 (global-prettify-symbols-mode)
@@ -493,11 +515,25 @@
             "-" #'er/contract-region))
 
 ;;; Auxiliary Modes
-;; (use-package request :defer t)
+;;;; REST client
 (use-package restclient :commands restclient-mode)
 (use-package dumb-jump
   :defer t
   :config (setq dumb-jump-selector 'ivy))
+
+;;;; shell extensions
+;; (defun eshell-open-unused ()
+;;   (interactive)
+;;   ())
+(use-package aweshell
+  :straight (:host github :repo "manateelazycat/aweshell"))
+(use-package company-shell
+  :config (add-to-list 'company-backends '(company-shell company-shell-env)))
+
+;;;; dired
+;; Provide a ranger-like interface for dired
+(use-package ranger
+  :ghook 'dired-mode-hook)
 
 ;;; Programming Languages
 ;;;; Language Server Protocol!
@@ -562,6 +598,9 @@
 ;;;; Java
 (use-package lsp-java :defer 1)
 (use-package kotlin-mode :defer 1)
+(use-package groovy-mode :defer 1)      ; for gradle build files
+(use-package gradle-mode
+  :ghook '(kotlin-mode-hook java-mode-hook groovy-mode-hook))
 
 ;;;; javascript and typescript
 (use-package eslint-fix :commands eslint-fix)
@@ -604,11 +643,14 @@
 (use-package markdown-mode :defer 1)
 (use-package poly-markdown :after markdown-mode)
 ;; org-mode additions
+(use-package org-ref)
 (use-package org-bullets :ghook 'org-mode-hook)
 (setq org-fontify-emphasized-text t
+      org-highlight-latex-and-related '(native)
       org-agenda-files '("~/Documents/agenda")
       org-default-notes-file "~/Documents/agenda/todo.org"
       org-log-done t
+      org-link-descriptive nil
       org-agenda-show-all-dates t
       org-agenda-skip-deadline-if-done t
       org-agenda-start-on-weekday nil
@@ -620,6 +662,9 @@
                                            ((org-agenda-overriding-header "Unscheduled TODOs")
                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
                                     nil nil)))
+
+(org-babel-do-load-languages 'org-babel-load-languages
+                             '((shell . t)))
 
 ;;;; Latex
 ;; latex packages have to go near the top for some reason.
@@ -651,7 +696,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "bq" #'kill-this-buffer
   "bo" #'switch-to-alternate-buffer
   "bf" #'counsel-find-file
-  "bd" #'dired
+  "bd" #'ranger
   "br" #'counsel-recentf
   "e" '("eval")
   "ee" (general-key "C-x C-e")
@@ -678,6 +723,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "a" '("apps")
   "ac" #'calc
   "ae" #'flycheck-list-errors
+  "as" #'eshell
   ;; TODO: Add debugger here under "ad"
   "m" '("modes")
   "mr" #'restclient-mode
@@ -725,15 +771,12 @@ Repeated invocations toggle between the two most recently open buffers."
   "gr" (general-simulate-key "C-c C-c")
   "[" '("previous")
   "]" '("next")
-  ;; TODO: Remove one of these pairs
   "C-{" #'evil-jump-backward
   "C-}" #'evil-jump-forward
   "]t" #'hl-todo-next
   "[t" #'hl-todo-previous
   "?" #'swiper
   "0" (general-key "^")
-  "gf" 'counsel-find-file
-  "gb" 'counsel-switch-buffer
   minor-leader (lambda ()
                  (interactive)
                  (message "No minor mode commands here")))
@@ -757,11 +800,14 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;;;; prog-mode
 (major-leader-def '(motion normal) prog-mode-map
-                  "g" '("goto")
-                  "r" '("refactor")
-                  "f" '("find")
-                  "fd" #'dumb-jump-go
-                  "f/" #'dumb-jump-go-prompt)
+  "g" '("goto")
+  "r" '("refactor")
+  "f" '("find")
+  ;; "fd" #'dumb-jump-go
+  "fd" #'xref-find-definitions
+  "fr" #'xref-find-references
+  "fj" #'dumb-jump-go
+  "f/" #'dumb-jump-go-prompt)
 
 (general-def '(normal insert) prog-mode-map
   "M-RET" #'comment-indent-new-line)

@@ -126,6 +126,8 @@
     nm-applet.enable = false;
     java.enable = true;
     adb.enable = true;
+    gnupg.agent.enable = true;
+    gnupg.agent.enableSSHSupport = true;
   };
 
   nix.gc = {
