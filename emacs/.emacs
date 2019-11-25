@@ -55,7 +55,8 @@
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
                     :family "SF Mono"
-                    :height 115
+                    ;; Fonts need a bit of beefing on Mac
+                    :height (if (eq system-type 'darwin) 120 115)
                     :weight 'medium
                     :width 'normal)
 
@@ -68,19 +69,10 @@
 (show-paren-mode)
 (save-place-mode)
 
-;; I only use magit and vdiff, no vc
-(setq vc-handled-backends nil)
-
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
 (setq-default
- ;; mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
- ;; mouse-wheel-progressive-speed nil
- ;; Window focus
- ;; focus-follows-mouse t
- ;; mouse-autoselect-window -.1
  ;; Text display
- ;; line-spacing 0
  display-line-numbers-width 3
  show-paren-style 'expression
  ;; Indentation and wrapping
@@ -89,7 +81,6 @@
  fill-column 80
  ;; misc settings
  prettify-symbols-unprettify-at-point 'right-edge
- ;; apropos-do-all t
  require-final-newline t
  load-prefer-newer t)
 
@@ -108,8 +99,14 @@
 (setq clean-buffer-list-kill-regexps '("\\`\\*Man "
                                        "\\*helpful "
                                        "\\*Calc"
+                                       "\\*xref"
+                                       "\\*straight-process\\*"
+                                       "\\*Flycheck"
+                                       "\\*forge"
+                                       "magit"
                                        "\\*eshell"
                                        "Aweshell:")
+      clean-buffer-list-delay-special (* 60 60 2)
       ;; Clean out potentially old buffers every hour
       midnight-period (* 60 60))
 (midnight-mode)
@@ -119,8 +116,8 @@
 (setq-default comment-auto-fill-only-comments t
               auto-fill-function 'do-auto-fill)
 (add-hook 'prog-mode-hook 'auto-fill-mode)
-(add-hook 'prog-mode-hook (lambda ()
-                            (add-hook 'after-save-hook 'delete-trailing-whitespace nil t)))
+(general-add-hook '(text-mode-hook prog-mode-hook)
+                  (lambda () (add-hook 'after-save-hook #'whitespace-cleanup nil t)))
 
 ;;;; Backup settings
 (setq backup-by-copying t ; don't clobber symlinks
@@ -147,6 +144,7 @@
               evil-move-beyond-eol t
               evil-respect-visual-line-mode t
               ;; evil-move-cursor-back nil
+              evil-search-module 'evil-search
               evil-want-C-i-jump nil)
   :config (evil-mode t))
 
@@ -198,11 +196,15 @@
                     "A" #'evil-mc-make-cursor-in-visual-selection-end
                     "I" #'evil-mc-make-cursor-in-visual-selection-beg))
 
+(use-package evil-matchit :after evil
+  :config (global-evil-matchit-mode))
+
 ;;;; setup prefixes
 ;; We're going to want a few different prefixes
 ;; SPC :: global commands for managing emacs
 ;; \   :: major mode key bindings
 ;; '   :: minor mode key bindings
+;; =   :: ???
 ;; g   :: other vim commands/go to...
 ;; z   :: change display
 (defconst global-leader "<SPC>")
@@ -338,6 +340,9 @@
   :defer 1
   :config (rainbow-mode))
 
+;;;; undo-tree
+(setq undo-tree-visualizer-timestamps t)
+
 ;;; Project management
 (use-package projectile
   :config (projectile-mode t))
@@ -347,7 +352,7 @@
 
 ;; Project tree
 (use-package treemacs
-  :general ("C-\\" 'treemacs))
+  :general ("C-\\" #'treemacs))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs evil)
 (use-package treemacs-magit :after treemacs magit)
@@ -374,7 +379,8 @@
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :defer 1 :after ivy)
 
-(use-package counsel)
+(use-package counsel
+  :config (counsel-mode))
 (use-package ivy-rich
   :config (ivy-rich-mode))
 
@@ -414,20 +420,20 @@
     [remap indent-for-tab-command] #'company-indent-or-complete-common)
   ;; Press tab once in the dialog to complete the common prefix
   ;; Press tab twice in the dialog to complete with the selection
-  (general-def company-active-map
+  (general-def :keymaps 'company-active-map
     "<tab>" 'company-complete
     "<backtab>" 'company-abort)
   ;; Show completion automatically upon typing anything
-  (setq completion-ignore-case t
-        completion-styles '(substring partial-completion)
-        company-idle-delay nil
-        company-minimum-prefix-length 1
-        company-selection-wrap-around nil
-        company-require-match nil))
+  (setq-default completion-ignore-case t
+                completion-styles '(substring partial-completion)
+                company-idle-delay nil
+                company-minimum-prefix-length 1
+                company-selection-wrap-around nil
+                company-require-match nil))
 
 ;; more fuzzy completion
 ;; (use-package company-fuzzy
-;;   :hook (company-mode . company-fuzzy-mode))
+;;   :ghook 'company-mode-hook)
 
 ;; GUI box to prevent interference with different font sizes
 (use-package company-box
@@ -437,7 +443,7 @@
 
 ;;; Version Control
 ;;;; Git
-(use-package magit :defer t)
+(use-package magit :defer 1)
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
@@ -454,15 +460,14 @@
   (general-def '(motion normal) git-timemachine-mode-map
     minor-leader git-timemachine-mode-map)
   (general-def 'motion git-timemachine-mode-map
-    "[r" 'git-timemachine-show-previous-revision
-    "]r" 'git-timemachine-show-next-revision))
+    "[r" #'git-timemachine-show-previous-revision
+    "]r" #'git-timemachine-show-next-revision))
 
 ;; Show changed lines in the margin
 (use-package diff-hl
   :gfhook ('magit-post-refresh-hook #'diff-hl-magit-post-refresh)
   :config
   (global-diff-hl-mode)
-  ;; (diff-hl-margin-mode t)
   (diff-hl-dired-mode)
   (diff-hl-flydiff-mode)
   (setq-default diff-hl-flydiff-delay 0.2)
@@ -470,29 +475,49 @@
     "[c" #'diff-hl-previous-hunk
     "]c" #'diff-hl-next-hunk))
 
+;; Don't ask me when following symlinks
+(setq vc-follow-symlinks t)
+
 ;;;; Diff configuration
 ;; Replace ediff with vdiff for synced scrolling and more...
 (use-package vdiff
   :config
-  (setq vdiff-magit-stage-is-2way t)
+  (setq-default vdiff-magit-stage-is-2way t)
   (general-def '(normal motion) vdiff-mode-map
-    minor-leader '(:keymap vdiff-mode-prefix-map)))
+    minor-leader #'vdiff-hydra/body))
 
 (use-package vdiff-magit
   :general (magit-mode-map
             "e" #'vdiff-magit-dwim
             "E" #'vdiff-magit))
 
-;;; Spellcheck
+;;; Writing
+;;;; Spellcheck
 ;; Enable spellcheck in comments and strings (requires ispell)
 (add-hook 'text-mode-hook #'flyspell-mode)
 (add-hook 'prog-mode-hook #'flyspell-prog-mode)
-(setq flyspell-issue-message-flag nil)
+(setq-default flyspell-issue-message-flag nil
+              ispell-program-name (executable-find "aspell")
+              ispell-dictionary "en_GB-ize"
+              ispell-extra-args '("--camel-case"))
+
+;;;; Thesaurus
+;; Requires internet to lookup words
+(use-package powerthesaurus
+  :commands powerthesaurus-lookup-word-dwim
+  :config
+  (global-leader-def '(normal motion) override
+    "tt" '("thesaurus" . powerthesaurus-lookup-word-dwim)))
 
 ;;; Enable completion, pair matching, line numbers
 ;; TODO: Fix this for lsp-ui sideline stuff.
-;; (use-package visual-fill-column
-;;   :hook (text-mode . visual-fill-column-mode))
+(use-package visual-fill-column
+  :ghook 'markdown-mode-hook)
+
+;; Stop auto-fill in certain modes where we'd rather break lines ourselves based
+;; on sentences or what have you. We use visual-fill-column to make that easier
+;; on the eyes.
+(general-add-hook '(markdown-mode-hook) #'turn-off-auto-fill)
 
 (global-subword-mode)
 (global-prettify-symbols-mode)
@@ -710,11 +735,10 @@ Repeated invocations toggle between the two most recently open buffers."
   "w <up>" #'evil-window-up
   "w <down>" #'evil-window-down
   "t" '("text")
-  "tw" '("words")
-  "tws" '("spell-check" . flyspell-correct-wrapper)
-  "twc" #'count-words
+  "ts" '("spell-check" . flyspell-correct-wrapper)
+  "tc" #'count-words
   "g" '("git")
-  "gs" #'magit-status
+  "gg" #'magit-status
   "gd" #'vdiff-magit-stage
   "gb" #'magit-blame
   "gt" #'git-timemachine
@@ -743,7 +767,7 @@ Repeated invocations toggle between the two most recently open buffers."
 
 
 ;;;; vim
-;; Letters I can remap: =, 0/^, gd, maybe _, +, Q
+;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>
 (general-def 'normal
   "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
@@ -777,8 +801,8 @@ Repeated invocations toggle between the two most recently open buffers."
   "[t" #'hl-todo-previous
   "?" #'swiper
   "0" (general-key "^")
-  minor-leader (lambda ()
-                 (interactive)
+  major-leader (general-simulate-key "C-c")
+  minor-leader (lambda () (interactive)
                  (message "No minor mode commands here")))
 
 ;; Fix outline bindings in non-insert states
@@ -788,15 +812,6 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; General evil mode overrides
 (general-def '(normal motion insert)
   "C-s" (general-key "C-x C-s"))
-
-;; Use return to exit insert mode, but provide S-return if you want to continue.
-;; Alternative: Keep return functionality but adjust to caps-lock as escape
-;; (general-def 'insert
-;;   "S-<return>" 'newline
-;;   "<return>" (lambda ()
-;;                (interactive)
-;;                (evil-normal-state)
-;;                (evil-forward-char)))
 
 ;;;; prog-mode
 (major-leader-def '(motion normal) prog-mode-map
@@ -856,9 +871,10 @@ Repeated invocations toggle between the two most recently open buffers."
     "cs" #'org-agenda-schedule
     "cd" #'org-agenda-deadline))
 
+;;;; Auxiliary Modes
 ;; TODO: Figure out mode-local artist-mode bindings?
 (major-leader-def 'normal artist-mode-map
-                  "a" (general-simulate-key "C-c C-a"))
+  "a" (general-simulate-key "C-c C-a"))
 
 ;;; Custom theme
 (custom-set-faces
@@ -879,11 +895,17 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(vdiff-addition-face ((t (:inherit diff-added)))))
+ '(vdiff-addition-face ((t (:inherit diff-added))))
+ '(diff-hl-insert ((t (:background (face-foreground 'diff-hl-insert))))))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
                     :foreground nil)
+
+;; Match diff fringe highlighting background for higher visibility.
+(dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
+  (set-face-attribute f nil
+                      :background (face-foreground f)))
 
 (set-face-attribute 'show-paren-match-expression nil
                     :inherit nil
@@ -913,3 +935,6 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
 ;; (setq gc-cons-percentage 0.5)
+;; Local Variables:
+;; byte-compile-warnings: (not free-vars)
+;; End:
