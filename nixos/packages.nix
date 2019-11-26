@@ -22,6 +22,8 @@
     stow
     fortune
     lastpass-cli
+    aspell
+    gnumake
 
     # desktop environment
     polybar
@@ -43,6 +45,8 @@
     nodejs-10_x
     yarn
     unstable.nim
+    texlive.combined.scheme-full
+    racket
 
     # dev
     emacs
@@ -69,7 +73,6 @@
 #     wine
 
     # gtk themes
-    adapta-gtk-theme
     arc-theme
     paper-icon-theme
     bibata-cursors
@@ -82,7 +85,7 @@
     };
     yarn = pkgs.yarn.override {
       nodejs = pkgs.nodejs-10_x;
-    }; 
+    };
     unstable = import <nixos-unstable> {
       # pass the nixpkgs config to the unstable alias
       # to ensure `allowUnfree = true;` is propagated:

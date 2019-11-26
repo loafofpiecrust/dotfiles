@@ -3,8 +3,9 @@
 #
 
 # terminal emulator
+# TODO: Solution for dangling buffers
 super + Return
-	alacritty
+    alacritty
 
 # program launcher
 super + space

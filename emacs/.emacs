@@ -28,8 +28,6 @@
 (setq straight-use-package-by-default 1)
 (straight-use-package 'use-package)
 
-(use-package org)
-
 ;; Easier binding definitions
 (use-package general)
 
@@ -62,12 +60,13 @@
 
 ;; Disable tool-bar and menu-bar
 (unless (eq system-type 'darwin)
-  (progn (menu-bar-mode -1)))
+  (menu-bar-mode -1))
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode '(10 . 0))
-(show-paren-mode)
-(save-place-mode)
+(show-paren-mode t)
+(save-place-mode t)
+(blink-cursor-mode t)
 
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
@@ -112,10 +111,11 @@
 (midnight-mode)
 
 ;;;; Autofill
-;; Only automatically wrap comments.
+;; Only automatically wrap comments in code
 (setq-default comment-auto-fill-only-comments t
               auto-fill-function 'do-auto-fill)
 (add-hook 'prog-mode-hook 'auto-fill-mode)
+;; Cleanup whitespace after saving most files
 (general-add-hook '(text-mode-hook prog-mode-hook)
                   (lambda () (add-hook 'after-save-hook #'whitespace-cleanup nil t)))
 
@@ -145,6 +145,7 @@
               evil-respect-visual-line-mode t
               ;; evil-move-cursor-back nil
               evil-search-module 'evil-search
+              evil-ex-search-persistent-highlight nil
               evil-want-C-i-jump nil)
   :config (evil-mode t))
 
@@ -158,6 +159,7 @@
     (delete m evil-collection--supported-modes))
   (evil-collection-init))
 
+;; Stop completion when exiting insert mode
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
 
 ;; commenting lines with verb 'g'
@@ -184,6 +186,7 @@
 ;; (use-package evil-exchange :after evil
 ;;   :config (evil-exchange-cx-install))
 
+;; Manage comma-delimited arguments with noun 'a'
 (use-package evil-args :after evil
   :general
   (:keymaps 'evil-inner-text-objects-map
@@ -196,6 +199,7 @@
                     "A" #'evil-mc-make-cursor-in-visual-selection-end
                     "I" #'evil-mc-make-cursor-in-visual-selection-beg))
 
+;; Extend % to match more delimeters, smarter
 (use-package evil-matchit :after evil
   :config (global-evil-matchit-mode))
 
@@ -265,21 +269,10 @@
 (use-package evil-anzu :after evil anzu
   :config (setq anzu-cons-mode-line-p nil))
 
-(use-package telephone-line
-  :after evil-anzu
+(use-package doom-modeline
+  :ghook 'after-init-hook
   :config
-  (telephone-line-defsegment* telephone-line-anzu-segment ()
-    '(:eval (anzu--update-mode-line)))
-  (setq telephone-line-lhs '((evil . (telephone-line-evil-tag-segment))
-                             (accent . (telephone-line-projectile-segment))
-                             (nil . (telephone-line-erc-modified-channels-segment
-                                     telephone-line-buffer-segment)))
-        telephone-line-rhs '((nil . (telephone-line-anzu-segment
-                                     telephone-line-misc-info-segment))
-                             (accent . (telephone-line-major-mode-segment))
-                             (evil . (telephone-line-airline-position-segment)))
-        telephone-line-height 16)
-  (telephone-line-mode t))
+  (setq doom-modeline-height 20))
 
 ;;;; Better help
 (use-package helpful
@@ -366,6 +359,8 @@
 ;;; mini-buffer completion
 (use-package ivy
   :config
+  (general-def ivy-minibuffer-map
+    "C-<return>" #'ivy-dispatching-done)
   (ivy-mode t)
   (setq ivy-use-virtual-buffers t
         enable-recursive-minibuffers t
@@ -387,9 +382,10 @@
 (use-package flyspell-correct-ivy)
 
 ;;;; Helm
-;; Helm is really good at certain things, like inserting references with
+;; Helm is a bit better at certain things, like inserting references with
 ;; org-ref. We should explore using it for more stuff, and getting proper setup.
-(use-package helm)
+(use-package helm
+  :config (setq helm-split-window-inside-p t))
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets :defer 1)
@@ -505,7 +501,7 @@
 ;; Requires internet to lookup words
 (use-package powerthesaurus
   :commands powerthesaurus-lookup-word-dwim
-  :config
+  :init
   (global-leader-def '(normal motion) override
     "tt" '("thesaurus" . powerthesaurus-lookup-word-dwim)))
 
@@ -720,9 +716,10 @@ Repeated invocations toggle between the two most recently open buffers."
   "bk" #'kill-buffer
   "bq" #'kill-this-buffer
   "bo" #'switch-to-alternate-buffer
-  "bf" #'counsel-find-file
-  "bd" #'ranger
-  "br" #'counsel-recentf
+  "f" '("files")
+  "ff" #'counsel-find-file
+  "fd" #'ranger
+  "fr" #'counsel-recentf
   "e" '("eval")
   "ee" (general-key "C-x C-e")
   "et" (general-key "C-M-x")
@@ -767,7 +764,7 @@ Repeated invocations toggle between the two most recently open buffers."
 
 
 ;;;; vim
-;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>
+;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j
 (general-def 'normal
   "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
@@ -784,8 +781,6 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-def 'normal evil-cleverparens-mode-map
   "[" nil
   "]" nil
-  "[]" #'evil-backward-section-begin
-  "][" #'evil-forward-section-begin
   "[[" #'evil-cp-previous-closing
   "]]" #'evil-cp-next-closing)
 
@@ -797,16 +792,29 @@ Repeated invocations toggle between the two most recently open buffers."
   "]" '("next")
   "C-{" #'evil-jump-backward
   "C-}" #'evil-jump-forward
+  "[]" #'evil-backward-section-begin
+  "][" #'evil-forward-section-begin
   "]t" #'hl-todo-next
   "[t" #'hl-todo-previous
+  "[p" #'evil-backward-paragraph
+  "]p" #'evil-forward-paragraph
   "?" #'swiper
   "0" (general-key "^")
   major-leader (general-simulate-key "C-c")
   minor-leader (lambda () (interactive)
                  (message "No minor mode commands here")))
 
+(general-def '(normal motion)
+  :keymaps '(outshine-mode-map outline-mode-map)
+  "C-j" 'outline-forward-same-level
+  "C-k" 'outline-backward-same-level)
+
 ;; Fix outline bindings in non-insert states
-(general-def '(normal motion) outshine-mode-map
+(general-def '(normal motion)
+  :keymaps 'outshine-mode-map
+  :predicate '(outline-on-heading-p)
+  "M-k" #'outline-move-subtree-up
+  "M-j" #'outline-move-subtree-down
   "TAB" #'outshine-kbd-TAB)
 
 ;; General evil mode overrides
@@ -895,17 +903,11 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(vdiff-addition-face ((t (:inherit diff-added))))
- '(diff-hl-insert ((t (:background (face-foreground 'diff-hl-insert))))))
+ '(vdiff-addition-face ((t (:inherit diff-added)))))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
                     :foreground nil)
-
-;; Match diff fringe highlighting background for higher visibility.
-(dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
-  (set-face-attribute f nil
-                      :background (face-foreground f)))
 
 (set-face-attribute 'show-paren-match-expression nil
                     :inherit nil
@@ -915,26 +917,28 @@ Repeated invocations toggle between the two most recently open buffers."
                     :background "dark slate grey"
                     :foreground nil)
 
+(add-hook 'after-init-hook
+          (lambda ()
+            ;; Match diff fringe highlighting background for higher visibility.
+            (dolist (f '(diff-hl-insert diff-hl-change))
+              (set-face-attribute f nil
+                                  :background (face-foreground f)))))
+
 ;; Use a symbol for collapsed headings
 (setq org-ellipsis " ▼")
 (set-display-table-slot standard-display-table
                         'selective-display
                         (string-to-vector (symbol-value 'org-ellipsis)))
 
-;; Swap flymake out for flycheck, ALWAYS
-(add-hook 'flymake-mode-hook (lambda ()
-                               (flymake-mode -1)
-                               (flycheck-mode t)))
-
 ;; TODO: Consider selectively removing mouse bindings (i.e. mouse => visual mode)
 
-;; Normalize evil keymaps for all modes that specify mode-local bindings
+;; Normalize evil keymaps for some modes that specify mode-local bindings
 (general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
                   #'evil-normalize-keymaps)
 
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
-;; (setq gc-cons-percentage 0.5)
+
 ;; Local Variables:
 ;; byte-compile-warnings: (not free-vars)
 ;; End:
