@@ -46,9 +46,15 @@
         ;; doom-challenger-deep-brighter-comments t
         ;; doom-dracula-brighter-comments t
         )
-  (load-theme 'doom-dracula t)
+  (load-theme 'doom-snazzy t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
+
+(add-hook 'after-init-hook (lambda ()
+  ;; Match diff fringe highlighting background for higher visibility.
+  (dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
+    (set-face-attribute f nil
+                        :background (face-foreground f)))))
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
@@ -162,6 +168,14 @@
 ;; Stop completion when exiting insert mode
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
 
+;; Fix expression evaluation in normal state
+(defun evil-fix-eval-last-sexp ()
+  (if (eq evil-state 'normal)
+      (evil-append 1)
+    (evil-normal-state nil)))
+
+(general-add-advice #'eval-last-sexp :around #'evil-fix-eval-last-sexp)
+
 ;; commenting lines with verb 'g'
 (use-package evil-commentary :after evil
   :config (evil-commentary-mode t))
@@ -231,6 +245,11 @@
   :config
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
+
+(use-package company-emoji
+  :config
+  (setq company-emoji-insert-unicode nil)
+  (add-to-list 'company-backends 'company-emoji))
 
 ;;;; Fancy looks
 ;; Show marks in fringe for lines past EOF
@@ -306,6 +325,12 @@
   :config (setq highlight-indent-guides-method 'fill))
 
 ;;;; Expressions
+
+(defconst lisp-lang-hooks '(lisp-mode-hook
+                            emacs-lisp-mode-hook
+                            scheme-mode-hook
+                            racket-mode-hook))
+
 ;; Make expression editing easier everywhere
 (use-package smartparens
   :config
@@ -315,7 +340,7 @@
   (require 'smartparens-config)
   :ghook
   'prog-mode-hook
-  ('(emacs-lisp-mode-hook lisp-mode-hook) #'smartparens-strict-mode))
+  (lisp-lang-hooks #'smartparens-strict-mode))
 
 (use-package evil-cleverparens
   :ghook 'smartparens-enabled-hook)
@@ -345,7 +370,10 @@
 
 ;; Project tree
 (use-package treemacs
-  :general ("C-\\" #'treemacs))
+  :general ("C-\\" #'treemacs)
+  :config
+  (general-def treemacs-mode-map
+    "p" '(:keymap treemacs-project-map)))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs evil)
 (use-package treemacs-magit :after treemacs magit)
@@ -494,7 +522,7 @@
 (add-hook 'prog-mode-hook #'flyspell-prog-mode)
 (setq-default flyspell-issue-message-flag nil
               ispell-program-name (executable-find "aspell")
-              ispell-dictionary "en_GB-ize"
+              ispell-dictionary "en_US"
               ispell-extra-args '("--camel-case"))
 
 ;;;; Thesaurus
@@ -601,6 +629,10 @@
 ;;;; One liners
 (use-package nix-mode :defer 1)
 (use-package bazel-mode :defer 1)
+(use-package terraform-mode :defer 1
+  :config
+  (use-package company-terraform
+    :config (company-terraform-init)))
 (use-package yaml-mode :defer 1)
 (use-package json-mode :defer 1)
 (use-package rust-mode :defer 1)
@@ -804,18 +836,18 @@ Repeated invocations toggle between the two most recently open buffers."
   minor-leader (lambda () (interactive)
                  (message "No minor mode commands here")))
 
-(general-def '(normal motion)
-  :keymaps '(outshine-mode-map outline-mode-map)
-  "C-j" 'outline-forward-same-level
-  "C-k" 'outline-backward-same-level)
+;; (general-def '(normal motion)
+;;   :keymaps '(outshine-mode-map outline-mode-map)
+;;   "C-j" 'outline-forward-same-level
+;;   "C-k" 'outline-backward-same-level)
 
 ;; Fix outline bindings in non-insert states
-(general-def '(normal motion)
-  :keymaps 'outshine-mode-map
-  :predicate '(outline-on-heading-p)
-  "M-k" #'outline-move-subtree-up
-  "M-j" #'outline-move-subtree-down
-  "TAB" #'outshine-kbd-TAB)
+;; (general-def '(normal motion)
+;;   :keymaps 'outshine-mode-map
+;;   :predicate '(outline-on-heading-p)
+;;   "M-k" #'outline-move-subtree-up
+;;   "M-j" #'outline-move-subtree-down
+;;   "TAB" #'outshine-kbd-TAB)
 
 ;; General evil mode overrides
 (general-def '(normal motion insert)
@@ -916,13 +948,6 @@ Repeated invocations toggle between the two most recently open buffers."
 (set-face-attribute 'diff-changed nil
                     :background "dark slate grey"
                     :foreground nil)
-
-(add-hook 'after-init-hook
-          (lambda ()
-            ;; Match diff fringe highlighting background for higher visibility.
-            (dolist (f '(diff-hl-insert diff-hl-change))
-              (set-face-attribute f nil
-                                  :background (face-foreground f)))))
 
 ;; Use a symbol for collapsed headings
 (setq org-ellipsis " ▼")
