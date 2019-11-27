@@ -169,12 +169,11 @@
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
 
 ;; Fix expression evaluation in normal state
-(defun evil-fix-eval-last-sexp ()
-  (if (eq evil-state 'normal)
-      (evil-append 1)
-    (evil-normal-state nil)))
-
-(general-add-advice #'eval-last-sexp :around #'evil-fix-eval-last-sexp)
+;; (defun evil-fix-eval-last-sexp ()
+;;   (if (eq evil-state 'normal)
+;;       (evil-append 1)
+;;     (evil-normal-state nil)))
+;; (general-add-advice #'eval-last-sexp :around #'evil-fix-eval-last-sexp)
 
 ;; commenting lines with verb 'g'
 (use-package evil-commentary :after evil
@@ -241,7 +240,7 @@
 ;;;; Icons & Emojis
 (use-package all-the-icons)
 (use-package emojify
-  :defer 1
+
   :config
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
@@ -291,7 +290,7 @@
 (use-package doom-modeline
   :ghook 'after-init-hook
   :config
-  (setq doom-modeline-height 20))
+  (setq doom-modeline-height 18))
 
 ;;;; Better help
 (use-package helpful
@@ -355,7 +354,6 @@
 ;;;; niceties
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
-  :defer 1
   :config (rainbow-mode))
 
 ;;;; undo-tree
@@ -400,7 +398,7 @@
         projectile-completion-system 'ivy))
 
 ;; TODO: Figure out how to clump these latex packages
-(use-package ivy-bibtex :defer 1 :after ivy)
+(use-package ivy-bibtex :commands ivy-bibtex)
 
 (use-package counsel
   :config (counsel-mode))
@@ -416,7 +414,7 @@
   :config (setq helm-split-window-inside-p t))
 
 ;;; in-buffer completion
-(use-package yasnippet-snippets :defer 1)
+(use-package yasnippet-snippets)
 (use-package yasnippet
   :after yasnippet-snippets company
   :config (yas-global-mode 1)
@@ -467,7 +465,7 @@
 
 ;;; Version Control
 ;;;; Git
-(use-package magit :defer 1)
+(use-package magit )
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
@@ -517,6 +515,9 @@
 
 ;;; Writing
 ;;;; Spellcheck
+;; Load flyspell async to prevent blocking on file load
+(use-package flyspell-lazy
+  :config (flyspell-lazy-mode t))
 ;; Enable spellcheck in comments and strings (requires ispell)
 (add-hook 'text-mode-hook #'flyspell-mode)
 (add-hook 'prog-mode-hook #'flyspell-prog-mode)
@@ -627,16 +628,16 @@
   :config (push 'company-lsp company-backends))
 
 ;;;; One liners
-(use-package nix-mode :defer 1)
-(use-package bazel-mode :defer 1)
-(use-package terraform-mode :defer 1
+(use-package nix-mode )
+(use-package bazel-mode )
+(use-package terraform-mode
   :config
   (use-package company-terraform
     :config (company-terraform-init)))
-(use-package yaml-mode :defer 1)
-(use-package json-mode :defer 1)
-(use-package rust-mode :defer 1)
-(use-package go-mode :defer 1
+(use-package yaml-mode )
+(use-package json-mode )
+(use-package rust-mode )
+(use-package go-mode
   :config
   (major-leader-def 'normal go-mode-map
     "ia" #'go-import-add)
@@ -646,12 +647,12 @@
     "gn" #'go-goto-function-name
     "gi" #'go-goto-imports))
 
-(use-package racket-mode :defer 1)
+(use-package racket-mode )
 
 ;;;; Java
-(use-package lsp-java :defer 1)
-(use-package kotlin-mode :defer 1)
-(use-package groovy-mode :defer 1)      ; for gradle build files
+(use-package lsp-java )
+(use-package kotlin-mode )
+(use-package groovy-mode )      ; for gradle build files
 (use-package gradle-mode
   :ghook '(kotlin-mode-hook java-mode-hook groovy-mode-hook))
 
@@ -667,7 +668,7 @@
   :ghook ('typescript-mode-hook #'custom-tide-setup))
 
 (use-package web-mode
-  :defer 1
+
   :config
   (add-to-list 'auto-mode-alist '("\\.tsx$" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode)))
@@ -688,12 +689,12 @@
 
 
 ;;;; GraphQL
-(use-package graphql-mode :defer 1)
+(use-package graphql-mode )
 ;; (use-package company-graphql)
 ;; (add-to-list 'company-backends 'company-graphql)
 
 ;;;; typesetting
-(use-package markdown-mode :defer 1)
+(use-package markdown-mode )
 (use-package poly-markdown :after markdown-mode)
 ;; org-mode additions
 (use-package org-ref)
