@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t; -*-
 ;;; Emacs Configuration
 ;;;; Bootstrap package manager
 ;; Fix TLS for emacs 26
@@ -356,9 +357,6 @@
 (use-package rainbow-mode
   :config (rainbow-mode))
 
-;;;; undo-tree
-(setq undo-tree-visualizer-timestamps t)
-
 ;;; Project management
 (use-package projectile
   :config (projectile-mode t))
@@ -439,6 +437,7 @@
   :config
   ;; Press tab/shift-tab to start/stop completion in insert mode
   (general-def 'insert company-mode-map
+    "C-SPC" #'company-complete
     [remap indent-for-tab-command] #'company-indent-or-complete-common)
   ;; Press tab once in the dialog to complete the common prefix
   ;; Press tab twice in the dialog to complete with the selection
@@ -589,6 +588,7 @@
 ;;;; Language Server Protocol!
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
+(use-package async)
 (use-package lsp-mode
   :config
   (setq lsp-inhibit-message t
@@ -608,8 +608,10 @@
     "i" '("imports")
     "io" #'lsp-organize-imports)
   ;; Format code on save
-  (add-hook 'lsp-mode-hook (lambda ()
-                             (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+  (add-hook 'lsp-mode-hook
+            (lambda () (add-hook 'before-save-hook
+                            (lambda () (async-start #'lsp-format-buffer))
+                            nil t)))
   :custom (lsp-rust-server 'rust-analyzer)
   :commands (lsp lsp-deferred)
   :ghook ('(go-mode-hook
@@ -619,7 +621,10 @@
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
-  :custom (lsp-ui-flycheck-enable t)
+  :custom
+  (lsp-ui-flycheck-enable t)
+  (lsp-ui-doc-include-signature t)
+  (lsp-ui-sideline-update-mode 'line)
   :ghook 'lsp-mode-hook)
 
 ;; Auto-complete languages with LSP support
@@ -627,32 +632,48 @@
   :after lsp-mode
   :config (push 'company-lsp company-backends))
 
-;;;; One liners
-(use-package nix-mode )
-(use-package bazel-mode )
-(use-package terraform-mode
+;;;; Debug Adapter Protocol!!
+(use-package dap-mode
   :config
-  (use-package company-terraform
-    :config (company-terraform-init)))
-(use-package yaml-mode )
-(use-package json-mode )
-(use-package rust-mode )
+  ;; Open the hydra when we hit a breakpoint
+  (add-hook 'dap-stopped-hook
+            (lambda (arg) (call-interactively #'dap-hydra)))
+  (major-leader-def 'normal dap-mode-map
+    "db" #'dap-breakpoint-toggle)
+  (dap-mode t)
+  (dap-ui-mode t)
+  (dap-tooltip-mode t))
+
+;;;; One liners
+(use-package nix-mode)
+(use-package bazel-mode)
+(use-package terraform-mode)
+(use-package company-terraform
+  :config (company-terraform-init))
+(use-package yaml-mode)
+(use-package json-mode)
+(use-package rust-mode)
 (use-package go-mode
   :config
+  ;; Code navigation key bindings
   (major-leader-def 'normal go-mode-map
     "ia" #'go-import-add)
   (major-leader-def '(normal motion) go-mode-map
     "ga" #'go-goto-arguments
     "gd" #'go-goto-docstring
     "gn" #'go-goto-function-name
-    "gi" #'go-goto-imports))
+    "gi" #'go-goto-imports)
 
-(use-package racket-mode )
+  ;; Setup debugging support
+  (require 'dap-go)
+  (dap-go-setup))
+
+(use-package racket-mode)
 
 ;;;; Java
-(use-package lsp-java )
-(use-package kotlin-mode )
-(use-package groovy-mode )      ; for gradle build files
+(use-package lsp-java)
+(use-package kotlin-mode)
+(use-package groovy-mode)      ; for gradle build files
 (use-package gradle-mode
   :ghook '(kotlin-mode-hook java-mode-hook groovy-mode-hook))
 
@@ -668,10 +689,9 @@
   :ghook ('typescript-mode-hook #'custom-tide-setup))
 
 (use-package web-mode
-
   :config
-  (add-to-list 'auto-mode-alist '("\\.tsx$" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode)))
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode)))
 
 (add-hook 'web-mode-hook
           (lambda ()
@@ -689,13 +709,13 @@
 
 
 ;;;; GraphQL
-(use-package graphql-mode )
+(use-package graphql-mode)
 ;; (use-package company-graphql)
 ;; (add-to-list 'company-backends 'company-graphql)
 
 ;;;; typesetting
-(use-package markdown-mode )
-(use-package poly-markdown :after markdown-mode)
+(use-package markdown-mode)
+(use-package poly-markdown)
 ;; org-mode additions
 (use-package org-ref)
 (use-package org-bullets :ghook 'org-mode-hook)
