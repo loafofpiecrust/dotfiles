@@ -30,7 +30,7 @@
 (straight-use-package 'use-package)
 
 ;; Easier binding definitions
-(use-package general :defer nil)
+(use-package general)
 
 ;; TODO: Make frame background translucent
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
@@ -47,7 +47,7 @@
         ;; doom-challenger-deep-brighter-comments t
         ;; doom-dracula-brighter-comments t
         )
-  (load-theme 'doom-dracula t)
+  (load-theme 'doom-acario-dark t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
@@ -79,8 +79,8 @@
  ;; Nicer scrolling
  ;; pixel-resolution-fine-flag nil
  mouse-wheel-progressive-speed nil
- mouse-wheel-scroll-amount '(1)
- scroll-margin 10
+ ;; mouse-wheel-scroll-amount '(1)
+ scroll-margin 15
  scroll-conservatively 10000
  ;; Indentation and wrapping
  tab-width 4
@@ -151,14 +151,15 @@
 (use-package which-key
   :config (which-key-mode)
   :init (setq which-key-enable-extended-define-key t
-              which-key-idle-delay 0.7))
+              which-key-idle-delay 1))
 
 ;; vim emulation
 (use-package evil
+  :defer 0.5
   :init (setq evil-want-keybinding nil  ; let evil-collection bind keys
               evil-move-beyond-eol t
               evil-respect-visual-line-mode t
-              ;; evil-move-cursor-back nil
+              evil-move-cursor-back nil
               evil-search-module 'evil-search
               evil-ex-search-persistent-highlight nil
               evil-want-C-i-jump nil)
@@ -168,13 +169,15 @@
 (use-package evil-collection :after evil
   :custom
   (evil-collection-outline-bind-tab-p t)
-  (evil-collection-company-use-tng t)
+  (evil-collection-company-use-tng nil)
   :config
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
   (evil-collection-init))
 
 ;; Stop completion when exiting insert mode
+(general-def 'insert company-active-map
+  "ESC" #'company-abort)
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
 
 ;; Fix expression evaluation in normal state
@@ -345,7 +348,9 @@
 
 (use-package highlight-indent-guides
   :ghook '(prog-mode-hook org-mode-hook)
-  :config (setq highlight-indent-guides-method 'fill))
+  :config (setq highlight-indent-guides-method 'fill
+                ;; highlight-indent-guides-responsive 'top
+                ))
 
 ;;;; Expressions
 
@@ -359,7 +364,7 @@
   :config
   (dolist (delim '("{" "(" "["))
     (sp-local-pair '(go-mode c-mode javascript-mode)
-                   delim nil :post-handlers '(("||\n[i]" "RET"))))
+                   delim nil :post-handlers '(("||\n[i]" ""))))
   (require 'smartparens-config)
   :ghook
   'prog-mode-hook
@@ -378,7 +383,6 @@
 ;;;; niceties
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
-  :defer 1
   :config (rainbow-mode))
 
 ;;; Project management
@@ -409,18 +413,26 @@
 
 ;;; mini-buffer completion
 (use-package ivy
+  :ghook 'after-init-hook
   :config
   (general-def ivy-minibuffer-map
     "C-<return>" #'ivy-dispatching-done)
-  (ivy-mode t)
-  (setq ivy-use-virtual-buffers t
-        enable-recursive-minibuffers t
-        ivy-initial-inputs-alist nil
-        ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-plus)
-                                (ivy-bibtex . ivy--regex-ignore-order)
-                                ;; Use fuzzy matching for most cases
-                                (t . ivy--regex-fuzzy))
-        projectile-completion-system 'ivy))
+  (setq-default ivy-use-virtual-buffers t
+                enable-recursive-minibuffers t
+                ivy-initial-inputs-alist nil
+                ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-plus)
+                                        (ivy-bibtex . ivy--regex-ignore-order)
+                                        ;; Use fuzzy matching for most cases
+                                        (t . ivy--regex-fuzzy))
+                projectile-completion-system 'ivy))
+
+(use-package ivy-posframe
+  :ghook 'ivy-mode-hook
+  :config
+  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-center))
+        ivy-posframe-parameters '((left-fringe . 8)
+                                  (right-fringe . 8)
+                                  (internal-border-width . 2))))
 
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
@@ -428,15 +440,14 @@
 (use-package counsel :ghook 'ivy-mode-hook)
 (use-package ivy-rich :ghook 'ivy-mode-hook)
 
-(use-package flyspell-correct-ivy
-  :ghook 'flyspell-mode-hook)
+(use-package flyspell-correct-ivy)
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets)
 (use-package yasnippet
   :after yasnippet-snippets company
-  :ghook ('company-mode-hook #'yas-minor-mode-on)
   :config
+  (yas-global-mode 1)
   ;; Disable auto completion of snippets. Instead rely on the completion dialog.
   (general-def yas-minor-mode-map
     "TAB" nil
@@ -454,21 +465,21 @@
 ;; (use-package auto-yasnippet :after yasnippet)
 
 (use-package company
-  :ghook '(prog-mode-hook eshell-mode-hook)
+  :ghook 'prog-mode-hook
   :config
   ;; Press tab/shift-tab to start/stop completion in insert mode
   (general-def 'insert company-mode-map
-    "C-SPC" #'company-complete
-    [remap indent-for-tab-command] #'company-indent-or-complete-common)
+    "C-SPC" #'company-complete)
   ;; Press tab once in the dialog to complete the common prefix
   ;; Press tab twice in the dialog to complete with the selection
   (general-def :keymaps 'company-active-map
-    "<tab>" 'company-complete
-    "<backtab>" 'company-abort)
+    "<tab>" #'company-complete-selection
+    "<return>" nil
+    "<escape>" #'company-abort)
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
                 completion-styles '(basic partial-completion substring)
-                company-idle-delay 0.1
+                company-idle-delay 0
                 company-minimum-prefix-length 1
                 company-selection-wrap-around nil
                 company-require-match nil))
@@ -481,12 +492,11 @@
 (use-package company-box
   :ghook 'company-mode-hook
   :custom
+  ;; TODO: Add key binding for showing docstring
   (company-box-icons-alist 'company-box-icons-all-the-icons)
   (company-box-max-candidates 50)
   (company-box-doc-delay 2)
-  (company-box-show-single-candidate t)
-  ;; TODO: Add key binding for showing docstring
-  )
+  (company-box-show-single-candidate t))
 
 ;;; Version Control
 ;;;; Git
@@ -500,12 +510,10 @@
 
 ;; View the history of the current file.
 (use-package git-timemachine
-  :general
+  :config
+  (add-hook 'git-timemachine-mode-hook #'evil-motion-state)
   (global-leader-def '(normal motion) override
     "gt" #'git-timemachine)
-  :config
-  ;; (evil-make-overriding-map git-timemachine-mode-map 'motion)
-  (add-hook 'git-timemachine-mode-hook #'evil-motion-state)
   (general-def '(motion normal) git-timemachine-mode-map
     minor-leader git-timemachine-mode-map)
   (general-def 'motion git-timemachine-mode-map
@@ -566,7 +574,8 @@
 (use-package visual-fill-column
   :ghook 'markdown-mode-hook)
 
-;; (general-add-hook '(markdown-mode-hook org-mode-hook) #'electric-pair-mode)
+(general-add-hook '(org-mode-hook go-mode-hook)
+                  #'electric-pair-mode)
 
 ;; Stop auto-fill in certain modes where we'd rather break lines ourselves based
 ;; on sentences or what have you. We use visual-fill-column to make that easier
@@ -619,12 +628,11 @@
 ;;;; Language Server Protocol!
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
-(use-package async)
 (use-package lsp-mode
   :config
-  (setq lsp-inhibit-message t
-        lsp-prefer-flymake nil
-        lsp-enable-on-type-formatting t)
+  (setq-default lsp-inhibit-message t
+                lsp-prefer-flymake nil
+                lsp-enable-on-type-formatting t)
   (general-def '(motion normal) lsp-mode-map
     "gd" #'lsp-find-definition)
   (major-leader-def '(normal motion) lsp-mode-map
@@ -641,7 +649,7 @@
   ;; Format code on save
   (add-hook 'lsp-mode-hook
             (lambda () (add-hook 'before-save-hook
-                            (lambda () (async-start #'lsp-format-buffer))
+                            #'lsp-format-buffer
                             nil t)))
   :custom (lsp-rust-server 'rust-analyzer)
   :commands (lsp lsp-deferred)
@@ -853,6 +861,11 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;;; vim
 ;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j
 (general-def 'normal
+  ;; Make normal paste go AT point rather than AFTER
+  "p" (lambda ()
+        (interactive)
+        (evil-backward-char 1 nil t)
+        (call-interactively #'evil-paste-after))
   "U" #'undo-tree-redo
   ;; Useful binding for managing method call chains
   "K" #'newline
@@ -885,6 +898,8 @@ Repeated invocations toggle between the two most recently open buffers."
   "[t" #'hl-todo-previous
   "[p" #'evil-backward-paragraph
   "]p" #'evil-forward-paragraph
+  "C-S-p" (general-simulate-key "M-x")
+  "C-p" #'projectile-find-file
   "?" #'swiper
   "0" (general-key "^")
   major-leader (general-simulate-key "C-c")
@@ -986,7 +1001,11 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(vdiff-addition-face ((t (:inherit diff-added)))))
+ '(vdiff-addition-face ((t (:inherit diff-added))))
+ ;; Match diff fringe highlighting background for higher visibility.
+ '(diff-hl-insert ((t (:background "#60aa00"))))
+ '(diff-hl-change ((t (:background "#da8548"))))
+ '(diff-hl-delete ((t (:background "#d02b61")))))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
@@ -999,12 +1018,6 @@ Repeated invocations toggle between the two most recently open buffers."
 (set-face-attribute 'diff-changed nil
                     :background "dark slate grey"
                     :foreground nil)
-
-;; Match diff fringe highlighting background for higher visibility.
-(add-to-list 'after-make-frame-functions
-             (lambda (frame) (dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
-                          (set-face-attribute
-                           f nil :background (face-foreground f)))))
 
 ;; Use a symbol for collapsed headings
 (setq org-ellipsis " ▼")
