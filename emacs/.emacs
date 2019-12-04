@@ -30,7 +30,7 @@
 (straight-use-package 'use-package)
 
 ;; Easier binding definitions
-(use-package general)
+(use-package general :defer nil)
 
 ;; TODO: Make frame background translucent
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
@@ -47,15 +47,9 @@
         ;; doom-challenger-deep-brighter-comments t
         ;; doom-dracula-brighter-comments t
         )
-  (load-theme 'doom-snazzy t)
+  (load-theme 'doom-dracula t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
-
-(add-hook 'after-init-hook (lambda ()
-  ;; Match diff fringe highlighting background for higher visibility.
-  (dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
-    (set-face-attribute f nil
-                        :background (face-foreground f)))))
 
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
@@ -70,10 +64,11 @@
   (menu-bar-mode -1))
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
-(fringe-mode '(10 . 0))
+(fringe-mode '(nil . 0))
 (show-paren-mode t)
 (save-place-mode t)
 (blink-cursor-mode t)
+;; (pixel-scroll-mode t)
 
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
@@ -81,6 +76,12 @@
  ;; Text display
  display-line-numbers-width 3
  show-paren-style 'expression
+ ;; Nicer scrolling
+ ;; pixel-resolution-fine-flag nil
+ mouse-wheel-progressive-speed nil
+ mouse-wheel-scroll-amount '(1)
+ scroll-margin 10
+ scroll-conservatively 10000
  ;; Indentation and wrapping
  tab-width 4
  indent-tabs-mode nil      ; use spaces for indentation
@@ -89,6 +90,13 @@
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
  load-prefer-newer t)
+
+;; (use-package sublimity
+;;   :config
+;;   (require 'sublimity-scroll)
+;;   (setq mouse-wheel-progressive-speed nil
+;;         mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+;;   (sublimity-mode 1))
 
 (use-package exec-path-from-shell
   :defer 0.1
@@ -160,7 +168,7 @@
 (use-package evil-collection :after evil
   :custom
   (evil-collection-outline-bind-tab-p t)
-  (evil-collection-company-use-tng nil)
+  (evil-collection-company-use-tng t)
   :config
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
@@ -177,16 +185,16 @@
 ;; (general-add-advice #'eval-last-sexp :around #'evil-fix-eval-last-sexp)
 
 ;; commenting lines with verb 'g'
-(use-package evil-commentary :after evil
-  :config (evil-commentary-mode t))
+(use-package evil-commentary
+  :ghook 'evil-mode-hook)
 
 ;; surround things with verb 'S'
-(use-package evil-surround :after evil
+(use-package evil-surround
+  :ghook ('evil-mode-hook #'global-evil-surround-mode)
   :config
   (setq-default evil-surround-pairs-alist
                 ;; Allow surrounding with newlines
-                (cons '(13 . ("\n" . "")) evil-surround-pairs-alist))
-  (global-evil-surround-mode t))
+                (cons '(13 . ("\n" . "")) evil-surround-pairs-alist)))
 
 ;; add more surroundings by default
 (use-package evil-embrace :after evil
@@ -214,8 +222,8 @@
                     "I" #'evil-mc-make-cursor-in-visual-selection-beg))
 
 ;; Extend % to match more delimeters, smarter
-(use-package evil-matchit :after evil
-  :config (global-evil-matchit-mode))
+(use-package evil-matchit
+  :ghook ('evil-mode-hook #'global-evil-matchit-mode))
 
 ;;;; setup prefixes
 ;; We're going to want a few different prefixes
@@ -241,15 +249,29 @@
 ;;;; Icons & Emojis
 (use-package all-the-icons)
 (use-package emojify
-
   :config
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
 
 (use-package company-emoji
+  :after company
   :config
   (setq company-emoji-insert-unicode nil)
   (add-to-list 'company-backends 'company-emoji))
+
+;; (defun --set-emoji-font (frame)
+;;   "Adjust the font settings of FRAME so Emacs can display emoji properly."
+;;   (if (eq system-type 'darwin)
+;;       ;; For NS/Cocoa
+;;       (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") frame 'prepend)
+;;     ;; For Linux
+;;     (set-fontset-font t 'symbol (font-spec :family "Noto Emoji") frame 'prepend)))
+
+;; ;; For when Emacs is started in GUI mode:
+;; (--set-emoji-font nil)
+;; ;; Hook for when a frame is created with emacsclient
+;; ;; see https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Frames.html
+;; (add-hook 'after-make-frame-functions '--set-emoji-font)
 
 ;;;; Fancy looks
 ;; Show marks in fringe for lines past EOF
@@ -312,8 +334,9 @@
 ;;;; General
 (use-package editorconfig
   :ghook 'prog-mode-hook)
+;; Auto-detect indent for flexibly indented languages
 (use-package dtrt-indent
-  :ghook 'prog-mode-hook)
+  :ghook '(web-mode-hook js-mode-hook c-mode-hook java-mode-hook python-mode-hook))
 
 ;; Always indent, no matter what
 (use-package aggressive-indent
@@ -335,7 +358,7 @@
 (use-package smartparens
   :config
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(go-mode rust-mode c-mode javascript-mode)
+    (sp-local-pair '(go-mode c-mode javascript-mode)
                    delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :ghook
@@ -355,11 +378,15 @@
 ;;;; niceties
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
+  :defer 1
   :config (rainbow-mode))
 
 ;;; Project management
 (use-package projectile
-  :config (projectile-mode t))
+  :config
+  (projectile-mode t)
+  (global-leader-def '(normal motion) override
+    "p" '(:keymap projectile-command-map)))
 
 ;; Use for searching within projects
 (use-package ripgrep)
@@ -371,7 +398,7 @@
   (general-def treemacs-mode-map
     "p" '(:keymap treemacs-project-map)))
 (use-package treemacs-evil :after treemacs evil)
-(use-package treemacs-projectile :after treemacs evil)
+(use-package treemacs-projectile :after treemacs projectile)
 (use-package treemacs-magit :after treemacs magit)
 
 ;;; Syntax checking
@@ -398,24 +425,18 @@
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
 
-(use-package counsel
-  :config (counsel-mode))
-(use-package ivy-rich
-  :config (ivy-rich-mode))
+(use-package counsel :ghook 'ivy-mode-hook)
+(use-package ivy-rich :ghook 'ivy-mode-hook)
 
-(use-package flyspell-correct-ivy)
-
-;;;; Helm
-;; Helm is a bit better at certain things, like inserting references with
-;; org-ref. We should explore using it for more stuff, and getting proper setup.
-(use-package helm
-  :config (setq helm-split-window-inside-p t))
+(use-package flyspell-correct-ivy
+  :ghook 'flyspell-mode-hook)
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets)
 (use-package yasnippet
   :after yasnippet-snippets company
-  :config (yas-global-mode 1)
+  :ghook ('company-mode-hook #'yas-minor-mode-on)
+  :config
   ;; Disable auto completion of snippets. Instead rely on the completion dialog.
   (general-def yas-minor-mode-map
     "TAB" nil
@@ -446,8 +467,8 @@
     "<backtab>" 'company-abort)
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
-                completion-styles '(substring partial-completion)
-                company-idle-delay nil
+                completion-styles '(basic partial-completion substring)
+                company-idle-delay 0.1
                 company-minimum-prefix-length 1
                 company-selection-wrap-around nil
                 company-require-match nil))
@@ -458,13 +479,18 @@
 
 ;; GUI box to prevent interference with different font sizes
 (use-package company-box
+  :ghook 'company-mode-hook
   :custom
   (company-box-icons-alist 'company-box-icons-all-the-icons)
-  :ghook 'company-mode-hook)
+  (company-box-max-candidates 50)
+  (company-box-doc-delay 2)
+  (company-box-show-single-candidate t)
+  ;; TODO: Add key binding for showing docstring
+  )
 
 ;;; Version Control
 ;;;; Git
-(use-package magit )
+(use-package magit)
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
@@ -474,7 +500,9 @@
 
 ;; View the history of the current file.
 (use-package git-timemachine
-  :defer t
+  :general
+  (global-leader-def '(normal motion) override
+    "gt" #'git-timemachine)
   :config
   ;; (evil-make-overriding-map git-timemachine-mode-map 'motion)
   (add-hook 'git-timemachine-mode-hook #'evil-motion-state)
@@ -502,6 +530,7 @@
 ;;;; Diff configuration
 ;; Replace ediff with vdiff for synced scrolling and more...
 (use-package vdiff
+  :commands vdiff-mode
   :config
   (setq-default vdiff-magit-stage-is-2way t)
   (general-def '(normal motion) vdiff-mode-map
@@ -518,8 +547,8 @@
 (use-package flyspell-lazy
   :config (flyspell-lazy-mode t))
 ;; Enable spellcheck in comments and strings (requires ispell)
-(add-hook 'text-mode-hook #'flyspell-mode)
-(add-hook 'prog-mode-hook #'flyspell-prog-mode)
+(general-add-hook '(markdown-mode-hook org-mode-hook) #'flyspell-mode)
+(general-add-hook 'prog-mode-hook #'flyspell-prog-mode)
 (setq-default flyspell-issue-message-flag nil
               ispell-program-name (executable-find "aspell")
               ispell-dictionary "en_US"
@@ -528,8 +557,7 @@
 ;;;; Thesaurus
 ;; Requires internet to lookup words
 (use-package powerthesaurus
-  :commands powerthesaurus-lookup-word-dwim
-  :init
+  :general
   (global-leader-def '(normal motion) override
     "tt" '("thesaurus" . powerthesaurus-lookup-word-dwim)))
 
@@ -537,6 +565,8 @@
 ;; TODO: Fix this for lsp-ui sideline stuff.
 (use-package visual-fill-column
   :ghook 'markdown-mode-hook)
+
+;; (general-add-hook '(markdown-mode-hook org-mode-hook) #'electric-pair-mode)
 
 ;; Stop auto-fill in certain modes where we'd rather break lines ourselves based
 ;; on sentences or what have you. We use visual-fill-column to make that easier
@@ -575,7 +605,8 @@
 ;;   (interactive)
 ;;   ())
 (use-package aweshell
-  :straight (:host github :repo "manateelazycat/aweshell"))
+  :straight (:host github :repo "manateelazycat/aweshell")
+  :commands aweshell)
 (use-package company-shell
   :config (add-to-list 'company-backends '(company-shell company-shell-env)))
 
@@ -621,11 +652,11 @@
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
+  :ghook 'lsp-mode-hook
   :custom
   (lsp-ui-flycheck-enable t)
   (lsp-ui-doc-include-signature t)
-  (lsp-ui-sideline-update-mode 'line)
-  :ghook 'lsp-mode-hook)
+  (lsp-ui-sideline-update-mode 'line))
 
 ;; Auto-complete languages with LSP support
 (use-package company-lsp
@@ -634,6 +665,7 @@
 
 ;;;; Debug Adapter Protocol!!
 (use-package dap-mode
+  :ghook 'lsp-mode-hook
   :config
   ;; Open the hydra when we hit a breakpoint
   (add-hook 'dap-stopped-hook
@@ -645,6 +677,7 @@
   (dap-tooltip-mode t))
 
 ;;;; One liners
+(use-package haskell-mode)
 (use-package nix-mode)
 (use-package bazel-mode)
 (use-package terraform-mode)
@@ -714,7 +747,10 @@
 ;; (add-to-list 'company-backends 'company-graphql)
 
 ;;;; typesetting
-(use-package markdown-mode)
+(use-package markdown-mode
+  :config
+  (major-leader-def 'normal markdown-mode-map
+    "i`" #'markdown-insert-gfm-code-block))
 (use-package poly-markdown)
 ;; org-mode additions
 (use-package org-ref)
@@ -744,7 +780,7 @@
 ;; latex packages have to go near the top for some reason.
 ;; otherwise they just mysteriously don't load.
 ;; Because 'auctex is doodled, must use straight directly here.
-(straight-use-package 'auctex)
+;; (straight-use-package 'auctex)
 ;; latex additions
 (add-hook 'TeX-mode-hook #'TeX-fold-mode)
 (setq-default TeX-engine 'xetex) ; enables unicode support
@@ -791,9 +827,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "gg" #'magit-status
   "gd" #'vdiff-magit-stage
   "gb" #'magit-blame
-  "gt" #'git-timemachine
   "n" '(:keymap narrow-map)
-  "p" '(:keymap projectile-command-map)
   "a" '("apps")
   "ac" #'calc
   "ae" #'flycheck-list-errors
@@ -944,10 +978,6 @@ Repeated invocations toggle between the two most recently open buffers."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(hl-paren-face ((t (:weight bold))) t)
- '(org-document-title ((t (:weight bold :height 1.6))))
- '(org-level-1 ((t (:height 1.35 :inherit nil))))
- '(org-level-2 ((t (:height 1.2 :inherit nil))))
- '(org-level-3 ((t (:height 1.1 :inherit nil))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
  '(outline-3 ((t (:inherit org-level-3))))
@@ -970,6 +1000,12 @@ Repeated invocations toggle between the two most recently open buffers."
                     :background "dark slate grey"
                     :foreground nil)
 
+;; Match diff fringe highlighting background for higher visibility.
+(add-to-list 'after-make-frame-functions
+             (lambda (frame) (dolist (f '(diff-hl-insert diff-hl-change diff-hl-delete))
+                          (set-face-attribute
+                           f nil :background (face-foreground f)))))
+
 ;; Use a symbol for collapsed headings
 (setq org-ellipsis " ▼")
 (set-display-table-slot standard-display-table
@@ -984,7 +1020,6 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
-
 ;; Local Variables:
 ;; byte-compile-warnings: (not free-vars)
 ;; End:
