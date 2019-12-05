@@ -155,7 +155,6 @@
 
 ;; vim emulation
 (use-package evil
-  :defer 0.5
   :init (setq evil-want-keybinding nil  ; let evil-collection bind keys
               evil-move-beyond-eol t
               evil-respect-visual-line-mode t
@@ -163,10 +162,57 @@
               evil-search-module 'evil-search
               evil-ex-search-persistent-highlight nil
               evil-want-C-i-jump nil)
-  :config (evil-mode t))
+  :config
+  (evil-mode t)
+
+  ;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R
+  ;; TODO: Use a better command for nearby find on key f
+  (general-def 'normal
+    ;; Make normal paste go AT point rather than AFTER
+    "p" (lambda ()
+          (interactive)
+          (evil-backward-char 1 nil t)
+          (call-interactively #'evil-paste-after))
+    "P" #'evil-paste-after
+    "C-p" nil
+    "U" #'undo-tree-redo
+    ;; Useful binding for managing method call chains
+    "K" #'newline
+    "z=" #'flyspell-correct-at-point
+    "M-;" (lambda ()
+            (interactive)
+            (call-interactively #'comment-dwim)
+            (evil-insert-state))
+    "R" nil)
+
+  ;; Use some standard keybindings.
+  (general-def
+    "C-S-p" #'counsel-M-x
+    "C-w" #'kill-this-buffer
+    "C-v" #'evil-paste-after
+    "C-z" #'undo-tree-undo
+    "C-S-z" #'undo-tree-redo)
+
+  (general-def '(normal motion visual)
+    ;; "gr" stands for "go run this"
+    ;; By default, use "gr" to refresh and run what's at point
+    "gr" (general-simulate-key "C-c C-c")
+    "C-RET" (general-simulate-key "C-c C-c")
+    "[" '("previous")
+    "]" '("next")
+    "C-{" #'evil-jump-backward
+    "C-}" #'evil-jump-forward
+    "[]" #'evil-backward-section-begin
+    "][" #'evil-forward-section-begin
+    "]t" #'hl-todo-next
+    "[t" #'hl-todo-previous
+    "[p" #'evil-backward-paragraph
+    "]p" #'evil-forward-paragraph
+    "?" #'swiper
+    "0" (general-key "^")))
 
 ;; bind keys for many modes with better evil compatibility
-(use-package evil-collection :after evil
+(use-package evil-collection
   :custom
   (evil-collection-outline-bind-tab-p t)
   (evil-collection-company-use-tng nil)
@@ -189,18 +235,18 @@
 
 ;; commenting lines with verb 'g'
 (use-package evil-commentary
-  :ghook 'evil-mode-hook)
+  :config (evil-commentary-mode))
 
 ;; surround things with verb 'S'
 (use-package evil-surround
-  :ghook ('evil-mode-hook #'global-evil-surround-mode)
   :config
+  (global-evil-surround-mode)
   (setq-default evil-surround-pairs-alist
                 ;; Allow surrounding with newlines
                 (cons '(13 . ("\n" . "")) evil-surround-pairs-alist)))
 
 ;; add more surroundings by default
-(use-package evil-embrace :after evil
+(use-package evil-embrace
   :config (evil-embrace-enable-evil-surround-integration)
   :ghook ('org-mode-hook #'embrace-org-mode-hook))
 
@@ -208,25 +254,25 @@
 (use-package evil-tutor :defer t)
 
 ;; Exchange selections easily with
-;; (use-package evil-exchange :after evil
+;; (use-package evil-exchange
 ;;   :config (evil-exchange-cx-install))
 
 ;; Manage comma-delimited arguments with noun 'a'
-(use-package evil-args :after evil
+(use-package evil-args
   :general
   (:keymaps 'evil-inner-text-objects-map
             "a" 'evil-inner-arg)
   (:keymaps 'evil-outer-text-objects-map
             "a" 'evil-outer-arg))
 
-(use-package evil-mc :after evil
+(use-package evil-mc
   :general ('visual evil-mc-key-map
                     "A" #'evil-mc-make-cursor-in-visual-selection-end
                     "I" #'evil-mc-make-cursor-in-visual-selection-beg))
 
 ;; Extend % to match more delimeters, smarter
 (use-package evil-matchit
-  :ghook ('evil-mode-hook #'global-evil-matchit-mode))
+  :config (global-evil-matchit-mode))
 
 ;;;; setup prefixes
 ;; We're going to want a few different prefixes
@@ -257,6 +303,7 @@
   (global-emojify-mode t))
 
 (use-package company-emoji
+  :disabled
   :after company
   :config
   (setq company-emoji-insert-unicode nil)
@@ -291,7 +338,6 @@
 ;;;; Dashboard!
 (use-package page-break-lines)
 (use-package dashboard
-  :after evil
   :config
   (dashboard-setup-startup-hook)
   (evil-set-initial-state 'dashboard-mode 'motion)
@@ -310,13 +356,13 @@
 ;; Show search candidate counts in the mode-line
 (use-package anzu
   :config (global-anzu-mode))
-(use-package evil-anzu :after evil anzu
+(use-package evil-anzu :after anzu
   :config (setq anzu-cons-mode-line-p nil))
 
 (use-package doom-modeline
-  :ghook 'after-init-hook
   :config
-  (setq doom-modeline-height 18))
+  (setq doom-modeline-height 16)
+  (doom-modeline-mode))
 
 ;;;; Better help
 (use-package helpful
@@ -363,7 +409,7 @@
 (use-package smartparens
   :config
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(go-mode c-mode javascript-mode)
+    (sp-local-pair '(nix-mode go-mode c-mode javascript-mode)
                    delim nil :post-handlers '(("||\n[i]" ""))))
   (require 'smartparens-config)
   :ghook
@@ -392,6 +438,11 @@
   (global-leader-def '(normal motion) override
     "p" '(:keymap projectile-command-map)))
 
+(use-package counsel-projectile
+  :after counsel projectile
+  :ghook 'counsel-mode-hook
+  :general ("C-p" #'counsel-projectile))
+
 ;; Use for searching within projects
 (use-package ripgrep)
 
@@ -419,7 +470,6 @@
     "C-<return>" #'ivy-dispatching-done)
   (setq-default ivy-use-virtual-buffers t
                 enable-recursive-minibuffers t
-                ivy-initial-inputs-alist nil
                 ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-plus)
                                         (ivy-bibtex . ivy--regex-ignore-order)
                                         ;; Use fuzzy matching for most cases
@@ -429,7 +479,8 @@
 (use-package ivy-posframe
   :ghook 'ivy-mode-hook
   :config
-  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-center))
+  (setq ivy-posframe-display-functions-alist '((swiper . nil)
+                                               (t . ivy-posframe-display-at-frame-center))
         ivy-posframe-parameters '((left-fringe . 8)
                                   (right-fringe . 8)
                                   (internal-border-width . 2))))
@@ -437,10 +488,17 @@
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
 
-(use-package counsel :ghook 'ivy-mode-hook)
-(use-package ivy-rich :ghook 'ivy-mode-hook)
+(use-package counsel :ghook 'ivy-mode-hook
+  :config
+  (setcdr (assq 'counsel-M-x ivy-initial-inputs-alist) ""))
+(use-package ivy-rich :ghook 'ivy-mode-hook
+  :config (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
 (use-package flyspell-correct-ivy)
+
+(use-package prescient)
+(use-package ivy-prescient
+  :ghook 'ivy-mode-hook)
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets)
@@ -488,6 +546,9 @@
 ;; (use-package company-fuzzy
 ;;   :ghook 'company-mode-hook)
 
+(use-package company-prescient
+  :ghook 'company-mode-hook)
+
 ;; GUI box to prevent interference with different font sizes
 (use-package company-box
   :ghook 'company-mode-hook
@@ -504,7 +565,7 @@
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
-(use-package evil-magit :after evil magit)
+(use-package evil-magit :after magit)
 (use-package forge :after magit)
 (use-package github-review :after magit)
 
@@ -664,7 +725,13 @@
   :custom
   (lsp-ui-flycheck-enable t)
   (lsp-ui-doc-include-signature t)
-  (lsp-ui-sideline-update-mode 'line))
+  (lsp-ui-sideline-update-mode 'line)
+  :config
+  (major-leader-def 'normal lsp-ui-mode-map
+    "p" '("peek")
+    "pr" #'lsp-ui-peek-find-references
+    "pd" #'lsp-ui-peek-find-definitions
+    "pi" #'lsp-ui-peek-find-implementation))
 
 ;; Auto-complete languages with LSP support
 (use-package company-lsp
@@ -679,6 +746,7 @@
   (add-hook 'dap-stopped-hook
             (lambda (arg) (call-interactively #'dap-hydra)))
   (major-leader-def 'normal dap-mode-map
+    "d" '("debug")
     "db" #'dap-breakpoint-toggle)
   (dap-mode t)
   (dap-ui-mode t)
@@ -859,22 +927,6 @@ Repeated invocations toggle between the two most recently open buffers."
 
 
 ;;;; vim
-;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j
-(general-def 'normal
-  ;; Make normal paste go AT point rather than AFTER
-  "p" (lambda ()
-        (interactive)
-        (evil-backward-char 1 nil t)
-        (call-interactively #'evil-paste-after))
-  "U" #'undo-tree-redo
-  ;; Useful binding for managing method call chains
-  "K" #'newline
-  "z=" #'flyspell-correct-at-point
-  "M-;" (lambda ()
-          (interactive)
-          (call-interactively 'comment-dwim)
-          (evil-insert-state)))
-
 (general-def help-map
   "K" #'which-key-show-top-level)
 
@@ -884,27 +936,6 @@ Repeated invocations toggle between the two most recently open buffers."
   "[[" #'evil-cp-previous-closing
   "]]" #'evil-cp-next-closing)
 
-(general-def '(normal motion visual)
-  ;; "gr" stands for "go run this"
-  ;; By default, use "gr" to refresh and run what's at point
-  "gr" (general-simulate-key "C-c C-c")
-  "[" '("previous")
-  "]" '("next")
-  "C-{" #'evil-jump-backward
-  "C-}" #'evil-jump-forward
-  "[]" #'evil-backward-section-begin
-  "][" #'evil-forward-section-begin
-  "]t" #'hl-todo-next
-  "[t" #'hl-todo-previous
-  "[p" #'evil-backward-paragraph
-  "]p" #'evil-forward-paragraph
-  "C-S-p" (general-simulate-key "M-x")
-  "C-p" #'projectile-find-file
-  "?" #'swiper
-  "0" (general-key "^")
-  major-leader (general-simulate-key "C-c")
-  minor-leader (lambda () (interactive)
-                 (message "No minor mode commands here")))
 
 ;; (general-def '(normal motion)
 ;;   :keymaps '(outshine-mode-map outline-mode-map)

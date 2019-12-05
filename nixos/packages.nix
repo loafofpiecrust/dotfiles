@@ -16,13 +16,15 @@
     gnome3.file-roller # provides all archive formats
     networkmanager-openvpn
     docker
+    xfce.gvfs
+    glib
 
     # user tools
     alacritty
     stow
     fortune
     lastpass-cli
-    aspell
+    unstable.aspell
     gnumake
 
     # desktop environment
@@ -92,6 +94,28 @@
       config = config.nixpkgs.config;
     };
   };
+
+  nixpkgs.overlays = [
+    (self: super: {
+      # Build emacs from bleeding-edge source and customize
+      emacs = (super.emacs.override {
+        srcRepo = true;
+      }).overrideAttrs (oldAttrs:  {
+        name = "emacs-27";
+        version = "27";
+        src = pkgs.fetchurl {
+          url = "http://git.savannah.gnu.org/cgit/emacs.git/snapshot/emacs-9027084793831031926c12d3bdfa132ec6ac4e60.tar.gz";
+          sha256 = "023m671dmpi501y2qlrwzy5fsfa07cril4miycggk3jba7k963fy";
+        };
+        # FIXME: nixpkgs emacs requires a few patches for tramp and build env
+        patches = [];
+        nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [ pkgs.git ];
+        # Build with json support for faster LSP
+        buildInputs = oldAttrs.buildInputs ++ [ pkgs.jansson ];
+        configureFlags = oldAttrs.configureFlags ++ [ "--with-json" ];
+      });
+    })
+  ];
 
   fonts.fonts = with pkgs; [
     noto-fonts

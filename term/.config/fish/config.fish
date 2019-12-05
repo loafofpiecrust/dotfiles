@@ -14,4 +14,4 @@ end
 set -x EDITOR "emacsclient -tc"
 
 set -x GOPATH ~/.go
-set -g fish_user_paths $GOPATH $HOME/.cargo/bin $fish_user_paths
+set -g fish_user_paths $GOPATH $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
