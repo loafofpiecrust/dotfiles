@@ -59,6 +59,10 @@
                     :weight 'medium
                     :width 'normal)
 
+(when (eq system-type 'darwin)
+  (setq mac-option-modifier 'meta
+        mac-command-modifier 'control))
+
 ;; Disable tool-bar and menu-bar
 (unless (eq system-type 'darwin)
   (menu-bar-mode -1))
