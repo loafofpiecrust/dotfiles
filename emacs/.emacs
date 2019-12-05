@@ -31,6 +31,8 @@
 
 ;; Easier binding definitions
 (use-package general)
+(use-package dash)
+(use-package s)
 
 ;; TODO: Make frame background translucent
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
@@ -51,13 +53,20 @@
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
+;; Fonts need a bit of beefing on Mac
+(defvar default-font-height (if (eq system-type 'darwin) 120 115)
+  "Platform-dependent default font size")
+
 ;; font test: `' o O 0 () [] {} *i
 (set-face-attribute 'default nil
                     :family "SF Mono"
-                    ;; Fonts need a bit of beefing on Mac
-                    :height (if (eq system-type 'darwin) 120 115)
+                    :height default-font-height
                     :weight 'medium
                     :width 'normal)
+
+(set-face-attribute 'variable-pitch nil
+                    :family "Overpass"
+                    :height default-font-height)
 
 (when (eq system-type 'darwin)
   (setq mac-option-modifier 'meta
@@ -93,7 +102,8 @@
  ;; misc settings
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
- load-prefer-newer t)
+ load-prefer-newer t
+ custom-safe-themes t)
 
 ;; (use-package sublimity
 ;;   :config
@@ -177,30 +187,41 @@
           (interactive)
           (evil-backward-char 1 nil t)
           (call-interactively #'evil-paste-after))
-    "P" #'evil-paste-after
-    "C-p" nil
+    ;; "P" #'evil-paste-before
     "U" #'undo-tree-redo
     ;; Useful binding for managing method call chains
     "K" #'newline
     "z=" #'flyspell-correct-at-point
-    "M-;" (lambda ()
-            (interactive)
-            (call-interactively #'comment-dwim)
-            (evil-insert-state))
+    "C-p" nil
     "R" nil)
 
   ;; Use some standard keybindings.
-  (general-def
-    "C-S-p" #'counsel-M-x
-    "C-w" #'kill-this-buffer
+  (general-def '(normal insert)
     "C-v" #'evil-paste-after
     "C-z" #'undo-tree-undo
     "C-S-z" #'undo-tree-redo)
 
-  (general-def '(normal motion visual)
+  (general-def '(motion insert)
+    "C-b" #'counsel-switch-buffer
+    "C-f" #'counsel-projectile-rg
+    "C-w" #'kill-this-buffer)
+
+  (general-def '(normal insert visual)
+    ;; TODO: Decide how I want to combine these commands based on general rules
+    ;; about my modifier keys: C, M, S.
+    "C-/" #'comment-line
+    "M-/" (lambda ()
+            (interactive)
+            (call-interactively #'comment-dwim)
+            (evil-insert-state)))
+
+  (general-def 'motion
     ;; "gr" stands for "go run this"
     ;; By default, use "gr" to refresh and run what's at point
     "gr" (general-simulate-key "C-c C-c")
+    ;; Stands for "go quit" to quit some auxiliary mode, like editing a git
+    ;; commit message.
+    "gq" (general-key "C-c C-k")
     "C-RET" (general-simulate-key "C-c C-c")
     "[" '("previous")
     "]" '("next")
@@ -383,6 +404,11 @@
 (use-package avy
   :general ('(motion normal) "ga" 'avy-goto-char-timer))
 
+(use-package origami
+  :ghook '(prog-mode-hook markdown-mode-hook))
+(use-package lsp-origami
+  :ghook 'origami-mode-hook)
+
 ;;; Editing
 ;;;; General
 (use-package editorconfig
@@ -398,9 +424,7 @@
 
 (use-package highlight-indent-guides
   :ghook '(prog-mode-hook org-mode-hook)
-  :config (setq highlight-indent-guides-method 'fill
-                ;; highlight-indent-guides-responsive 'top
-                ))
+  :config (setq highlight-indent-guides-method 'fill))
 
 ;;;; Expressions
 
@@ -453,12 +477,14 @@
 ;; Project tree
 (use-package treemacs
   :general ("C-\\" #'treemacs)
+  :gfhook #'variable-pitch-mode
   :config
   (general-def treemacs-mode-map
     "p" '(:keymap treemacs-project-map)))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs projectile)
 (use-package treemacs-magit :after treemacs magit)
+(use-package lsp-treemacs :after treemacs lsp)
 
 ;;; Syntax checking
 (use-package flycheck
@@ -467,6 +493,7 @@
   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
 ;;; mini-buffer completion
+(use-package flx)
 (use-package ivy
   :ghook 'after-init-hook
   :config
@@ -474,8 +501,9 @@
     "C-<return>" #'ivy-dispatching-done)
   (setq-default ivy-use-virtual-buffers t
                 enable-recursive-minibuffers t
-                ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-plus)
+                ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-fuzzy)
                                         (ivy-bibtex . ivy--regex-ignore-order)
+                                        (counsel-M-x . ivy--regex-ignore-order)
                                         ;; Use fuzzy matching for most cases
                                         (t . ivy--regex-fuzzy))
                 projectile-completion-system 'ivy))
@@ -503,6 +531,10 @@
 (use-package prescient)
 (use-package ivy-prescient
   :ghook 'ivy-mode-hook)
+
+;; TODO: Bind commands for this thing
+(use-package lsp-ivy
+  :straight (:host github :repo "emacs-lsp/lsp-ivy"))
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets)
@@ -535,6 +567,7 @@
   ;; Press tab once in the dialog to complete the common prefix
   ;; Press tab twice in the dialog to complete with the selection
   (general-def :keymaps 'company-active-map
+    "C-SPC" #'company-abort
     "<tab>" #'company-complete-selection
     "<return>" nil
     "<escape>" #'company-abort)
@@ -565,7 +598,9 @@
 
 ;;; Version Control
 ;;;; Git
-(use-package magit)
+(use-package magit
+  :config
+  (evil-set-initial-state 'git-commit-mode 'insert))
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
@@ -653,8 +688,9 @@
 (global-visual-line-mode)
 (column-number-mode)
 
-(add-hook 'prog-mode-hook #'display-line-numbers-mode)
-(add-hook 'text-mode-hook #'display-line-numbers-mode)
+(general-add-hook '(prog-mode-hook
+                    text-mode-hook)
+                  #'display-line-numbers-mode)
 
 (defun cycle-line-numbers ()
   (interactive)
@@ -721,7 +757,8 @@
   :ghook ('(go-mode-hook
             rust-mode-hook
             java-mode-hook
-            kotlin-mode-hook) #'lsp-deferred))
+            kotlin-mode-hook
+            ruby-mode-hook) #'lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
@@ -761,6 +798,7 @@
 (use-package nix-mode)
 (use-package bazel-mode)
 (use-package terraform-mode)
+(use-package git-modes)
 (use-package company-terraform
   :config (company-terraform-init))
 (use-package yaml-mode)
@@ -881,7 +919,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "oc" #'org-capture
   "oa" #'org-agenda
   "b" '("buffers")
-  "bb" #'ivy-switch-buffer
+  "bb" #'counsel-switch-buffer
   "bk" #'kill-buffer
   "bq" #'kill-this-buffer
   "bo" #'switch-to-alternate-buffer

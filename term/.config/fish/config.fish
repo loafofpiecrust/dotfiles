@@ -2,7 +2,7 @@
 # The line below screws up emacs and may be unnecessary
 # cat ~/.config/wpg/sequences &
 
-source ~/.cache/wal/colors.fish
+source ~/.cache/wal/colors.fish 2>/dev/null
 
 # Install all fish packages on new systems!
 if not functions -q fisher
@@ -14,4 +14,5 @@ end
 set -x EDITOR "emacsclient -tc"
 
 set -x GOPATH ~/.go
-set -g fish_user_paths $GOPATH $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
+set -g fish_user_paths $GOPATH/bin $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
+set -g fish_user_paths (gem env | grep "EXECUTABLE DIRECTORY" | cut -d':' -f 2 | cut -c 2-) $fish_user_paths
