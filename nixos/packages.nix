@@ -11,11 +11,10 @@
     htop
     gksu
     networkmanager
+    networkmanager-openvpn
     unzip
     nnn # file manager
     gnome3.file-roller # provides all archive formats
-    networkmanager-openvpn
-    docker
     xfce.gvfs
     glib
 
@@ -24,18 +23,16 @@
     stow
     fortune
     lastpass-cli
-    unstable.aspell
     gnumake
 
     # desktop environment
-    polybar
     dunst
     rofi
     rofi-menugen
     networkmanager_dmenu
     pavucontrol
     feh
-    unstable.wpgtk
+    wpgtk
 
     # languages
     git
@@ -44,35 +41,31 @@
     python3
     go
     kotlin
-    nodejs-10_x
+    nodejs
     yarn
-    unstable.nim
-    texlive.combined.scheme-full
+    texlive.combined.scheme-medium
     racket
 
+    # Spellcheck
+    unstable.aspell
+    aspellDicts.en
+    aspellDicts.en-computers
+    aspellDicts.en-science
+
     # dev
-    emacs
-    jetbrains.idea-ultimate
+    emacsGit
     insomnia
-    vscode
+    vscodium
 
     # apps
-    firefox-devedition-bin
-    chromium # backup
-    spotify
+    firefox
     calibre # ebook manager
     mate.atril # pdf viewer
     xfce.parole # video player
     font-manager
-    slack
-    zoom-us
     deluge
     filezilla
     bleachbit
-
-    # games
-#     steam
-#     wine
 
     # gtk themes
     arc-theme
@@ -80,13 +73,11 @@
     bibata-cursors
   ];
 
+  # TODO: Convert these to overlays where possible.
   nixpkgs.config.packageOverrides = pkgs: rec {
     polybar = pkgs.polybar.override {
       i3GapsSupport = true;
       pulseSupport = true;
-    };
-    yarn = pkgs.yarn.override {
-      nodejs = pkgs.nodejs-10_x;
     };
     unstable = import <nixos-unstable> {
       # pass the nixpkgs config to the unstable alias
@@ -96,25 +87,11 @@
   };
 
   nixpkgs.overlays = [
-    (self: super: {
-      # Build emacs from bleeding-edge source and customize
-      emacs = (super.emacs.override {
-        srcRepo = true;
-      }).overrideAttrs (oldAttrs:  {
-        name = "emacs-27";
-        version = "27";
-        src = pkgs.fetchurl {
-          url = "http://git.savannah.gnu.org/cgit/emacs.git/snapshot/emacs-9027084793831031926c12d3bdfa132ec6ac4e60.tar.gz";
-          sha256 = "023m671dmpi501y2qlrwzy5fsfa07cril4miycggk3jba7k963fy";
-        };
-        # FIXME: nixpkgs emacs requires a few patches for tramp and build env
-        patches = [];
-        nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [ pkgs.git ];
-        # Build with json support for faster LSP
-        buildInputs = oldAttrs.buildInputs ++ [ pkgs.jansson ];
-        configureFlags = oldAttrs.configureFlags ++ [ "--with-json" ];
-      });
-    })
+    # Build emacs from bleeding-edge source
+    (import (builtins.fetchTarball {
+      # Pin to a particular commit until I manually upgrade
+      url = https://github.com/nix-community/emacs-overlay/archive/987648217c9aacfa5a5fd6925ed3da3bbeb0b3b7.tar.gz;
+    }))
   ];
 
   fonts.fonts = with pkgs; [

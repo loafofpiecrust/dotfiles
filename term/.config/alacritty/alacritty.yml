@@ -4,7 +4,7 @@
 # environment variables. Some entries may override variables
 # set by alacritty itself.
 env:
-  WINIT_HIDPI_FACTOR: 1.7
+  WINIT_HIDPI_FACTOR: "1.7"
   # TERM variable
   #
   # This value is used to set the `$TERM` environment variable for
@@ -104,7 +104,7 @@ font:
     style: Italic
 
   # Point size
-  size: 6.5
+  size: 11
 
   # Offset is the extra space around each character. `offset.y` can be thought of
   # as modifying the line spacing, and `offset.x` as modifying the letter spacing.

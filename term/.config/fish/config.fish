@@ -1,4 +1,3 @@
-
 # The line below screws up emacs and may be unnecessary
 # cat ~/.config/wpg/sequences &
 
@@ -15,4 +14,6 @@ set -x EDITOR "emacsclient -tc"
 
 set -x GOPATH ~/.go
 set -g fish_user_paths $GOPATH/bin $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
-set -g fish_user_paths (gem env | grep "EXECUTABLE DIRECTORY" | cut -d':' -f 2 | cut -c 2-) $fish_user_paths
+if command -qs gem
+    set -g fish_user_paths (gem env | rg "EXECUTABLE DIRECTORY" | cut -d':' -f 2 | cut -c 2-) $fish_user_paths
+end

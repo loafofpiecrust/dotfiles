@@ -7,8 +7,8 @@
     loader.systemd-boot.editor = false; # editor defeats the purpose of all security...
     loader.efi.canTouchEfiVariables = true;
 
-    initrd.availableKernelModules = ["xhci_pci" "nvme" "usb_storage" 
-  "sd_mod" "bbswitch"];
+    initrd.availableKernelModules = ["xhci_pci" "nvme" "usb_storage"
+                                     "sd_mod" "bbswitch"];
     # I never use bluetooth
     blacklistedKernelModules = ["btusb" "bluetooth"];
 
@@ -16,13 +16,13 @@
     cleanTmpDir = true;
     consoleLogLevel = 3;
   };
-  
+
   networking.hostName = "loafofpiecrust";
 
   hardware.nvidiaOptimus.disable = true;
   hardware.opengl.extraPackages = [pkgs.linuxPackages.nvidia_x11.out];
-  hardware.opengl.extraPackages32 = 
-[pkgs.linuxPackages.nvidia_x11.lib32];
+  hardware.opengl.extraPackages32 =
+    [pkgs.linuxPackages.nvidia_x11.lib32];
 
   services.undervolt = {
     enable = true;
@@ -30,10 +30,12 @@
     gpuOffset = "-110";
   };
 
+  location = {
+    latitude = 42.35843;
+    longitude = -71.05977;
+  };
   services.redshift = {
     enable = true;
-    latitude = "42.35843";
-    longitude = "-71.05977";
     temperature.night = 3700;
   };
 }

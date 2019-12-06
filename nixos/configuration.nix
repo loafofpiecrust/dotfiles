@@ -59,15 +59,13 @@
       };
 
       desktopManager = {
-        default = "xfce";
+        default = "xfce4-14";
         xterm.enable = false;
-        xfce.enable = true;
-        xfce.noDesktop = true;
-        xfce.enableXfwm = false;
-        xfce.thunarPlugins = [
-          pkgs.xfce.thunar-archive-plugin
-          pkgs.xfce.thunar-volman
-        ];
+        xfce4-14 = {
+          enable = true;
+          noDesktop = true;
+          enableXfwm = false;
+        };
       };
 
       windowManager.bspwm = {
@@ -96,7 +94,8 @@
     # Window compositing effects.
     compton = {
       enable = true;
-      package = pkgs.compton-git;
+      backend = "glx";
+      # package = pkgs.compton-git;
     };
     openssh.enable = true;
     printing.enable = true;

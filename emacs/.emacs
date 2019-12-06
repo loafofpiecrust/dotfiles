@@ -95,6 +95,7 @@
  ;; mouse-wheel-scroll-amount '(1)
  scroll-margin 15
  scroll-conservatively 10000
+ shift-select-mode nil
  ;; Indentation and wrapping
  tab-width 4
  indent-tabs-mode nil      ; use spaces for indentation
@@ -197,12 +198,14 @@
 
   ;; Use some standard keybindings.
   (general-def '(normal insert)
-    "C-v" #'evil-paste-after
     "C-z" #'undo-tree-undo
     "C-S-z" #'undo-tree-redo)
 
+  (general-def 'insert
+    "C-v" #'evil-paste-after)
+
   (general-def '(motion insert)
-    "C-b" #'counsel-switch-buffer
+    "C-b" #'ivy-switch-buffer
     "C-f" #'counsel-projectile-rg
     "C-w" #'kill-this-buffer)
 
@@ -285,15 +288,24 @@
 ;; Manage comma-delimited arguments with noun 'a'
 (use-package evil-args
   :general
-  (:keymaps 'evil-inner-text-objects-map
-            "a" 'evil-inner-arg)
-  (:keymaps 'evil-outer-text-objects-map
-            "a" 'evil-outer-arg))
+  (general-def :keymaps 'evil-inner-text-objects-map
+    "a" 'evil-inner-arg)
+  (general-def :keymaps 'evil-outer-text-objects-map
+    "a" 'evil-outer-arg))
 
 (use-package evil-mc
-  :general ('visual evil-mc-key-map
-                    "A" #'evil-mc-make-cursor-in-visual-selection-end
-                    "I" #'evil-mc-make-cursor-in-visual-selection-beg))
+  :config
+  (global-evil-mc-mode 1)
+  (general-def 'visual evil-mc-key-map
+    "A" #'evil-mc-make-cursor-in-visual-selection-end
+    "I" #'evil-mc-make-cursor-in-visual-selection-beg)
+  ;; Borrow these keybindings from VS/Atom/Sublime
+  (general-def 'normal
+    "gmq" #'evil-mc-undo-all-cursors
+    "C-J" #'evil-mc-make-cursor-move-next-line
+    "C-K" #'evil-mc-make-cursor-move-prev-line
+    "C-S-<down>" #'evil-mc-make-cursor-move-next-line
+    "C-S-<up>" #'evil-mc-make-cursor-move-prev-line))
 
 ;; Extend % to match more delimeters, smarter
 (use-package evil-matchit
@@ -491,6 +503,12 @@
   :ghook 'prog-mode-hook
   :config
   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+
+(use-package flycheck-posframe
+  :ghook 'flycheck-mode-hook
+  :config
+  (flycheck-posframe-configure-pretty-defaults)
+  (setq flycheck-posframe-border-width 2))
 
 ;;; mini-buffer completion
 (use-package flx)
@@ -764,9 +782,9 @@
 (use-package lsp-ui
   :ghook 'lsp-mode-hook
   :custom
-  (lsp-ui-flycheck-enable t)
+  (lsp-ui-flycheck-enable nil)
+  (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-include-signature t)
-  (lsp-ui-sideline-update-mode 'line)
   :config
   (major-leader-def 'normal lsp-ui-mode-map
     "p" '("peek")
@@ -796,6 +814,7 @@
 ;;;; One liners
 (use-package haskell-mode)
 (use-package nix-mode)
+(use-package fish-mode)
 (use-package bazel-mode)
 (use-package terraform-mode)
 (use-package git-modes)
@@ -919,7 +938,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "oc" #'org-capture
   "oa" #'org-agenda
   "b" '("buffers")
-  "bb" #'counsel-switch-buffer
+  "bb" #'ivy-switch-buffer
   "bk" #'kill-buffer
   "bq" #'kill-this-buffer
   "bo" #'switch-to-alternate-buffer
