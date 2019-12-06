@@ -49,7 +49,7 @@
         ;; doom-challenger-deep-brighter-comments t
         ;; doom-dracula-brighter-comments t
         )
-  (load-theme 'doom-acario-dark t)
+  (load-theme 'doom-snazzy t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
@@ -87,7 +87,7 @@
 ;; TODO: Move scroll stuff to only not on MacOS
 (setq-default
  ;; Text display
- display-line-numbers-width 3
+ display-line-numbers-width 4
  show-paren-style 'expression
  ;; Nicer scrolling
  ;; pixel-resolution-fine-flag nil
@@ -204,8 +204,8 @@
   (general-def 'insert
     "C-v" #'evil-paste-after)
 
+  ;; TODO: Globalize these bindings if possible
   (general-def '(motion insert)
-    "C-b" #'ivy-switch-buffer
     "C-f" #'counsel-projectile-rg
     "C-w" #'kill-this-buffer)
 
@@ -332,33 +332,41 @@
   :prefix minor-leader)
 
 ;;; UI Packages
+;;;; Window Management
+(use-package window-purpose
+  :config
+  (purpose-mode)
+  (purpose-x-kill-setup)
+  (purpose-x-magit-multi-on)
+  (setq purpose-user-mode-purposes '((deadgrep-mode . searches)
+                                     (helpful-mode . searches)
+                                     (xref--xref-buffer-mode . searches)
+                                     (help-mode . searches)))
+  (purpose-compile-user-configuration)
+  (global-leader-def 'motion override
+    "wd" #'purpose-toggle-window-purpose-dedicated))
+
+(use-package ivy-purpose
+  :after ivy
+  :config
+  (general-def '(motion insert)
+    "C-b" #'ivy-purpose-switch-buffer-with-purpose))
+
+;; Automatically manage window sizes
+(use-package zoom
+  :config
+  (setq zoom-size '(0.7 . 0.7))
+  (zoom-mode)
+  ;; Make zoom work with purpose!
+  (add-hook 'purpose-select-buffer-hook #'zoom--update)
+  (add-hook 'xref-after-jump-hook #'zoom--update))
+
 ;;;; Icons & Emojis
 (use-package all-the-icons)
 (use-package emojify
   :config
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
-
-(use-package company-emoji
-  :disabled
-  :after company
-  :config
-  (setq company-emoji-insert-unicode nil)
-  (add-to-list 'company-backends 'company-emoji))
-
-;; (defun --set-emoji-font (frame)
-;;   "Adjust the font settings of FRAME so Emacs can display emoji properly."
-;;   (if (eq system-type 'darwin)
-;;       ;; For NS/Cocoa
-;;       (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") frame 'prepend)
-;;     ;; For Linux
-;;     (set-fontset-font t 'symbol (font-spec :family "Noto Emoji") frame 'prepend)))
-
-;; ;; For when Emacs is started in GUI mode:
-;; (--set-emoji-font nil)
-;; ;; Hook for when a frame is created with emacsclient
-;; ;; see https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Frames.html
-;; (add-hook 'after-make-frame-functions '--set-emoji-font)
 
 ;;;; Fancy looks
 ;; Show marks in fringe for lines past EOF
@@ -449,7 +457,7 @@
 (use-package smartparens
   :config
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(nix-mode go-mode c-mode javascript-mode)
+    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode)
                    delim nil :post-handlers '(("||\n[i]" ""))))
   (require 'smartparens-config)
   :ghook
@@ -481,10 +489,12 @@
 (use-package counsel-projectile
   :after counsel projectile
   :ghook 'counsel-mode-hook
-  :general ("C-p" #'counsel-projectile))
+  :general ("C-p" #'counsel-projectile-find-file))
 
 ;; Use for searching within projects
 (use-package ripgrep)
+(use-package deadgrep
+  :general ("C-S-F" #'deadgrep))
 
 ;; Project tree
 (use-package treemacs
@@ -492,7 +502,9 @@
   :gfhook #'variable-pitch-mode
   :config
   (general-def treemacs-mode-map
-    "p" '(:keymap treemacs-project-map)))
+    "p" '(:keymap treemacs-project-map))
+  (general-def treemacs-project-map
+    "w" #'treemacs-switch-workspace))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs projectile)
 (use-package treemacs-magit :after treemacs magit)
@@ -551,8 +563,8 @@
   :ghook 'ivy-mode-hook)
 
 ;; TODO: Bind commands for this thing
-(use-package lsp-ivy
-  :straight (:host github :repo "emacs-lsp/lsp-ivy"))
+;; (use-package lsp-ivy
+;;   :straight (:host github :repo "emacs-lsp/lsp-ivy"))
 
 ;;; in-buffer completion
 (use-package yasnippet-snippets)
@@ -659,13 +671,25 @@
   :commands vdiff-mode
   :config
   (setq-default vdiff-magit-stage-is-2way t)
-  (general-def '(normal motion) vdiff-mode-map
+  (general-def 'motion vdiff-mode-map
     minor-leader #'vdiff-hydra/body))
 
 (use-package vdiff-magit
   :general (magit-mode-map
             "e" #'vdiff-magit-dwim
             "E" #'vdiff-magit))
+
+;; Define just a few bindings for smerge, but it has pretty great mouse support
+;; for handling conflicts by right clicking.
+(eval-after-load 'smerge
+  (progn
+    (minor-leader-def 'motion smerge-mode-map
+      "k" #'smerge-keep-upper
+      "j" #'smerge-keep-lower
+      "a" #'smerge-keep-all)
+    (general-def 'motion smerge-mode-map
+      "[c" #'smerge-prev
+      "]c" #'smerge-next)))
 
 ;;; Writing
 ;;;; Spellcheck
@@ -850,11 +874,15 @@
 ;;;; javascript and typescript
 (use-package eslint-fix :commands eslint-fix)
 
+(use-package eldoc-box
+  :ghook ('eldoc-mode-hook #'eldoc-box-hover-mode))
+
 (defun custom-tide-setup ()
   (tide-setup)
   (tide-hl-identifier-mode 1))
 ;; TODO: Use eslint before save
 
+;; TODO: Use js2 + web + lsp if possible
 (use-package tide
   :ghook ('typescript-mode-hook #'custom-tide-setup))
 
@@ -942,6 +970,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "bk" #'kill-buffer
   "bq" #'kill-this-buffer
   "bo" #'switch-to-alternate-buffer
+  "bf" #'view-buffer-other-frame
   "f" '("files")
   "ff" #'counsel-find-file
   "fd" #'ranger
@@ -991,12 +1020,16 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-def help-map
   "K" #'which-key-show-top-level)
 
-(general-def 'normal evil-cleverparens-mode-map
+(general-def '(motion normal) evil-cleverparens-mode-map
   "[" nil
   "]" nil
   "[[" #'evil-cp-previous-closing
   "]]" #'evil-cp-next-closing)
 
+;; Unbind evil keys that we want to use ourselves.
+(general-def :states 'motion
+  minor-leader nil
+  "C-o" nil)
 
 ;; (general-def '(normal motion)
 ;;   :keymaps '(outshine-mode-map outline-mode-map)
@@ -1011,12 +1044,13 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;   "M-j" #'outline-move-subtree-down
 ;;   "TAB" #'outshine-kbd-TAB)
 
-;; General evil mode overrides
-(general-def '(normal motion insert)
+;; Bind a few ctrl keys to all states
+(general-def
+  "C-o" #'counsel-find-file
   "C-s" (general-key "C-x C-s"))
 
 ;;;; prog-mode
-(major-leader-def '(motion normal) prog-mode-map
+(major-leader-def 'motion prog-mode-map
   "g" '("goto")
   "r" '("refactor")
   "f" '("find")
@@ -1029,36 +1063,38 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-def '(normal insert) prog-mode-map
   "M-RET" #'comment-indent-new-line)
 
+(general-def 'normal evil-cleverparens-mode-map
+  "M->" #'sp-slurp-hybrid-sexp)
+
 (general-def
   :states '(normal visual)
-  :keymaps '(go-mode-map rust-mode-map c-mode-map)
+  :keymaps '(go-mode-map rust-mode-map c-mode-map web-mode-map js-mode-map typescript-mode-map)
   "M-t" #'sp-transpose-hybrid-sexp
   "D" #'sp-kill-hybrid-sexp
   "M-r" #'sp-raise-hybrid-sexp
-  "M-j" #'sp-push-hybrid-sexp
-  "M->" #'sp-slurp-hybrid-sexp)
+  "M-j" #'sp-push-hybrid-sexp)
 
 ;;;; org-mode
 (major-leader-def 'normal org-mode-map
-                  ;; Mirror some evil agenda commands here for symmetry.
-                  "c" '("change")
-                  "cs" #'org-schedule
-                  "cd" #'org-deadline
-                  "ct" #'org-set-tags-command
-                  "ce" #'org-set-effort
-                  "I" #'org-clock-in
-                  "O" #'org-clock-out
-                  "s" '("sorting")
-                  "ss" #'org-sort
-                  "da" #'org-archive-subtree-default
-                  "r" #'org-refile
-                  "a" #'org-agenda
-                  "i" '("insert")
-                  "ih" #'org-table-insert-hline
-                  "il" #'org-insert-link
-                  "t" #'org-todo)
+  ;; Mirror some evil agenda commands here for symmetry.
+  "c" '("change")
+  "cs" #'org-schedule
+  "cd" #'org-deadline
+  "ct" #'org-set-tags-command
+  "ce" #'org-set-effort
+  "I" #'org-clock-in
+  "O" #'org-clock-out
+  "s" '("sorting")
+  "ss" #'org-sort
+  "da" #'org-archive-subtree-default
+  "r" #'org-refile
+  "a" #'org-agenda
+  "i" '("insert")
+  "ih" #'org-table-insert-hline
+  "il" #'org-insert-link
+  "t" #'org-todo)
 
-(general-def '(motion normal) org-mode-map
+(general-def 'motion org-mode-map
   "zt" #'org-show-todo-tree)
 
 ;; Give org-mode some evil keybindings
@@ -1078,12 +1114,20 @@ Repeated invocations toggle between the two most recently open buffers."
 (major-leader-def 'normal artist-mode-map
   "a" (general-simulate-key "C-c C-a"))
 
+(use-package pretty-hydra)
+(use-package hydra-posframe
+  :straight (:host github :repo "Ladicle/hydra-posframe")
+  :config
+  (setq hydra-posframe-border-width 2)
+  (hydra-posframe-mode))
+
 ;;; Custom theme
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(font-lock-comment-face ((t (:slant italic))))
  '(hl-paren-face ((t (:weight bold))) t)
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))

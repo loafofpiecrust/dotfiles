@@ -10,10 +10,11 @@ if not functions -q fisher
     fish -c fisher
 end
 
-set -x EDITOR "emacsclient -tc"
+# Default to opening files in existing frames
+set -x VISUAL "emacsclient"
+# If all else fails, use vim
+set -x EDITOR "vim"
 
+# Make go install packages somwehre less annoying.
 set -x GOPATH ~/.go
 set -g fish_user_paths $GOPATH/bin $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
-if command -qs gem
-    set -g fish_user_paths (gem env | rg "EXECUTABLE DIRECTORY" | cut -d':' -f 2 | cut -c 2-) $fish_user_paths
-end
