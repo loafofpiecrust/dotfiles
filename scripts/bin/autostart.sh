@@ -9,6 +9,9 @@ ibus-daemon -s -d -n xfce4-session
 # Starts notification manager as well
 ~/.config/wpg/wp_init.sh
 
+# Window compositor to make bspwm prettier :cat:
+compton &
+
 # Bar
 pkill nm-applet # not needed with my polybar modules
 polybar main &

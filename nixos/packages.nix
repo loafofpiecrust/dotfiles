@@ -19,13 +19,15 @@
     glib
 
     # user tools
-    alacritty
+    unstable.alacritty
     stow
     fortune
     lastpass-cli
     gnumake
 
     # desktop environment
+    compton
+    polybar
     dunst
     rofi
     rofi-menugen
@@ -75,10 +77,6 @@
 
   # TODO: Convert these to overlays where possible.
   nixpkgs.config.packageOverrides = pkgs: rec {
-    polybar = pkgs.polybar.override {
-      i3GapsSupport = true;
-      pulseSupport = true;
-    };
     unstable = import <nixos-unstable> {
       # pass the nixpkgs config to the unstable alias
       # to ensure `allowUnfree = true;` is propagated:
@@ -91,7 +89,19 @@
     (import (builtins.fetchTarball {
       # Pin to a particular commit until I manually upgrade
       url = https://github.com/nix-community/emacs-overlay/archive/987648217c9aacfa5a5fd6925ed3da3bbeb0b3b7.tar.gz;
+      sha256 = "07jcy5q79z4yf3y8iw7b8h1n214jrhrrbjpybhbl8hn6lrdkp8w2";
     }))
+    (self: super: {
+      bspwm = super.bspwm.overrideAttrs(oldAttrs: {
+        src = builtins.fetchurl {
+          url = "https://github.com/Javyre/bspwm/archive/round_corners.tar.gz";
+          sha256 = "0b4a02ami7pa71g4j4an5cfjn3sgrf1mvwm8k90q0j0iqgs7zwii";
+        };
+      });
+      polybar = super.polybar.override {
+        pulseSupport = true;
+      };
+    })
   ];
 
   fonts.fonts = with pkgs; [

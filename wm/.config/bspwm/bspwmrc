@@ -2,8 +2,9 @@
 
 bspc monitor -d 1 2 3 4 5 6 7 8 9 0
 
-bspc config border_width         3
-bspc config window_gap          15
+bspc config border_width 3
+bspc config border_radius 7
+bspc config window_gap 15
 
 bspc config split_ratio          0.5
 bspc config borderless_monocle   true
@@ -36,10 +37,12 @@ bspc rule -a Galculator state=floating
 bspc rule -a "Wrapper-1.0" border=off focus=on follow=on # manage=off # Whisker Menu
 bspc rule -a Oblogout state=floating
 bspc rule -a Pavucontrol state=floating
+bspc rule -a Emacs state=tiled
 
 # For wine games, don't fullscreen inside app, use the bspwm rule :P
 bspc rule -a "osu!.exe" state=fullscreen
 
 # BSPWM-specific autostart
+export SXHKD_SHELL='fish'
 sxhkd &
 exec ~/bin/autostart.sh

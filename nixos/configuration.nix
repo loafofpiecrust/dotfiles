@@ -68,9 +68,7 @@
         };
       };
 
-      windowManager.bspwm = {
-        enable = true;
-      };
+      windowManager.bspwm.enable = true;
 
       displayManager.lightdm = {
         enable = true;
@@ -82,26 +80,22 @@
           theme.name = "Arc";
         };
       };
-
     };
 
     # Shared emacs server for :zap: speedy-macs
     emacs = {
       enable = true;
       defaultEditor = true;
+      package = pkgs.emacsGit;
     };
 
     # Window compositing effects.
-    compton = {
-      enable = true;
-      backend = "glx";
-      # package = pkgs.compton-git;
-    };
     openssh.enable = true;
     printing.enable = true;
     tlp.enable = true; # power saving
     tzupdate.enable = true; # automatic timezone by IP
     autorandr.enable = true; # monitor presets
+    gnome3.gnome-keyring.enable = true;
 
     # Limit journal size
     journald.extraConfig = ''

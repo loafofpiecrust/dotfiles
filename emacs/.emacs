@@ -43,13 +43,11 @@
 ;; Load theme early to prevent flickering
 (use-package doom-themes
   :config
-  (setq doom-themes-treemacs-enable-variable-pitch nil
+  (setq doom-themes-treemacs-enable-variable-pitch t
         doom-themes-treemacs-theme "doom-colors"
-        ;; doom-gruvbox-brighter-comments t
-        ;; doom-challenger-deep-brighter-comments t
-        ;; doom-dracula-brighter-comments t
-        )
-  (load-theme 'doom-snazzy t)
+        doom-dracula-brighter-modeline t
+        doom-dracula-colorful-headers t)
+  (load-theme 'doom-dracula t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
@@ -78,10 +76,11 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode '(nil . 0))
-(show-paren-mode t)
-(save-place-mode t)
-(blink-cursor-mode t)
-;; (pixel-scroll-mode t)
+(show-paren-mode)
+(save-place-mode)
+(blink-cursor-mode)
+(window-divider-mode)
+(global-hl-line-mode)
 
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
@@ -101,6 +100,7 @@
  indent-tabs-mode nil      ; use spaces for indentation
  fill-column 80
  ;; misc settings
+ warning-minimum-level :error
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
  load-prefer-newer t
@@ -176,11 +176,19 @@
               evil-move-cursor-back nil
               evil-search-module 'evil-search
               evil-ex-search-persistent-highlight nil
+              evil-want-visual-char-semi-exclusive t
               evil-want-C-i-jump nil)
   :config
   (evil-mode t)
 
   ;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R
+  (general-unbind '(motion normal)
+    ;; Disable dragging mouse selection.
+    ;; This fixes buttons, changing focus, basically anything using mouse.
+    "<down-mouse-1>"
+    "C-p"
+    "R" "Q" "=")
+
   ;; TODO: Use a better command for nearby find on key f
   (general-def 'normal
     ;; Make normal paste go AT point rather than AFTER
@@ -192,9 +200,7 @@
     "U" #'undo-tree-redo
     ;; Useful binding for managing method call chains
     "K" #'newline
-    "z=" #'flyspell-correct-at-point
-    "C-p" nil
-    "R" nil)
+    "z=" #'flyspell-correct-at-point)
 
   ;; Use some standard keybindings.
   (general-def '(normal insert)
@@ -213,7 +219,7 @@
     ;; TODO: Decide how I want to combine these commands based on general rules
     ;; about my modifier keys: C, M, S.
     "C-/" #'comment-line
-    "M-/" (lambda ()
+    "M-;" (lambda ()
             (interactive)
             (call-interactively #'comment-dwim)
             (evil-insert-state)))
@@ -302,8 +308,8 @@
   ;; Borrow these keybindings from VS/Atom/Sublime
   (general-def 'normal
     "gmq" #'evil-mc-undo-all-cursors
-    "C-J" #'evil-mc-make-cursor-move-next-line
-    "C-K" #'evil-mc-make-cursor-move-prev-line
+    "C-S-J" #'evil-mc-make-cursor-move-next-line
+    "C-S-K" #'evil-mc-make-cursor-move-prev-line
     "C-S-<down>" #'evil-mc-make-cursor-move-next-line
     "C-S-<up>" #'evil-mc-make-cursor-move-prev-line))
 
@@ -354,12 +360,13 @@
 
 ;; Automatically manage window sizes
 (use-package zoom
+  :general ('motion "zx" #'zoom)
   :config
   (setq zoom-size '(0.7 . 0.7))
-  (zoom-mode)
   ;; Make zoom work with purpose!
-  (add-hook 'purpose-select-buffer-hook #'zoom--update)
-  (add-hook 'xref-after-jump-hook #'zoom--update))
+  ;; (add-hook 'purpose-select-buffer-hook #'zoom--update)
+  ;; (add-hook 'xref-after-jump-hook #'zoom--update)
+  )
 
 ;;;; Icons & Emojis
 (use-package all-the-icons)
@@ -489,7 +496,7 @@
 (use-package counsel-projectile
   :after counsel projectile
   :ghook 'counsel-mode-hook
-  :general ("C-p" #'counsel-projectile-find-file))
+  :general ("C-p" #'projectile-find-file))
 
 ;; Use for searching within projects
 (use-package ripgrep)
@@ -501,6 +508,9 @@
   :general ("C-\\" #'treemacs)
   :gfhook #'variable-pitch-mode
   :config
+  (setq treemacs-indentation 3
+        treemacs-is-never-other-window t
+        treemacs-eldoc-display nil)
   (general-def treemacs-mode-map
     "p" '(:keymap treemacs-project-map))
   (general-def treemacs-project-map
@@ -545,7 +555,7 @@
                                                (t . ivy-posframe-display-at-frame-center))
         ivy-posframe-parameters '((left-fringe . 8)
                                   (right-fringe . 8)
-                                  (internal-border-width . 2))))
+                                  (internal-border-width . 4))))
 
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
@@ -714,7 +724,12 @@
 ;;; Enable completion, pair matching, line numbers
 ;; TODO: Fix this for lsp-ui sideline stuff.
 (use-package visual-fill-column
-  :ghook 'markdown-mode-hook)
+  :ghook '(prog-mode-hook markdown-mode-hook)
+  :config
+  (setq visual-fill-column-width 128))
+
+(use-package adaptive-wrap
+  :config (adaptive-wrap-prefix-mode))
 
 (general-add-hook '(org-mode-hook go-mode-hook)
                   #'electric-pair-mode)
@@ -1010,6 +1025,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "s" '("settings")
   "sl" #'cycle-line-numbers
   "sw" #'treemacs-switch-workspace
+  "spd" #'posframe-delete-all           ; Only for emergencies
   "h" '(:keymap help-map))
 
 (use-package hungry-delete
@@ -1127,7 +1143,12 @@ Repeated invocations toggle between the two most recently open buffers."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(font-lock-comment-face ((t (:slant italic))))
+ '(diff-hl-change ((t (:background "#da8548"))))
+ '(diff-hl-delete ((t (:background "#d02b61"))))
+ '(diff-hl-insert ((t (:background "#60aa00"))))
+ ;; '(font-lock-comment-face ((t (:slant italic))))
+ '(ivy-posframe ((t (:inherit default))))
+ '(ivy-posframe-border ((t (:background "white" :foreground "white"))))
  '(hl-paren-face ((t (:weight bold))) t)
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
@@ -1138,10 +1159,19 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
  '(vdiff-addition-face ((t (:inherit diff-added))))
- ;; Match diff fringe highlighting background for higher visibility.
- '(diff-hl-insert ((t (:background "#60aa00"))))
- '(diff-hl-change ((t (:background "#da8548"))))
- '(diff-hl-delete ((t (:background "#d02b61")))))
+ '(window-divider ((t (:foreground "white")))))
+
+;; Stopgap to extend several faces to EOL
+(dolist (f '(region
+             hl-line
+             ivy-current-match
+             company-tooltip-selection
+             magit-diff-context-highlight
+             magit-diff-removed-highlight
+             magit-diff-added-highlight
+             magit-diff-hunk-heading-highlight
+             magit-diff-hunk-heading))
+  (set-face-attribute f nil :extend t))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)

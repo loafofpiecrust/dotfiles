@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env fish
 
 # Split workspaces between the monitors
 bspc monitor eDP1  -d 1 2 3 4 5
