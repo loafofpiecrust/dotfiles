@@ -10,7 +10,7 @@
 
 ;; I'm not planning to modify packages directly, so only rebuild on newly
 ;; published versions
-(setq straight-check-for-modifications '(find-at-startup))
+(setq straight-check-for-modifications 'live)
 
 ;; bootstrap package manager (straight.el)
 (defvar bootstrap-version)
@@ -51,6 +51,10 @@
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
+(use-package ewal
+  :disabled
+  :straight (:host github :repo "emacsmirror/ewal"))
+
 ;; Fonts need a bit of beefing on Mac
 (defvar default-font-height (if (eq system-type 'darwin) 120 115)
   "Platform-dependent default font size")
@@ -80,7 +84,6 @@
 (save-place-mode)
 (blink-cursor-mode)
 (window-divider-mode)
-(global-hl-line-mode)
 
 ;; Setup basic settings
 ;; TODO: Move scroll stuff to only not on MacOS
@@ -126,14 +129,14 @@
 ;;;; Periodically clean buffers
 (require 'midnight)
 (setq clean-buffer-list-kill-regexps '("\\`\\*Man "
-                                       "\\*helpful "
-                                       "\\*Calc"
-                                       "\\*xref"
-                                       "\\*straight-process\\*"
-                                       "\\*Flycheck"
-                                       "\\*forge"
+                                       "\\`\\*helpful "
+                                       "\\`\\*Calc"
+                                       "\\`\\*xref"
+                                       "\\`\\*straight-process\\*"
+                                       "\\`\\*Flycheck"
+                                       "\\`\\*forge"
                                        "magit"
-                                       "\\*eshell"
+                                       "\\`\\*eshell"
                                        "Aweshell:")
       clean-buffer-list-delay-special (* 60 60 2)
       ;; Clean out potentially old buffers every hour
@@ -143,11 +146,11 @@
 ;;;; Autofill
 ;; Only automatically wrap comments in code
 (setq-default comment-auto-fill-only-comments t
-              auto-fill-function 'do-auto-fill)
-(add-hook 'prog-mode-hook 'auto-fill-mode)
+              auto-fill-function #'do-auto-fill)
+(add-hook 'prog-mode-hook #'auto-fill-mode)
 ;; Cleanup whitespace after saving most files
 (general-add-hook '(text-mode-hook prog-mode-hook)
-                  (lambda () (add-hook 'after-save-hook #'whitespace-cleanup nil t)))
+                  (lambda () (add-hook 'before-save-hook #'whitespace-cleanup nil t)))
 
 ;;;; Backup settings
 (setq backup-by-copying t ; don't clobber symlinks
@@ -164,9 +167,15 @@
 ;;; Evil mode
 ;; Show key combo helpers
 (use-package which-key
-  :config (which-key-mode)
-  :init (setq which-key-enable-extended-define-key t
-              which-key-idle-delay 1))
+  :custom (which-key-enable-extended-define-key t)
+  :config (which-key-mode))
+
+(use-package keyfreq
+  :config
+  (setq keyfreq-file "~/.emacs.d/keyfreq"
+        keyfreq-file-lock "~/.emacs.d/keyfreq.lock")
+  (keyfreq-mode)
+  (keyfreq-autosave-mode))
 
 ;; vim emulation
 (use-package evil
@@ -176,74 +185,11 @@
               evil-move-cursor-back nil
               evil-search-module 'evil-search
               evil-ex-search-persistent-highlight nil
+              evil-symbol-word-search t
               evil-want-visual-char-semi-exclusive t
               evil-want-C-i-jump nil)
   :config
-  (evil-mode t)
-
-  ;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R
-  (general-unbind '(motion normal)
-    ;; Disable dragging mouse selection.
-    ;; This fixes buttons, changing focus, basically anything using mouse.
-    "<down-mouse-1>"
-    "C-p"
-    "R" "Q" "=")
-
-  ;; TODO: Use a better command for nearby find on key f
-  (general-def 'normal
-    ;; Make normal paste go AT point rather than AFTER
-    "p" (lambda ()
-          (interactive)
-          (evil-backward-char 1 nil t)
-          (call-interactively #'evil-paste-after))
-    ;; "P" #'evil-paste-before
-    "U" #'undo-tree-redo
-    ;; Useful binding for managing method call chains
-    "K" #'newline
-    "z=" #'flyspell-correct-at-point)
-
-  ;; Use some standard keybindings.
-  (general-def '(normal insert)
-    "C-z" #'undo-tree-undo
-    "C-S-z" #'undo-tree-redo)
-
-  (general-def 'insert
-    "C-v" #'evil-paste-after)
-
-  ;; TODO: Globalize these bindings if possible
-  (general-def '(motion insert)
-    "C-f" #'counsel-projectile-rg
-    "C-w" #'kill-this-buffer)
-
-  (general-def '(normal insert visual)
-    ;; TODO: Decide how I want to combine these commands based on general rules
-    ;; about my modifier keys: C, M, S.
-    "C-/" #'comment-line
-    "M-;" (lambda ()
-            (interactive)
-            (call-interactively #'comment-dwim)
-            (evil-insert-state)))
-
-  (general-def 'motion
-    ;; "gr" stands for "go run this"
-    ;; By default, use "gr" to refresh and run what's at point
-    "gr" (general-simulate-key "C-c C-c")
-    ;; Stands for "go quit" to quit some auxiliary mode, like editing a git
-    ;; commit message.
-    "gq" (general-key "C-c C-k")
-    "C-RET" (general-simulate-key "C-c C-c")
-    "[" '("previous")
-    "]" '("next")
-    "C-{" #'evil-jump-backward
-    "C-}" #'evil-jump-forward
-    "[]" #'evil-backward-section-begin
-    "][" #'evil-forward-section-begin
-    "]t" #'hl-todo-next
-    "[t" #'hl-todo-previous
-    "[p" #'evil-backward-paragraph
-    "]p" #'evil-forward-paragraph
-    "?" #'swiper
-    "0" (general-key "^")))
+  (evil-mode t))
 
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection
@@ -259,13 +205,6 @@
 (general-def 'insert company-active-map
   "ESC" #'company-abort)
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
-
-;; Fix expression evaluation in normal state
-;; (defun evil-fix-eval-last-sexp ()
-;;   (if (eq evil-state 'normal)
-;;       (evil-append 1)
-;;     (evil-normal-state nil)))
-;; (general-add-advice #'eval-last-sexp :around #'evil-fix-eval-last-sexp)
 
 ;; commenting lines with verb 'g'
 (use-package evil-commentary
@@ -307,7 +246,7 @@
     "I" #'evil-mc-make-cursor-in-visual-selection-beg)
   ;; Borrow these keybindings from VS/Atom/Sublime
   (general-def 'normal
-    "gmq" #'evil-mc-undo-all-cursors
+    "gm" #'evil-mc-undo-all-cursors
     "C-S-J" #'evil-mc-make-cursor-move-next-line
     "C-S-K" #'evil-mc-make-cursor-move-prev-line
     "C-S-<down>" #'evil-mc-make-cursor-move-next-line
@@ -317,25 +256,51 @@
 (use-package evil-matchit
   :config (global-evil-matchit-mode))
 
+;; Show registers in popup when necessary!
+(use-package evil-owl
+  :config
+  (setq evil-owl-display-method 'posframe
+        evil-owl-extra-posframe-args '(:width 50
+                                              :internal-border-width 2
+                                              :left-fringe 8 :right-fringe 8)
+        evil-owl-idle-delay 0)
+  (general-unbind 'motion "'")
+  (evil-owl-mode))
+
 ;;;; setup prefixes
 ;; We're going to want a few different prefixes
-;; SPC :: global commands for managing emacs
-;; \   :: major mode key bindings
-;; '   :: minor mode key bindings
-;; =   :: ???
-;; g   :: other vim commands/go to...
-;; z   :: change display
-(defconst global-leader "<SPC>")
+;; , :: global commands for managing emacs
+;; \ :: major mode key bindings
+;; ' :: minor mode key bindings
+;; = :: ???
+;; g :: other vim commands/go to...
+;; z :: change display
+
+;; Modifiers:
+;; C- :: Very common operations for navigation
+;; S- :: Larger scope of operation
+;; M- :: Common editing operations, especially dealing with expressions
+(defconst global-leader ",")
 (general-create-definer global-leader-def
-  :prefix global-leader)
+  :prefix global-leader
+  :states '(normal motion))
 
-(defconst major-leader "\\")
+(defconst major-leader "'")
 (general-create-definer major-leader-def
-  :prefix major-leader)
+  :prefix major-leader
+  :states '(normal motion))
 
-(defconst minor-leader "'")
+(defconst minor-leader "\\")
 (general-create-definer minor-leader-def
-  :prefix minor-leader)
+  :prefix minor-leader
+  :states 'motion)
+
+;; Unbind any previous usage of leader keys
+(general-auto-unbind-keys)
+
+;;;; Escape everywhere
+(general-def '(normal motion) [escape] 'keyboard-escape-quit)
+(general-def minibuffer-local-map 'minibuffer-keyboard-quit)
 
 ;;; UI Packages
 ;;;; Window Management
@@ -349,14 +314,15 @@
                                      (xref--xref-buffer-mode . searches)
                                      (help-mode . searches)))
   (purpose-compile-user-configuration)
-  (global-leader-def 'motion override
-    "wd" #'purpose-toggle-window-purpose-dedicated))
+  (global-leader-def
+    "sd" #'purpose-toggle-window-purpose-dedicated))
 
 (use-package ivy-purpose
   :after ivy
   :config
   (general-def '(motion insert)
-    "C-b" #'ivy-purpose-switch-buffer-with-purpose))
+    "C-b" #'ivy-purpose-switch-buffer-with-purpose
+    "C-S-B" #'switch-to-buffer))
 
 ;; Automatically manage window sizes
 (use-package zoom
@@ -381,7 +347,11 @@
   :ghook '(prog-mode-hook text-mode-hook))
 
 (use-package hl-todo
-  :ghook 'prog-mode-hook)
+  :ghook 'prog-mode-hook
+  :config
+  (general-def 'motion
+    "]t" #'hl-todo-next
+    "[t" #'hl-todo-previous))
 
 ;; Temporarily highlight large insertions of text
 (use-package volatile-highlights
@@ -472,7 +442,17 @@
   (lisp-lang-hooks #'smartparens-strict-mode))
 
 (use-package evil-cleverparens
-  :ghook 'smartparens-enabled-hook)
+  :ghook 'smartparens-enabled-hook
+  :init
+  (setq evil-cleverparens-swap-move-by-word-and-symbol t
+        evil-cleverparens-use-regular-insert t)
+  :config
+  (general-def 'normal evil-cleverparens-mode-map
+    "[" nil
+    "]" nil
+    "[[" #'evil-cp-previous-closing
+    "]]" #'evil-cp-next-closing
+    "M->" #'sp-slurp-hybrid-sexp))
 
 (use-package highlight-parentheses
   :ghook 'prog-mode-hook)
@@ -490,13 +470,14 @@
 (use-package projectile
   :config
   (projectile-mode t)
-  (global-leader-def '(normal motion) override
-    "p" '(:keymap projectile-command-map)))
+  (global-leader-def
+    "p" '(:keymap projectile-command-map :wk "project")))
 
 (use-package counsel-projectile
   :after counsel projectile
   :ghook 'counsel-mode-hook
-  :general ("C-p" #'projectile-find-file))
+  :general ("C-p" #'counsel-projectile-find-file
+            "C-f" #'counsel-projectile-rg))
 
 ;; Use for searching within projects
 (use-package ripgrep)
@@ -506,9 +487,8 @@
 ;; Project tree
 (use-package treemacs
   :general ("C-\\" #'treemacs)
-  :gfhook #'variable-pitch-mode
   :config
-  (setq treemacs-indentation 3
+  (setq treemacs-indentation 2
         treemacs-is-never-other-window t
         treemacs-eldoc-display nil)
   (general-def treemacs-mode-map
@@ -555,7 +535,7 @@
                                                (t . ivy-posframe-display-at-frame-center))
         ivy-posframe-parameters '((left-fringe . 8)
                                   (right-fringe . 8)
-                                  (internal-border-width . 4))))
+                                  (internal-border-width . 2))))
 
 ;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
@@ -652,7 +632,7 @@
 (use-package git-timemachine
   :config
   (add-hook 'git-timemachine-mode-hook #'evil-motion-state)
-  (global-leader-def '(normal motion) override
+  (global-leader-def
     "gt" #'git-timemachine)
   (general-def '(motion normal) git-timemachine-mode-map
     minor-leader git-timemachine-mode-map)
@@ -714,24 +694,28 @@
               ispell-dictionary "en_US"
               ispell-extra-args '("--camel-case"))
 
+(general-def '(motion normal) flyspell-mode-map
+  "]s" #'flyspell-goto-next-error)
+
 ;;;; Thesaurus
 ;; Requires internet to lookup words
 (use-package powerthesaurus
   :general
-  (global-leader-def '(normal motion) override
-    "tt" '("thesaurus" . powerthesaurus-lookup-word-dwim)))
+  (global-leader-def
+    "tt" '(powerthesaurus-lookup-word-dwim :wk "thesaurus")))
 
 ;;; Enable completion, pair matching, line numbers
 ;; TODO: Fix this for lsp-ui sideline stuff.
 (use-package visual-fill-column
   :ghook '(prog-mode-hook markdown-mode-hook)
   :config
-  (setq visual-fill-column-width 128))
+  (setq-default visual-fill-column-width 110))
 
-(use-package adaptive-wrap
-  :config (adaptive-wrap-prefix-mode))
+;; Smartly indent wrapped lines
+;; (use-package adaptive-wrap
+;;   :config (adaptive-wrap-prefix-mode))
 
-(general-add-hook '(org-mode-hook go-mode-hook)
+(general-add-hook '(org-mode-hook conf-toml-mode-hook)
                   #'electric-pair-mode)
 
 ;; Stop auto-fill in certain modes where we'd rather break lines ourselves based
@@ -739,16 +723,21 @@
 ;; on the eyes.
 (general-add-hook '(markdown-mode-hook) #'turn-off-auto-fill)
 
+;; Separate words in camelCase symbol names
 (global-subword-mode)
 (global-prettify-symbols-mode)
 ;; (global-auto-revert-mode)
 (global-visual-line-mode)
+(global-display-line-numbers-mode)
 (column-number-mode)
 
-(general-add-hook '(prog-mode-hook
-                    text-mode-hook)
-                  #'display-line-numbers-mode)
+;; Let special modes handle lines however they want to.
+(add-hook 'special-mode-hook
+          (lambda ()
+            (visual-line-mode -1)
+            (display-line-numbers-mode -1)))
 
+(setq-default display-line-numbers-type 'relative)
 (defun cycle-line-numbers ()
   (interactive)
   (setq display-line-numbers
@@ -756,9 +745,8 @@
             'relative t)))
 
 (use-package expand-region
-  :general ('visual
-            "=" #'er/expand-region
-            "-" #'er/contract-region))
+  :general ('visual "=" #'er/expand-region
+                    "-" #'er/contract-region))
 
 ;;; Auxiliary Modes
 ;;;; REST client
@@ -768,9 +756,6 @@
   :config (setq dumb-jump-selector 'ivy))
 
 ;;;; shell extensions
-;; (defun eshell-open-unused ()
-;;   (interactive)
-;;   ())
 (use-package aweshell
   :straight (:host github :repo "manateelazycat/aweshell")
   :commands aweshell)
@@ -779,8 +764,7 @@
 
 ;;;; dired
 ;; Provide a ranger-like interface for dired
-(use-package ranger
-  :ghook 'dired-mode-hook)
+(use-package ranger)
 
 ;;; Programming Languages
 ;;;; Language Server Protocol!
@@ -793,7 +777,7 @@
                 lsp-enable-on-type-formatting t)
   (general-def '(motion normal) lsp-mode-map
     "gd" #'lsp-find-definition)
-  (major-leader-def '(normal motion) lsp-mode-map
+  (major-leader-def 'motion lsp-mode-map
     "fi" #'lsp-goto-implementation
     "ft" #'lsp-goto-type-definition
     "fd" #'lsp-find-definition
@@ -802,20 +786,21 @@
     "rr" #'lsp-rename
     "rf" #'lsp-format-buffer
     "re" #'lsp-execute-code-action
-    "i" '("imports")
-    "io" #'lsp-organize-imports)
+    "ri" #'lsp-organize-imports)
   ;; Format code on save
   (add-hook 'lsp-mode-hook
             (lambda () (add-hook 'before-save-hook
                             #'lsp-format-buffer
                             nil t)))
+  (general-add-hook '(go-mode-hook
+                      rust-mode-hook
+                      java-mode-hook
+                      kotlin-mode-hook
+                      ruby-mode-hook)
+                    (lambda () (unless (bound-and-true-p polymode-mode)
+                            (lsp-deferred))))
   :custom (lsp-rust-server 'rust-analyzer)
-  :commands (lsp lsp-deferred)
-  :ghook ('(go-mode-hook
-            rust-mode-hook
-            java-mode-hook
-            kotlin-mode-hook
-            ruby-mode-hook) #'lsp-deferred))
+  :commands (lsp lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
@@ -825,7 +810,7 @@
   (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-include-signature t)
   :config
-  (major-leader-def 'normal lsp-ui-mode-map
+  (major-leader-def 'motion lsp-ui-mode-map
     "p" '("peek")
     "pr" #'lsp-ui-peek-find-references
     "pd" #'lsp-ui-peek-find-definitions
@@ -861,12 +846,13 @@
   :config (company-terraform-init))
 (use-package yaml-mode)
 (use-package json-mode)
+(use-package swift-mode)
 (use-package rust-mode)
 (use-package go-mode
   :config
   ;; Code navigation key bindings
   (major-leader-def 'normal go-mode-map
-    "ia" #'go-import-add)
+    "ai" #'go-import-add)
   (major-leader-def '(normal motion) go-mode-map
     "ga" #'go-goto-arguments
     "gd" #'go-goto-docstring
@@ -930,7 +916,7 @@
 (use-package markdown-mode
   :config
   (major-leader-def 'normal markdown-mode-map
-    "i`" #'markdown-insert-gfm-code-block))
+    "a`" #'markdown-insert-gfm-code-block))
 (use-package poly-markdown)
 ;; org-mode additions
 (use-package org-ref)
@@ -975,78 +961,138 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; Contextual leader key as backslash
 ;; Generic leader key as space
-(global-leader-def '(motion normal) override
-  "SPC" #'counsel-M-x
-  "o" '("org")
-  "oc" #'org-capture
-  "oa" #'org-agenda
-  "b" '("buffers")
-  "bb" #'ivy-switch-buffer
-  "bk" #'kill-buffer
-  "bq" #'kill-this-buffer
-  "bo" #'switch-to-alternate-buffer
-  "bf" #'view-buffer-other-frame
-  "f" '("files")
-  "ff" #'counsel-find-file
-  "fd" #'ranger
-  "fr" #'counsel-recentf
+(global-leader-def
+  "," #'other-window
+  "x" (general-key "M-x")
+  "d" '("delete")
+  "dw" #'delete-window
+  "do" #'delete-other-windows
+  "db" #'kill-buffer
+  "dp" #'posframe-delete-all           ; Only for emergencies
+  "o" '("open")
+  "of" #'counsel-find-file
+  "od" #'ranger
+  "or" #'counsel-recentf
+  "oo" #'switch-to-alternate-buffer
+  "ow" #'view-buffer-other-frame
+  "ob" #'ivy-switch-buffer
+  "b" #'ivy-purpose-switch-buffer-with-purpose
+  "/" #'deadgrep
+  "u" #'undo-tree-visualize
   "e" '("eval")
-  "ee" (general-key "C-x C-e")
+  ;; Fix expression evaluation position in normal state
+  ;; Our cursor is technically before the character we're on, in normal state.
+  "ee" (lambda ()
+         (interactive)
+         (save-excursion
+           (evil-forward-char 1)
+           (call-interactively #'eval-last-sexp)))
   "et" (general-key "C-M-x")
-  "w" '("windows")
-  "wo" #'other-window
-  "wq" #'delete-window
-  "wk" #'delete-other-windows
-  "w <left>" #'evil-window-left
-  "w <right>" #'evil-window-right
-  "w <up>" #'evil-window-up
-  "w <down>" #'evil-window-down
   "t" '("text")
-  "ts" '("spell-check" . flyspell-correct-wrapper)
-  "tc" #'count-words
   "g" '("git")
   "gg" #'magit-status
   "gd" #'vdiff-magit-stage
   "gb" #'magit-blame
-  "n" '(:keymap narrow-map)
+  "n" '(:keymap narrow-map :wk "narrow")
   "a" '("apps")
   "ac" #'calc
   "ae" #'flycheck-list-errors
   "as" #'eshell
   ;; TODO: Add debugger here under "ad"
   "m" '("modes")
-  "mr" #'restclient-mode
   "ma" #'artist-mode
-  "mw" #'whitespace-mode
-  "u" #'undo-tree-visualize
-  "i" '("input-method")
-  "is" #'set-input-method
-  "it" #'toggle-input-method
+  "c" '("change")
+  "ci" #'set-input-method
+  "cw" #'treemacs-switch-workspace
   "s" '("settings")
   "sl" #'cycle-line-numbers
-  "sw" #'treemacs-switch-workspace
-  "spd" #'posframe-delete-all           ; Only for emergencies
-  "h" '(:keymap help-map))
+  "si" #'toggle-input-method
+  "sw" #'whitespace-mode
+  "h" '(:keymap help-map :wk "help"))
 
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
-
 
 ;;;; vim
 (general-def help-map
   "K" #'which-key-show-top-level)
 
-(general-def '(motion normal) evil-cleverparens-mode-map
-  "[" nil
-  "]" nil
-  "[[" #'evil-cp-previous-closing
-  "]]" #'evil-cp-next-closing)
-
 ;; Unbind evil keys that we want to use ourselves.
-(general-def :states 'motion
-  minor-leader nil
-  "C-o" nil)
+;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R
+(general-unbind '(motion normal)
+  ;; Disable dragging mouse selection.
+  ;; This fixes buttons, changing focus, basically anything using mouse.
+  "<down-mouse-1>"
+  "C-o" "C-p" "C-f" "C-w"
+  "R" "Q" "=")
 
+;; Swap word motions so that the unshifted forms move symbols rather than
+;; sub-words, giving the shifted forms the more granular action.
+(general-swap-key nil '(evil-inner-text-objects-map evil-outer-text-objects-map)
+  "w" "W")
+
+(general-swap-key nil 'evil-motion-state-map
+  "w" "W"
+  "b" "B"
+  "e" "E"
+  "ge" "gE")
+
+(defun evil-paste-at-point ()
+  (interactive)
+  (evil-backward-char 1 nil t)
+  (call-interactively #'evil-paste-after))
+
+;; TODO: Use a better command for nearby find on key f
+(general-def 'normal
+  ;; Make normal paste go AT point rather than AFTER
+  "p" #'evil-paste-at-point
+  "U" #'undo-tree-redo
+  ;; Useful binding for managing method call chains
+  "K" #'newline
+  "z=" #'flyspell-correct-at-point)
+
+;; Use some standard keybindings.
+(general-unbind 'insert
+  "C-v" "C-z" "C-y" "C-w")
+(general-def
+  "C-w" #'kill-this-buffer
+  "C-v" #'evil-paste-at-point
+  "C-z" #'undo-tree-undo
+  "C-y" #'undo-tree-redo
+  "C-o" #'counsel-find-file
+  "C-s" (general-key "C-x C-s")
+  "C-=" #'text-scale-increase
+  "C--" #'text-scale-decrease)
+
+(general-def '(normal insert)
+  ;; TODO: Decide how I want to combine these commands based on general rules
+  ;; about my modifier keys: C, M, S.
+  "M-;" (lambda ()
+          (interactive)
+          (call-interactively #'comment-dwim)
+          (evil-insert-state)))
+
+(general-def 'motion
+  ;; "gr" stands for "go run this"
+  ;; By default, use "gr" to refresh and run what's at point
+  "gr" (general-simulate-key "C-c C-c")
+  ;; Stands for "go quit" to quit some auxiliary mode, like editing a git
+  ;; commit message.
+  "gq" (general-key "C-c C-k")
+  "C-RET" (general-simulate-key "C-c C-c")
+  "[" '("previous")
+  "]" '("next")
+  ;; Requires special handling to avoid equaling ESC
+  [control-bracketleft] #'evil-jump-backward
+  "C-]" #'evil-jump-forward
+  "[]" #'evil-backward-section-begin
+  "][" #'evil-forward-section-begin
+  "[p" #'evil-backward-paragraph
+  "]p" #'evil-forward-paragraph
+  "[e" #'previous-error
+  "]e" #'next-error
+  "?" #'swiper
+  "0" (general-key "^"))
 ;; (general-def '(normal motion)
 ;;   :keymaps '(outshine-mode-map outline-mode-map)
 ;;   "C-j" 'outline-forward-same-level
@@ -1060,11 +1106,6 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;   "M-j" #'outline-move-subtree-down
 ;;   "TAB" #'outshine-kbd-TAB)
 
-;; Bind a few ctrl keys to all states
-(general-def
-  "C-o" #'counsel-find-file
-  "C-s" (general-key "C-x C-s"))
-
 ;;;; prog-mode
 (major-leader-def 'motion prog-mode-map
   "g" '("goto")
@@ -1073,14 +1114,11 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; "fd" #'dumb-jump-go
   "fd" #'xref-find-definitions
   "fr" #'xref-find-references
-  "fj" #'dumb-jump-go
-  "f/" #'dumb-jump-go-prompt)
+  "j" #'dumb-jump-go
+  "/" #'dumb-jump-go-prompt)
 
 (general-def '(normal insert) prog-mode-map
   "M-RET" #'comment-indent-new-line)
-
-(general-def 'normal evil-cleverparens-mode-map
-  "M->" #'sp-slurp-hybrid-sexp)
 
 (general-def
   :states '(normal visual)
@@ -1131,11 +1169,11 @@ Repeated invocations toggle between the two most recently open buffers."
   "a" (general-simulate-key "C-c C-a"))
 
 (use-package pretty-hydra)
-(use-package hydra-posframe
-  :straight (:host github :repo "Ladicle/hydra-posframe")
-  :config
-  (setq hydra-posframe-border-width 2)
-  (hydra-posframe-mode))
+;; (use-package hydra-posframe
+;;   :straight (:host github :repo "Ladicle/hydra-posframe")
+;;   :config
+;;   (setq hydra-posframe-border-width 2)
+;;   (hydra-posframe-mode))
 
 ;;; Custom theme
 (custom-set-faces
@@ -1148,7 +1186,7 @@ Repeated invocations toggle between the two most recently open buffers."
  '(diff-hl-insert ((t (:background "#60aa00"))))
  ;; '(font-lock-comment-face ((t (:slant italic))))
  '(ivy-posframe ((t (:inherit default))))
- '(ivy-posframe-border ((t (:background "white" :foreground "white"))))
+ '(internal-border ((t (:background "white" :foreground "white"))))
  '(hl-paren-face ((t (:weight bold))) t)
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
@@ -1159,7 +1197,13 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
  '(vdiff-addition-face ((t (:inherit diff-added))))
- '(window-divider ((t (:foreground "white")))))
+ ;; '(window-divider ((t (:foreground "white"))))
+ )
+
+;; TODO: Bind f3 to kmacro-end-and-call-macro
+
+(setq window-divider-default-right-width 3
+      window-divider-default-bottom-width 3)
 
 ;; Stopgap to extend several faces to EOL
 (dolist (f '(region
@@ -1196,6 +1240,10 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Normalize evil keymaps for some modes that specify mode-local bindings
 (general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
                   #'evil-normalize-keymaps)
+
+(define-key input-decode-map
+  (kbd "C-[")
+  [control-bracketleft])
 
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
