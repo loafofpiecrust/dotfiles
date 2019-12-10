@@ -241,12 +241,20 @@
 (use-package evil-mc
   :config
   (global-evil-mc-mode 1)
-  (general-def 'visual evil-mc-key-map
+  (general-def 'visual
     "A" #'evil-mc-make-cursor-in-visual-selection-end
     "I" #'evil-mc-make-cursor-in-visual-selection-beg)
   ;; Borrow these keybindings from VS/Atom/Sublime
   (general-def 'normal
-    "gm" #'evil-mc-undo-all-cursors
+    "gmq" #'evil-mc-undo-all-cursors
+    "gmu" #'evil-mc-undo-last-added-cursor
+    "C-n" (lambda ()
+            (interactive)
+            (when (eq nil (call-interactively #'evil-mc-undo-cursor-at-pos))
+              (call-interactively #'evil-mc-make-cursor-here)
+              (call-interactively #'evil-mc-pause-cursors)))
+    "gmp" #'evil-mc-pause-cursors
+    "gmr" #'evil-mc-resume-cursors
     "C-S-J" #'evil-mc-make-cursor-move-next-line
     "C-S-K" #'evil-mc-make-cursor-move-prev-line
     "C-S-<down>" #'evil-mc-make-cursor-move-next-line
@@ -476,13 +484,13 @@
 (use-package counsel-projectile
   :after counsel projectile
   :ghook 'counsel-mode-hook
-  :general ("C-p" #'counsel-projectile-find-file
+  :config (general-def 'normal
+            "C-p" #'projectile-find-file
             "C-f" #'counsel-projectile-rg))
 
 ;; Use for searching within projects
 (use-package ripgrep)
-(use-package deadgrep
-  :general ("C-S-F" #'deadgrep))
+(use-package deadgrep :commands deadgrep)
 
 ;; Project tree
 (use-package treemacs
@@ -494,6 +502,8 @@
   (general-def treemacs-mode-map
     "p" '(:keymap treemacs-project-map))
   (general-def treemacs-project-map
+    "w" #'treemacs-switch-workspace)
+  (general-def projectile-command-map
     "w" #'treemacs-switch-workspace))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs projectile)
