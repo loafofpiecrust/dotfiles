@@ -47,7 +47,7 @@
         doom-themes-treemacs-theme "doom-colors"
         doom-dracula-brighter-modeline t
         doom-dracula-colorful-headers t)
-  (load-theme 'doom-dracula t)
+  (load-theme 'doom-molokai t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
@@ -56,19 +56,16 @@
   :straight (:host github :repo "emacsmirror/ewal"))
 
 ;; Fonts need a bit of beefing on Mac
-(defvar default-font-height (if (eq system-type 'darwin) 120 115)
+;; font test: `' o O 0 () [] {} *i
+(defvar default-font (if (eq system-type 'darwin) "SF Mono-12" "SF Mono-11")
   "Platform-dependent default font size")
 
-;; font test: `' o O 0 () [] {} *i
-(set-face-attribute 'default nil
-                    :family "SF Mono"
-                    :height default-font-height
-                    :weight 'medium
-                    :width 'normal)
+(add-to-list 'default-frame-alist
+             `(font . ,default-font))
 
 (set-face-attribute 'variable-pitch nil
                     :family "Overpass"
-                    :height default-font-height)
+                    :height 120)
 
 (when (eq system-type 'darwin)
   (setq mac-option-modifier 'meta
@@ -117,7 +114,7 @@
 ;;   (sublimity-mode 1))
 
 (use-package exec-path-from-shell
-  :defer 0.1
+  :defer 0.5
   :config (exec-path-from-shell-initialize))
 
 ;; Empty scratch buffers
@@ -125,6 +122,11 @@
 
 ;; Easier confirmation
 (fset 'yes-or-no-p 'y-or-n-p)
+
+(defun extend-faces-to-eol (faces)
+  "Extend the given faces to fill the line if they contain the end of it. Required for compatibility with Emacs 27"
+  (dolist (f faces)
+    (set-face-attribute f nil :extend t)))
 
 ;;;; Periodically clean buffers
 (require 'midnight)
@@ -345,6 +347,7 @@
 ;;;; Icons & Emojis
 (use-package all-the-icons)
 (use-package emojify
+  :defer 1
   :config
   (setq emojify-emoji-styles '(unicode github))
   (global-emojify-mode t))
@@ -362,8 +365,8 @@
     "[t" #'hl-todo-previous))
 
 ;; Temporarily highlight large insertions of text
-(use-package volatile-highlights
-  :config (volatile-highlights-mode))
+;; (use-package volatile-highlights
+;;   :config (volatile-highlights-mode))
 
 ;;;; Dashboard!
 (use-package page-break-lines)
@@ -389,10 +392,8 @@
 (use-package evil-anzu :after anzu
   :config (setq anzu-cons-mode-line-p nil))
 
-(use-package doom-modeline
-  :config
-  (setq doom-modeline-height 16)
-  (doom-modeline-mode))
+(use-package telephone-line
+  :config (telephone-line-mode))
 
 ;;;; Better help
 (use-package helpful
@@ -556,7 +557,7 @@
 (use-package ivy-rich :ghook 'ivy-mode-hook
   :config (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
-(use-package flyspell-correct-ivy)
+(use-package flyspell-correct-ivy :commands flyspell-mode)
 
 (use-package prescient)
 (use-package ivy-prescient
@@ -567,9 +568,9 @@
 ;;   :straight (:host github :repo "emacs-lsp/lsp-ivy"))
 
 ;;; in-buffer completion
-(use-package yasnippet-snippets)
+(use-package yasnippet-snippets :after company)
 (use-package yasnippet
-  :after yasnippet-snippets company
+  :after yasnippet-snippets
   :config
   (yas-global-mode 1)
   ;; Disable auto completion of snippets. Instead rely on the completion dialog.
@@ -629,8 +630,18 @@
 ;;; Version Control
 ;;;; Git
 (use-package magit
+  :general
+  (global-leader-def
+    "gg" #'magit-status
+    "gb" #'magit-blame)
+  :gfhook #'hl-line-mode
   :config
-  (evil-set-initial-state 'git-commit-mode 'insert))
+  (evil-set-initial-state 'git-commit-mode 'insert)
+  (extend-faces-to-eol '(magit-diff-context-highlight
+                         magit-diff-removed-highlight
+                         magit-diff-added-highlight
+                         magit-diff-hunk-heading-highlight
+                         magit-diff-hunk-heading)))
 ;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
@@ -769,12 +780,13 @@
 (use-package aweshell
   :straight (:host github :repo "manateelazycat/aweshell")
   :commands aweshell)
-(use-package company-shell
-  :config (add-to-list 'company-backends '(company-shell company-shell-env)))
+;; (use-package company-shell
+;;   :config (add-to-list 'company-backends '(company-shell company-shell-env)))
 
 ;;;; dired
 ;; Provide a ranger-like interface for dired
-(use-package ranger)
+(use-package ranger
+  :general (global-leader-def "od" #'ranger))
 
 ;;; Programming Languages
 ;;;; Language Server Protocol!
@@ -846,19 +858,31 @@
   (dap-tooltip-mode t))
 
 ;;;; One liners
-(use-package haskell-mode)
-(use-package nix-mode)
+(use-package haskell-mode
+  :mode (("\\.hsc\\'" . haskell-mode)
+         ("\\.l[gh]s\\'" . literate-haskell-mode)
+         ("\\.hsig\\'" . haskell-mode)
+         ("\\.[gh]s\\'" . haskell-mode)
+         ("\\.cabal\\'" . haskell-cabal-mode)
+         ("\\.chs\\'" . haskell-c2hs-mode)
+         ("\\.ghci\\'" . ghci-script-mode)
+         ("\\.dump-simpl\\'" . ghc-core-mode)
+         ("\\.hcr\\'" . ghc-core-mode)))
+(use-package nix-mode :mode "\\.nix\\'")
 (use-package fish-mode)
 (use-package bazel-mode)
-(use-package terraform-mode)
-(use-package git-modes)
+(use-package terraform-mode :mode "\\.tf\\(vars\\)?\\'")
 (use-package company-terraform
+  :after terraform-mode
   :config (company-terraform-init))
+(use-package git-modes)
 (use-package yaml-mode)
-(use-package json-mode)
-(use-package swift-mode)
-(use-package rust-mode)
+(use-package json-mode
+  :mode "\\(?:\\(?:\\.json\\|\\.jsonld\\|\\.babelrc\\|\\.bowerrc\\|composer\\.lock\\)\\'\\)")
+(use-package swift-mode :mode "\\.swift\\'")
+(use-package rust-mode :mode "\\.rs\\'")
 (use-package go-mode
+  :mode "\\.go\\'"
   :config
   ;; Code navigation key bindings
   (major-leader-def 'normal go-mode-map
@@ -869,15 +893,18 @@
     "gn" #'go-goto-function-name
     "gi" #'go-goto-imports)
 
-  ;; Setup debugging support
-  (require 'dap-go)
-  (dap-go-setup))
+  ;; Setup debugging support when go-mode starts.
+  (general-add-hook 'go-mode-hook
+                    (lambda ()
+                      (require 'dap-go)
+                      (dap-go-setup))
+                    nil nil t))
 
-(use-package racket-mode)
+(use-package racket-mode :mode "\\.rkt[dl]?\\'")
 
 ;;;; Java
-(use-package lsp-java)
-(use-package kotlin-mode)
+(use-package lsp-java :commands java-mode)
+(use-package kotlin-mode :mode "\\.kts?\\'")
 (use-package groovy-mode)      ; for gradle build files
 (use-package gradle-mode
   :ghook '(kotlin-mode-hook java-mode-hook groovy-mode-hook))
@@ -885,8 +912,8 @@
 ;;;; javascript and typescript
 (use-package eslint-fix :commands eslint-fix)
 
-(use-package eldoc-box
-  :ghook ('eldoc-mode-hook #'eldoc-box-hover-mode))
+;; (use-package eldoc-box
+;;   :ghook ('eldoc-mode-hook #'eldoc-box-hover-mode))
 
 (defun custom-tide-setup ()
   (tide-setup)
@@ -898,9 +925,9 @@
   :ghook ('typescript-mode-hook #'custom-tide-setup))
 
 (use-package web-mode
-  :config
-  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode)))
+  :mode (("\\.tsx\\'" . web-mode)
+         ("\\.jsx\\'" . web-mode)
+         ("\\.html\'" . web-mode)))
 
 (add-hook 'web-mode-hook
           (lambda ()
@@ -918,18 +945,23 @@
 
 
 ;;;; GraphQL
-(use-package graphql-mode)
+(use-package graphql-mode
+  :mode (("\\.gql\\'" . graphql-mode)
+         ("\\.graphql\\'" . graphql-mode)))
 ;; (use-package company-graphql)
 ;; (add-to-list 'company-backends 'company-graphql)
 
 ;;;; typesetting
 (use-package markdown-mode
+  :mode (("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
   :config
   (major-leader-def 'normal markdown-mode-map
     "a`" #'markdown-insert-gfm-code-block))
-(use-package poly-markdown)
+(use-package poly-markdown :commands markdown-mode)
 ;; org-mode additions
-(use-package org-ref)
+(use-package org-ref
+  :commands (bibtex-mode org-mode))
 (use-package org-bullets :ghook 'org-mode-hook)
 (setq org-fontify-emphasized-text t
       org-highlight-latex-and-related '(native)
@@ -949,8 +981,9 @@
                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
                                     nil nil)))
 
-(org-babel-do-load-languages 'org-babel-load-languages
-                             '((shell . t)))
+;; (eval-after-load 'org
+;;   (org-babel-do-load-languages 'org-babel-load-languages
+;;                                '((shell . t))))
 
 ;;;; Latex
 ;; latex packages have to go near the top for some reason.
@@ -969,19 +1002,18 @@ Repeated invocations toggle between the two most recently open buffers."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
+(general-def 'normal
+  "SPC" (general-key "M-x"))
+
 ;; Contextual leader key as backslash
 ;; Generic leader key as space
 (global-leader-def
   "," #'other-window
-  "x" (general-key "M-x")
-  "d" '("delete")
   "dw" #'delete-window
   "do" #'delete-other-windows
   "db" #'kill-buffer
   "dp" #'posframe-delete-all           ; Only for emergencies
-  "o" '("open")
   "of" #'counsel-find-file
-  "od" #'ranger
   "or" #'counsel-recentf
   "oo" #'switch-to-alternate-buffer
   "ow" #'view-buffer-other-frame
@@ -998,11 +1030,7 @@ Repeated invocations toggle between the two most recently open buffers."
            (evil-forward-char 1)
            (call-interactively #'eval-last-sexp)))
   "et" (general-key "C-M-x")
-  "t" '("text")
-  "g" '("git")
-  "gg" #'magit-status
   "gd" #'vdiff-magit-stage
-  "gb" #'magit-blame
   "n" '(:keymap narrow-map :wk "narrow")
   "a" '("apps")
   "ac" #'calc
@@ -1011,10 +1039,8 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; TODO: Add debugger here under "ad"
   "m" '("modes")
   "ma" #'artist-mode
-  "c" '("change")
   "ci" #'set-input-method
   "cw" #'treemacs-switch-workspace
-  "s" '("settings")
   "sl" #'cycle-line-numbers
   "si" #'toggle-input-method
   "sw" #'whitespace-mode
@@ -1178,7 +1204,7 @@ Repeated invocations toggle between the two most recently open buffers."
 (major-leader-def 'normal artist-mode-map
   "a" (general-simulate-key "C-c C-a"))
 
-(use-package pretty-hydra)
+(use-package pretty-hydra :defer t)
 ;; (use-package hydra-posframe
 ;;   :straight (:host github :repo "Ladicle/hydra-posframe")
 ;;   :config
@@ -1207,6 +1233,11 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
  '(vdiff-addition-face ((t (:inherit diff-added))))
+ ;; Stopgap to extend several faces to EOL
+ '(company-tooltip-selection ((t (:extend t))))
+ '(ivy-current-match ((t (:extend t))))
+ '(hl-line ((t (:extend t))))
+ '(region ((t (:extend t))))
  ;; '(window-divider ((t (:foreground "white"))))
  )
 
@@ -1214,18 +1245,6 @@ Repeated invocations toggle between the two most recently open buffers."
 
 (setq window-divider-default-right-width 3
       window-divider-default-bottom-width 3)
-
-;; Stopgap to extend several faces to EOL
-(dolist (f '(region
-             hl-line
-             ivy-current-match
-             company-tooltip-selection
-             magit-diff-context-highlight
-             magit-diff-removed-highlight
-             magit-diff-added-highlight
-             magit-diff-hunk-heading-highlight
-             magit-diff-hunk-heading))
-  (set-face-attribute f nil :extend t))
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
