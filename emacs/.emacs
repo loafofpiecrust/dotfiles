@@ -567,7 +567,8 @@
 
 (use-package prescient)
 (use-package ivy-prescient
-  :ghook 'ivy-mode-hook)
+  :ghook 'ivy-mode-hook
+  :gfhook #'prescient-persist-mode)
 
 ;; TODO: Bind commands for this thing
 ;; (use-package lsp-ivy
