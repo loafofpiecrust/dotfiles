@@ -34,19 +34,16 @@
 (use-package dash)
 (use-package s)
 
-;; TODO: Make frame background translucent
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
 ;; partial-line changes.
-;; TODO: totally disable scroll?!
 
 ;;;; GUI
-;; Load theme early to prevent flickering
+;; Load theme early to avoid flickering
 (use-package doom-themes
   :config
   (setq doom-themes-treemacs-enable-variable-pitch t
         doom-themes-treemacs-theme "doom-colors"
-        doom-dracula-brighter-modeline t
-        doom-dracula-colorful-headers t)
+        doom-molokai-brighter-comments t)
   (load-theme 'doom-molokai t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
@@ -69,53 +66,41 @@
 
 (when (eq system-type 'darwin)
   (setq mac-option-modifier 'meta
-        mac-command-modifier 'control))
+        mac-command-modifier 'control
+        mac-control-modifier 'super
+        mac-mouse-wheel-smooth-scroll nil))
 
 ;; Disable tool-bar and menu-bar
 (unless (eq system-type 'darwin)
   (menu-bar-mode -1))
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
-(fringe-mode '(nil . 0))
+(fringe-mode '(10 . 0))
 (show-paren-mode)
 (save-place-mode)
 (blink-cursor-mode)
 (window-divider-mode)
 
 ;; Setup basic settings
-;; TODO: Move scroll stuff to only not on MacOS
 (setq-default
  ;; Text display
  display-line-numbers-width 4
  show-paren-style 'expression
  ;; Nicer scrolling
- ;; pixel-resolution-fine-flag nil
  mouse-wheel-progressive-speed nil
- ;; mouse-wheel-scroll-amount '(1)
  scroll-margin 15
  scroll-conservatively 10000
  shift-select-mode nil
  ;; Indentation and wrapping
  tab-width 4
  indent-tabs-mode nil      ; use spaces for indentation
- fill-column 80
+ fill-column 90
  ;; misc settings
  warning-minimum-level :error
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
  load-prefer-newer t
  custom-safe-themes t)
-
-;; (use-package sublimity
-;;   :config
-;;   (require 'sublimity-scroll)
-;;   (setq mouse-wheel-progressive-speed nil
-;;         mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-;;   (sublimity-mode 1))
-
-(use-package exec-path-from-shell
-  :defer 0.5
-  :config (exec-path-from-shell-initialize))
 
 ;; Empty scratch buffers
 (setq initial-scratch-message "")
@@ -125,8 +110,13 @@
 
 (defun extend-faces-to-eol (faces)
   "Extend the given faces to fill the line if they contain the end of it. Required for compatibility with Emacs 27"
-  (dolist (f faces)
-    (set-face-attribute f nil :extend t)))
+  (when (>= emacs-major-version 27)
+    (dolist (f faces)
+      (set-face-attribute f nil :extend t))))
+
+;; Copy PATH from shell
+(use-package exec-path-from-shell
+  :config (exec-path-from-shell-initialize))
 
 ;;;; Periodically clean buffers
 (require 'midnight)
@@ -150,6 +140,7 @@
 (setq-default comment-auto-fill-only-comments t
               auto-fill-function #'do-auto-fill)
 (add-hook 'prog-mode-hook #'auto-fill-mode)
+
 ;; Cleanup whitespace after saving most files
 (general-add-hook '(text-mode-hook prog-mode-hook)
                   (lambda () (add-hook 'before-save-hook #'whitespace-cleanup nil t)))
@@ -172,6 +163,7 @@
   :custom (which-key-enable-extended-define-key t)
   :config (which-key-mode))
 
+;; Record command usage to figure out what to bind to keys.
 (use-package keyfreq
   :config
   (setq keyfreq-file "~/.emacs.d/keyfreq"
@@ -186,7 +178,6 @@
               evil-respect-visual-line-mode t
               evil-move-cursor-back nil
               evil-search-module 'evil-search
-              evil-ex-search-persistent-highlight nil
               evil-symbol-word-search t
               evil-want-visual-char-semi-exclusive t
               evil-want-C-i-jump nil)
@@ -195,17 +186,16 @@
 
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection
-  :custom
-  (evil-collection-outline-bind-tab-p t)
-  (evil-collection-company-use-tng nil)
+  :init
+  (setq evil-collection-outline-bind-tab-p t
+        evil-collection-company-use-tng nil
+        evil-collection-setup-minibuffer t)
   :config
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
   (evil-collection-init))
 
 ;; Stop completion when exiting insert mode
-(general-def 'insert company-active-map
-  "ESC" #'company-abort)
 (add-hook 'evil-insert-state-exit-hook #'company-abort)
 
 ;; commenting lines with verb 'g'
@@ -216,6 +206,9 @@
 (use-package evil-surround
   :config
   (global-evil-surround-mode)
+  (general-def 'visual evil-surround-mode-map
+    "s" #'evil-surround-region
+    "S" #'evil-Surround-region)
   (setq-default evil-surround-pairs-alist
                 ;; Allow surrounding with newlines
                 (cons '(13 . ("\n" . "")) evil-surround-pairs-alist)))
@@ -293,24 +286,42 @@
 (defconst global-leader ",")
 (general-create-definer global-leader-def
   :prefix global-leader
-  :states '(normal motion))
+  :states 'motion)
 
 (defconst major-leader "'")
 (general-create-definer major-leader-def
   :prefix major-leader
-  :states '(normal motion))
+  :states 'normal)
 
+;; TODO: Consider abolishing this third leader key to simplify overall bindings.
 (defconst minor-leader "\\")
 (general-create-definer minor-leader-def
   :prefix minor-leader
+  :states 'normal)
+
+;; Try to define mode-specific motions to "g" where possible.
+(general-create-definer evil-g-def
+  :prefix "g"
   :states 'motion)
 
-;; Unbind any previous usage of leader keys
+;; Unbind any previous usage of leader keys.
 (general-auto-unbind-keys)
 
+;; Name prefix keys within my leader set for clarity.
+(global-leader-def
+  "a" '("apps")
+  "e" '("eval")
+  "m" '("modes")
+  "c" '("change")
+  "o" '("open")
+  "d" '("delete")
+  "g" '("git")
+  "s" '("settings")
+  "t" '("text"))
+
 ;;;; Escape everywhere
-(general-def '(normal motion) [escape] 'keyboard-escape-quit)
-(general-def minibuffer-local-map 'minibuffer-keyboard-quit)
+;; (general-def '(normal motion) [escape] 'keyboard-escape-quit)
+(general-def minibuffer-local-map "ESC" 'minibuffer-keyboard-quit)
 
 ;;; UI Packages
 ;;;; Window Management
@@ -329,10 +340,7 @@
 
 (use-package ivy-purpose
   :after ivy
-  :config
-  (general-def '(motion insert)
-    "C-b" #'ivy-purpose-switch-buffer-with-purpose
-    "C-S-B" #'switch-to-buffer))
+  :general (global-leader-def "b" #'ivy-purpose-switch-buffer-with-purpose))
 
 ;; Automatically manage window sizes
 (use-package zoom
@@ -412,8 +420,8 @@
 
 (use-package origami
   :ghook '(prog-mode-hook markdown-mode-hook))
-(use-package lsp-origami
-  :ghook 'origami-mode-hook)
+;; (use-package lsp-origami
+;;   :ghook 'origami-mode-hook)
 
 ;;; Editing
 ;;;; General
@@ -444,11 +452,14 @@
   :config
   (dolist (delim '("{" "(" "["))
     (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode)
-                   delim nil :post-handlers '(("||\n[i]" ""))))
+                   delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :ghook
   'prog-mode-hook
-  (lisp-lang-hooks #'smartparens-strict-mode))
+  'conf-unix-mode-hook
+  'conf-toml-mode-hook
+  (lisp-lang-hooks #'smartparens-strict-mode)
+  :gfhook #'show-smartparens-mode)
 
 (use-package evil-cleverparens
   :ghook 'smartparens-enabled-hook
@@ -464,10 +475,6 @@
     "M->" #'sp-slurp-hybrid-sexp))
 
 (use-package highlight-parentheses
-  :ghook 'prog-mode-hook)
-
-;;;; org & outlines
-(use-package outshine
   :ghook 'prog-mode-hook)
 
 ;;;; niceties
@@ -486,7 +493,6 @@
   :after counsel projectile
   :ghook 'counsel-mode-hook
   :config (general-def 'normal
-            "C-p" #'projectile-find-file
             "C-f" #'counsel-projectile-rg))
 
 ;; Use for searching within projects
@@ -521,7 +527,8 @@
   :ghook 'flycheck-mode-hook
   :config
   (flycheck-posframe-configure-pretty-defaults)
-  (setq flycheck-posframe-border-width 2))
+  ;; (setq flycheck-posframe-border-width 2)
+  )
 
 ;;; mini-buffer completion
 (use-package flx)
@@ -548,7 +555,6 @@
                                   (right-fringe . 8)
                                   (internal-border-width . 2))))
 
-;; TODO: Figure out how to clump these latex packages
 (use-package ivy-bibtex :commands ivy-bibtex)
 
 (use-package counsel :ghook 'ivy-mode-hook
@@ -592,27 +598,24 @@
 (use-package company
   :ghook 'prog-mode-hook
   :config
-  ;; Press tab/shift-tab to start/stop completion in insert mode
   (general-def 'insert company-mode-map
     "C-SPC" #'company-complete)
-  ;; Press tab once in the dialog to complete the common prefix
-  ;; Press tab twice in the dialog to complete with the selection
   (general-def :keymaps 'company-active-map
     "C-SPC" #'company-abort
     "<tab>" #'company-complete-selection
-    "<return>" nil
+    "<backtab>" #'company-complete-common
+    "C-j" #'company-select-next-or-abort
+    "C-k" #'company-select-previous-or-abort
     "<escape>" #'company-abort)
+  (general-unbind :keymaps 'company-active-map
+    "<return>" "RET")
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
                 completion-styles '(basic partial-completion substring)
                 company-idle-delay 0
-                company-minimum-prefix-length 1
+                company-minimum-prefix-length 2
                 company-selection-wrap-around nil
                 company-require-match nil))
-
-;; more fuzzy completion
-;; (use-package company-fuzzy
-;;   :ghook 'company-mode-hook)
 
 (use-package company-prescient
   :ghook 'company-mode-hook)
@@ -621,7 +624,6 @@
 (use-package company-box
   :ghook 'company-mode-hook
   :custom
-  ;; TODO: Add key binding for showing docstring
   (company-box-icons-alist 'company-box-icons-all-the-icons)
   (company-box-max-candidates 50)
   (company-box-doc-delay 2)
@@ -630,31 +632,33 @@
 ;;; Version Control
 ;;;; Git
 (use-package magit
+  :gfhook #'hl-line-mode
   :general
   (global-leader-def
     "gg" #'magit-status
     "gb" #'magit-blame)
-  :gfhook #'hl-line-mode
   :config
+  (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p
+        magit-refresh-status-buffer nil)
   (evil-set-initial-state 'git-commit-mode 'insert)
   (extend-faces-to-eol '(magit-diff-context-highlight
                          magit-diff-removed-highlight
                          magit-diff-added-highlight
                          magit-diff-hunk-heading-highlight
                          magit-diff-hunk-heading)))
-;; TODO: Rebind magit file bindings behind SPC g
 
 ;; Provides evil friendly git bindings
-(use-package evil-magit :after magit)
+(use-package evil-magit :after magit
+  :config
+  (evil-set-initial-state 'git-commit-mode 'insert))
 (use-package forge :after magit)
 (use-package github-review :after magit)
 
 ;; View the history of the current file.
 (use-package git-timemachine
+  :general (global-leader-def "gt" #'git-timemachine)
+  :init (evil-set-initial-state 'git-timemachine-mode 'motion)
   :config
-  (add-hook 'git-timemachine-mode-hook #'evil-motion-state)
-  (global-leader-def
-    "gt" #'git-timemachine)
   (general-def '(motion normal) git-timemachine-mode-map
     minor-leader git-timemachine-mode-map)
   (general-def 'motion git-timemachine-mode-map
@@ -669,7 +673,7 @@
   (diff-hl-dired-mode)
   (diff-hl-flydiff-mode)
   (setq-default diff-hl-flydiff-delay 0.2)
-  (general-def '(normal motion) diff-hl-mode-map
+  (general-def 'motion diff-hl-mode-map
     "[c" #'diff-hl-previous-hunk
     "]c" #'diff-hl-next-hunk))
 
@@ -692,15 +696,13 @@
 
 ;; Define just a few bindings for smerge, but it has pretty great mouse support
 ;; for handling conflicts by right clicking.
-(eval-after-load 'smerge
-  (progn
-    (minor-leader-def 'motion smerge-mode-map
-      "k" #'smerge-keep-upper
-      "j" #'smerge-keep-lower
-      "a" #'smerge-keep-all)
-    (general-def 'motion smerge-mode-map
-      "[c" #'smerge-prev
-      "]c" #'smerge-next)))
+;; (minor-leader-def 'motion smerge-mode-map
+;;   "k" #'smerge-keep-upper
+;;   "j" #'smerge-keep-lower
+;;   "a" #'smerge-keep-all)
+(general-def 'motion smerge-mode-map
+  "[c" #'smerge-prev
+  "]c" #'smerge-next)
 
 ;;; Writing
 ;;;; Spellcheck
@@ -715,7 +717,7 @@
               ispell-dictionary "en_US"
               ispell-extra-args '("--camel-case"))
 
-(general-def '(motion normal) flyspell-mode-map
+(general-def 'motion flyspell-mode-map
   "]s" #'flyspell-goto-next-error)
 
 ;;;; Thesaurus
@@ -726,9 +728,8 @@
     "tt" '(powerthesaurus-lookup-word-dwim :wk "thesaurus")))
 
 ;;; Enable completion, pair matching, line numbers
-;; TODO: Fix this for lsp-ui sideline stuff.
 (use-package visual-fill-column
-  :ghook '(prog-mode-hook markdown-mode-hook)
+  :ghook '(markdown-mode-hook)
   :config
   (setq-default visual-fill-column-width 110))
 
@@ -753,17 +754,17 @@
 (column-number-mode)
 
 ;; Let special modes handle lines however they want to.
-(add-hook 'special-mode-hook
-          (lambda ()
-            (visual-line-mode -1)
-            (display-line-numbers-mode -1)))
+(general-add-hook 'special-mode-hook
+                  (lambda ()
+                    (visual-line-mode -1)
+                    (display-line-numbers-mode -1)))
 
-(setq-default display-line-numbers-type 'relative)
+(setq-default display-line-numbers-type 'visual)
 (defun cycle-line-numbers ()
   (interactive)
   (setq display-line-numbers
         (if (eq (symbol-value 'display-line-numbers) t)
-            'relative t)))
+            'visual t)))
 
 (use-package expand-region
   :general ('visual "=" #'er/expand-region
@@ -797,9 +798,8 @@
   (setq-default lsp-inhibit-message t
                 lsp-prefer-flymake nil
                 lsp-enable-on-type-formatting t)
-  (general-def '(motion normal) lsp-mode-map
-    "gd" #'lsp-find-definition)
-  (major-leader-def 'motion lsp-mode-map
+  (evil-g-def 'motion lsp-mode-map
+    "d" #'lsp-find-definition
     "fi" #'lsp-goto-implementation
     "ft" #'lsp-goto-type-definition
     "fd" #'lsp-find-definition
@@ -828,11 +828,11 @@
 (use-package lsp-ui
   :ghook 'lsp-mode-hook
   :custom
-  (lsp-ui-flycheck-enable nil)
+  ;; (lsp-ui-flycheck-enable nil)
   (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-include-signature t)
   :config
-  (major-leader-def 'motion lsp-ui-mode-map
+  (evil-g-def 'motion lsp-ui-mode-map
     "p" '("peek")
     "pr" #'lsp-ui-peek-find-references
     "pd" #'lsp-ui-peek-find-definitions
@@ -858,6 +858,8 @@
   (dap-tooltip-mode t))
 
 ;;;; One liners
+;; Default dot-files to conf
+(add-to-list 'auto-mode-alist '("\\.env\\'" . conf-unix-mode))
 (use-package haskell-mode
   :mode (("\\.hsc\\'" . haskell-mode)
          ("\\.l[gh]s\\'" . literate-haskell-mode)
@@ -887,11 +889,11 @@
   ;; Code navigation key bindings
   (major-leader-def 'normal go-mode-map
     "ai" #'go-import-add)
-  (major-leader-def '(normal motion) go-mode-map
-    "ga" #'go-goto-arguments
-    "gd" #'go-goto-docstring
-    "gn" #'go-goto-function-name
-    "gi" #'go-goto-imports)
+  (evil-g-def 'motion go-mode-map
+    "fa" #'go-goto-arguments
+    "fd" #'go-goto-docstring
+    "fn" #'go-goto-function-name
+    "fi" #'go-goto-imports)
 
   ;; Setup debugging support when go-mode starts.
   (general-add-hook 'go-mode-hook
@@ -1005,23 +1007,25 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-def 'normal
   "SPC" (general-key "M-x"))
 
+(use-package kill-or-bury-alive
+  :general (global-leader-def "dd" #'kill-or-bury-alive))
+
 ;; Contextual leader key as backslash
 ;; Generic leader key as space
 (global-leader-def
   "," #'other-window
   "dw" #'delete-window
-  "do" #'delete-other-windows
+  "d," #'delete-other-windows
   "db" #'kill-buffer
   "dp" #'posframe-delete-all           ; Only for emergencies
   "of" #'counsel-find-file
   "or" #'counsel-recentf
   "oo" #'switch-to-alternate-buffer
-  "ow" #'view-buffer-other-frame
+  "ow" #'view-buffer-other-window
   "ob" #'ivy-switch-buffer
   "b" #'ivy-purpose-switch-buffer-with-purpose
   "/" #'deadgrep
   "u" #'undo-tree-visualize
-  "e" '("eval")
   ;; Fix expression evaluation position in normal state
   ;; Our cursor is technically before the character we're on, in normal state.
   "ee" (lambda ()
@@ -1029,21 +1033,23 @@ Repeated invocations toggle between the two most recently open buffers."
          (save-excursion
            (evil-forward-char 1)
            (call-interactively #'eval-last-sexp)))
-  "et" (general-key "C-M-x")
-  "gd" #'vdiff-magit-stage
+  "ed" (general-key "C-M-x")
+  "gs" #'vdiff-magit-stage
+  "gp" (lambda ()
+         (interactive)
+         (magit-remote-prune "origin")
+         (magit-shell-command-topdir "git prune-removed"))
   "n" '(:keymap narrow-map :wk "narrow")
-  "a" '("apps")
   "ac" #'calc
   "ae" #'flycheck-list-errors
   "as" #'eshell
-  ;; TODO: Add debugger here under "ad"
-  "m" '("modes")
   "ma" #'artist-mode
   "ci" #'set-input-method
   "cw" #'treemacs-switch-workspace
   "sl" #'cycle-line-numbers
   "si" #'toggle-input-method
   "sw" #'whitespace-mode
+  "sh" #'hl-line-mode
   "h" '(:keymap help-map :wk "help"))
 
 (use-package hungry-delete
@@ -1059,13 +1065,17 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; Disable dragging mouse selection.
   ;; This fixes buttons, changing focus, basically anything using mouse.
   "<down-mouse-1>"
-  "C-o" "C-p" "C-f" "C-w"
+  "C-o" "C-p" "C-f" "C-w" "C-," "C-."
   "R" "Q" "=")
+(general-unbind 'insert
+  "C-j" "C-k")
 
 ;; Swap word motions so that the unshifted forms move symbols rather than
 ;; sub-words, giving the shifted forms the more granular action.
+;; Result is w = symbol, W = (sub)word, o = WORD (includes symbols)
 (general-swap-key nil '(evil-inner-text-objects-map evil-outer-text-objects-map)
-  "w" "W")
+  "w" "W"
+  "w" "o")
 
 (general-swap-key nil 'evil-motion-state-map
   "w" "W"
@@ -1091,14 +1101,17 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-unbind 'insert
   "C-v" "C-z" "C-y" "C-w")
 (general-def
-  "C-w" #'kill-this-buffer
+  "C-p" #'projectile-find-file
   "C-v" #'evil-paste-at-point
   "C-z" #'undo-tree-undo
   "C-y" #'undo-tree-redo
   "C-o" #'counsel-find-file
   "C-s" (general-key "C-x C-s")
   "C-=" #'text-scale-increase
-  "C--" #'text-scale-decrease)
+  "C--" #'text-scale-decrease
+  ;; I don't like drag-selection by mouse.
+  "<down-mouse-1>" nil
+  "<drag-mouse-1>" nil)
 
 (general-def '(normal insert)
   ;; TODO: Decide how I want to combine these commands based on general rules
@@ -1116,11 +1129,15 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; commit message.
   "gq" (general-key "C-c C-k")
   "C-RET" (general-simulate-key "C-c C-c")
+  ;; Make it really easy to execute commands!
+  "SPC" (general-key "M-x")
+  ;; Make -/+ for navigating line starts more ergonomic.
+  "=" #'evil-next-line-first-non-blank
   "[" '("previous")
   "]" '("next")
   ;; Requires special handling to avoid equaling ESC
-  [control-bracketleft] #'evil-jump-backward
-  "C-]" #'evil-jump-forward
+  "C-," #'evil-jump-backward
+  "C-." #'evil-jump-forward
   "[]" #'evil-backward-section-begin
   "][" #'evil-forward-section-begin
   "[p" #'evil-backward-paragraph
@@ -1134,23 +1151,15 @@ Repeated invocations toggle between the two most recently open buffers."
 ;;   "C-j" 'outline-forward-same-level
 ;;   "C-k" 'outline-backward-same-level)
 
-;; Fix outline bindings in non-insert states
-;; (general-def '(normal motion)
-;;   :keymaps 'outshine-mode-map
-;;   :predicate '(outline-on-heading-p)
-;;   "M-k" #'outline-move-subtree-up
-;;   "M-j" #'outline-move-subtree-down
-;;   "TAB" #'outshine-kbd-TAB)
 
 ;;;; prog-mode
-(major-leader-def 'motion prog-mode-map
-  "g" '("goto")
-  "r" '("refactor")
+(general-unbind 'normal "gf")
+(evil-g-def 'motion prog-mode-map
+  ;; "r" '("refactor")
   "f" '("find")
-  ;; "fd" #'dumb-jump-go
-  "fd" #'xref-find-definitions
+  ;; "fd" #'xref-find-definitions
   "fr" #'xref-find-references
-  "j" #'dumb-jump-go
+  "fj" #'dumb-jump-go
   "/" #'dumb-jump-go-prompt)
 
 (general-def '(normal insert) prog-mode-map
@@ -1205,11 +1214,23 @@ Repeated invocations toggle between the two most recently open buffers."
   "a" (general-simulate-key "C-c C-a"))
 
 (use-package pretty-hydra :defer t)
-;; (use-package hydra-posframe
-;;   :straight (:host github :repo "Ladicle/hydra-posframe")
-;;   :config
-;;   (setq hydra-posframe-border-width 2)
-;;   (hydra-posframe-mode))
+
+;;;; org & outlines
+(use-package outshine
+  :ghook 'prog-mode-hook
+  :config
+  ;; Fix outline bindings in non-insert states
+  (general-def
+    :keymaps 'outshine-mode-map
+    ;; :predicate '(outline-on-heading-p)
+    ;; "M-k" #'outline-move-subtree-up
+    ;; "M-j" #'outline-move-subtree-down
+    "TAB" #'outshine-kbd-TAB))
+
+;; TODO: Consider rebinding [[ and ]], as I haven't used them as-is.
+(general-def :keymaps 'outline-minor-mode-map
+  "C-j" #'outline-next-heading
+  "C-k" #'outline-previous-heading)
 
 ;;; Custom theme
 (custom-set-faces
@@ -1217,13 +1238,19 @@ Repeated invocations toggle between the two most recently open buffers."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(company-tooltip-selection ((t (:extend t))))
  '(diff-hl-change ((t (:background "#da8548"))))
  '(diff-hl-delete ((t (:background "#d02b61"))))
  '(diff-hl-insert ((t (:background "#60aa00"))))
- ;; '(font-lock-comment-face ((t (:slant italic))))
- '(ivy-posframe ((t (:inherit default))))
+ ;; Change wavy underline to straight style for readability.
+ '(flycheck-error ((t (:underline "#e74c3c"))))
+ '(flycheck-info ((t (:underline "#b6e63e"))))
+ '(flycheck-warning ((t (:underline "#e2c770"))))
+ '(hl-line ((t (:extend t))))
+ '(hl-paren-face ((t (:weight bold :background nil))) t)
  '(internal-border ((t (:background "white" :foreground "white"))))
- '(hl-paren-face ((t (:weight bold))) t)
+ '(ivy-current-match ((t (:extend t))))
+ '(ivy-posframe ((t (:inherit default))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
  '(outline-3 ((t (:inherit org-level-3))))
@@ -1232,14 +1259,8 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(vdiff-addition-face ((t (:inherit diff-added))))
- ;; Stopgap to extend several faces to EOL
- '(company-tooltip-selection ((t (:extend t))))
- '(ivy-current-match ((t (:extend t))))
- '(hl-line ((t (:extend t))))
  '(region ((t (:extend t))))
- ;; '(window-divider ((t (:foreground "white"))))
- )
+ '(vdiff-addition-face ((t (:inherit diff-added)))))
 
 ;; TODO: Bind f3 to kmacro-end-and-call-macro
 
@@ -1270,12 +1291,14 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
                   #'evil-normalize-keymaps)
 
-(define-key input-decode-map
-  (kbd "C-[")
-  [control-bracketleft])
-
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
 ;; Local Variables:
 ;; byte-compile-warnings: (not free-vars)
 ;; End:

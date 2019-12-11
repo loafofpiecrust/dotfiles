@@ -1,13 +1,17 @@
 [user]
-name = Taylor Snead
-email = taylorsnead@gmail.com
-username = loafofpiecrust
+	name = Taylor Snead
+	email = taylorsnead@gmail.com
+	username = loafofpiecrust
 
 [credential]
-helper = cache
+	helper = cache
 
 [core]
-editor = code
-excludesfile = ~/.gitignore
+	editor = code
+	excludesfile = ~/.gitignore
+
 [github]
 	user = loafofpiecrust
+	
+[alias]
+	prune-removed = "! git branch -vv | awk '/: gone]/{print $1}' | xargs git branch -D"
