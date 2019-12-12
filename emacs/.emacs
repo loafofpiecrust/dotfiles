@@ -188,8 +188,7 @@
 (use-package evil-collection
   :init
   (setq evil-collection-outline-bind-tab-p t
-        evil-collection-company-use-tng nil
-        evil-collection-setup-minibuffer t)
+        evil-collection-company-use-tng nil)
   :config
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
@@ -321,7 +320,10 @@
 
 ;;;; Escape everywhere
 ;; (general-def '(normal motion) [escape] 'keyboard-escape-quit)
-(general-def minibuffer-local-map "ESC" 'minibuffer-keyboard-quit)
+(general-def minibuffer-local-map
+  "ESC" 'minibuffer-keyboard-quit
+  "C-j" #'next-line-or-history-element
+  "C-k" #'previous-line-or-history-element)
 
 ;;; UI Packages
 ;;;; Window Management
@@ -406,8 +408,10 @@
 ;;;; Better help
 (use-package helpful
   :after counsel
-  :config (setq counsel-describe-function-function #'helpful-callable
-                counsel-describe-variable-function #'helpful-variable)
+  :config
+  (setq counsel-describe-function-function #'helpful-callable
+        counsel-describe-variable-function #'helpful-variable)
+  (evil-set-initial-state 'helpful-mode 'motion)
   :general (:keymaps 'help-map
                      "f" 'helpful-callable
                      "v" 'helpful-variable
@@ -420,16 +424,14 @@
 
 (use-package origami
   :ghook '(prog-mode-hook markdown-mode-hook))
-;; (use-package lsp-origami
-;;   :ghook 'origami-mode-hook)
 
 ;;; Editing
 ;;;; General
 (use-package editorconfig
   :ghook 'prog-mode-hook)
 ;; Auto-detect indent for flexibly indented languages
-(use-package dtrt-indent
-  :ghook '(web-mode-hook js-mode-hook c-mode-hook java-mode-hook python-mode-hook))
+;; (use-package dtrt-indent
+;;   :ghook '(web-mode-hook js-mode-hook c-mode-hook java-mode-hook python-mode-hook))
 
 ;; Always indent, no matter what
 (use-package aggressive-indent
@@ -441,7 +443,6 @@
   :config (setq highlight-indent-guides-method 'fill))
 
 ;;;; Expressions
-
 (defconst lisp-lang-hooks '(lisp-mode-hook
                             emacs-lisp-mode-hook
                             scheme-mode-hook
@@ -451,13 +452,11 @@
 (use-package smartparens
   :config
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode)
+    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode swift-mode)
                    delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :ghook
-  'prog-mode-hook
-  'conf-unix-mode-hook
-  'conf-toml-mode-hook
+  '(prog-mode-hook conf-unix-mode-hook conf-toml-mode-hook)
   (lisp-lang-hooks #'smartparens-strict-mode)
   :gfhook #'show-smartparens-mode)
 
@@ -474,13 +473,13 @@
     "]]" #'evil-cp-next-closing
     "M->" #'sp-slurp-hybrid-sexp))
 
-(use-package highlight-parentheses
-  :ghook 'prog-mode-hook)
-
 ;;;; niceties
 ;; Highlight color codes in the buffer
 (use-package rainbow-mode
   :config (rainbow-mode))
+
+(use-package highlight-parentheses
+  :ghook 'prog-mode-hook)
 
 ;;; Project management
 (use-package projectile
@@ -525,10 +524,7 @@
 
 (use-package flycheck-posframe
   :ghook 'flycheck-mode-hook
-  :config
-  (flycheck-posframe-configure-pretty-defaults)
-  ;; (setq flycheck-posframe-border-width 2)
-  )
+  :config (flycheck-posframe-configure-pretty-defaults))
 
 ;;; mini-buffer completion
 (use-package flx)
@@ -536,7 +532,9 @@
   :ghook 'after-init-hook
   :config
   (general-def ivy-minibuffer-map
-    "C-<return>" #'ivy-dispatching-done)
+    "C-<return>" #'ivy-dispatching-done
+    "C-j" #'ivy-next-line
+    "C-k" #'ivy-previous-line)
   (setq-default ivy-use-virtual-buffers t
                 enable-recursive-minibuffers t
                 ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-fuzzy)
@@ -557,18 +555,22 @@
 
 (use-package ivy-bibtex :commands ivy-bibtex)
 
-(use-package counsel :ghook 'ivy-mode-hook
-  :config
-  (setcdr (assq 'counsel-M-x ivy-initial-inputs-alist) ""))
-(use-package ivy-rich :ghook 'ivy-mode-hook
+(use-package counsel
+  :ghook 'ivy-mode-hook
+  :config (setcdr (assq 'counsel-M-x ivy-initial-inputs-alist) ""))
+
+;; Show more details about ivy entries.
+(use-package ivy-rich
+  :ghook 'ivy-mode-hook
   :config (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
 (use-package flyspell-correct-ivy :commands flyspell-mode)
 
-(use-package prescient)
+;; Use completion history to sort candidates.
+(use-package prescient
+  :config (prescient-persist-mode))
 (use-package ivy-prescient
-  :ghook 'ivy-mode-hook
-  :gfhook #'prescient-persist-mode)
+  :ghook 'ivy-mode-hook)
 
 ;; TODO: Bind commands for this thing
 ;; (use-package lsp-ivy
@@ -957,11 +959,22 @@
 ;;;; typesetting
 (use-package markdown-mode
   :mode (("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode))
+         ("\\.markdown\\'" . markdown-mode)
+         ("\\.mdx\\'" . markdown-mode))
   :config
   (major-leader-def 'normal markdown-mode-map
-    "a`" #'markdown-insert-gfm-code-block))
-(use-package poly-markdown :commands markdown-mode)
+    "a`" #'markdown-insert-gfm-code-block)
+  (general-def markdown-mode-map
+    "C-j" #'markdown-next-visible-heading
+    "C-k" #'markdown-previous-visible-heading))
+(use-package polymode
+  :config
+  (general-def
+    :states 'motion
+    :keymaps 'polymode-minor-mode-map
+    "znc" #'polymode-toggle-chunk-narrowing))
+(use-package poly-markdown
+  :commands (gfm-mode markdown-mode))
 ;; org-mode additions
 (use-package org-ref
   :commands (bibtex-mode org-mode))
@@ -1052,6 +1065,15 @@ Repeated invocations toggle between the two most recently open buffers."
   "sw" #'whitespace-mode
   "sh" #'hl-line-mode
   "h" '(:keymap help-map :wk "help"))
+
+(general-def
+  :states 'motion
+  :prefix "zn"
+  nil '("narrow")
+  "d" #'narrow-to-defun
+  "n" #'narrow-to-region
+  "p" #'narrow-to-page
+  "w" #'widen)
 
 (use-package hungry-delete
   :config (global-hungry-delete-mode))
@@ -1229,7 +1251,7 @@ Repeated invocations toggle between the two most recently open buffers."
     "TAB" #'outshine-kbd-TAB))
 
 ;; TODO: Consider rebinding [[ and ]], as I haven't used them as-is.
-(general-def :keymaps 'outline-minor-mode-map
+(general-def :keymaps '(outline-mode-map outline-minor-mode-map)
   "C-j" #'outline-next-heading
   "C-k" #'outline-previous-heading)
 
@@ -1252,6 +1274,7 @@ Repeated invocations toggle between the two most recently open buffers."
  '(internal-border ((t (:background "white" :foreground "white"))))
  '(ivy-current-match ((t (:extend t))))
  '(ivy-posframe ((t (:inherit default))))
+ '(markdown-code-face ((t (:extend t))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
  '(outline-3 ((t (:inherit org-level-3))))
@@ -1303,3 +1326,4 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Local Variables:
 ;; byte-compile-warnings: (not free-vars)
 ;; End:
+(put 'narrow-to-region 'disabled nil)
