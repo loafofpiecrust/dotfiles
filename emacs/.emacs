@@ -457,7 +457,7 @@
 (use-package smartparens
   :config
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode swift-mode)
+    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode swift-mode graphql-mode)
                    delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :ghook
@@ -684,6 +684,9 @@
   (diff-hl-dired-mode)
   (diff-hl-flydiff-mode)
   (setq-default diff-hl-flydiff-delay 0.2)
+  ;; TODO: Rebind this under another leader (major?)
+  ;; (evil-g-def 'normal diff-hl-mode-map
+  ;;   "rh" 'diff-hl-revert-hunk)
   (general-def 'motion diff-hl-mode-map
     "[c" 'diff-hl-previous-hunk
     "]c" 'diff-hl-next-hunk))
@@ -792,10 +795,9 @@
 
 ;;;; shell extensions
 (use-package aweshell
+  :disabled
   :straight (:host github :repo "manateelazycat/aweshell")
   :commands aweshell)
-;; (use-package company-shell
-;;   :config (add-to-list 'company-backends '(company-shell company-shell-env)))
 
 ;;;; dired
 ;; Provide a ranger-like interface for dired
@@ -810,8 +812,7 @@
   :config
   (setq-default lsp-inhibit-message t
                 lsp-prefer-flymake nil
-                lsp-enable-on-type-formatting nil
-                )
+                lsp-enable-on-type-formatting nil)
   (evil-g-def 'motion lsp-mode-map
     "d" 'lsp-find-definition
     "fi" 'lsp-goto-implementation
@@ -834,7 +835,8 @@
                       java-mode-hook
                       kotlin-mode-hook
                       ruby-mode-hook
-                      python-mode-hook)
+                      python-mode-hook
+                      typescript-mode-hook)
                     (lambda () (unless (bound-and-true-p polymode-mode)
                             (lsp-deferred))))
   :custom (lsp-rust-server 'rust-analyzer)
@@ -885,7 +887,7 @@
          ("\\.ghci\\'" . ghci-script-mode)
          ("\\.hcr\\'" . ghc-core-mode)))
 (use-package nix-mode :mode "\\.nix\\'")
-(use-package fish-mode)
+(use-package fish-mode :mode "\\.fish\\'")
 (use-package bazel-mode)
 (use-package dockerfile-mode :mode "Dockerfile\\'")
 (use-package terraform-mode :mode "\\.tf\\(vars\\)?\\'")
@@ -939,6 +941,7 @@
 
 ;; TODO: Use js2 + web + lsp if possible
 (use-package tide
+  :disabled
   :ghook ('typescript-mode-hook 'custom-tide-setup))
 
 (use-package web-mode
@@ -946,12 +949,12 @@
          ("\\.jsx\\'" . web-mode)
          ("\\.html\'" . web-mode)))
 
-(add-hook 'web-mode-hook
-          (lambda ()
-            (let ((ext (file-name-extension buffer-file-name)))
-              (when (or (string-equal ext "tsx")
-                        (string-equal ext "jsx"))
-                (custom-tide-setup)))))
+;; (add-hook 'web-mode-hook
+;;           (lambda ()
+;;             (let ((ext (file-name-extension buffer-file-name)))
+;;               (when (or (string-equal ext "tsx")
+;;                         (string-equal ext "jsx"))
+;;                 (custom-tide-setup)))))
 
 ;; Use eslint for js/ts
 ;; FIXME!
