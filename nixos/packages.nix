@@ -108,18 +108,17 @@
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
-    fira-code
+    hasklig
+    fantasque-sans-mono
     material-design-icons
-    hermit
     charis-sil # IPA font
     google-fonts
     ubuntu_font_family
-    fantasque-sans-mono
     # Add user fonts to ~/.local/share/fonts
   ];
 
   fonts.fontconfig = {
-    defaultFonts.monospace = ["SF Mono" "Fantasque Sans Mono" "Noto Sans Mono CJK SC" "Noto Emoji"];
+    defaultFonts.monospace = ["Hasklig" "Noto Sans Mono CJK SC" "Noto Emoji"];
     defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC"];
     defaultFonts.serif = ["Merriweather"];
   };

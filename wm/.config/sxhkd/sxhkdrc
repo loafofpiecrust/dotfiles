@@ -21,6 +21,9 @@ super + n
 super + e
 	emacsclient -c
 
+super + b
+    firefox
+
 super + F7
 	networkmanager_dmenu
 

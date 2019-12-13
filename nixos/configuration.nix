@@ -19,8 +19,8 @@
 
   # Select internationalisation properties.
   i18n = {
-    consoleFont = "Hermit";
-    consolePackages = [pkgs.hermit];
+    consoleFont = "Hasklig";
+    consolePackages = [pkgs.hasklig];
     consoleKeyMap = "us";
     defaultLocale = "en_US.UTF-8";
     extraLocaleSettings = {

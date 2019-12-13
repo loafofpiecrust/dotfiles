@@ -54,7 +54,14 @@
 
 ;; Fonts need a bit of beefing on Mac
 ;; font test: `' o O 0 () [] {} *i
-(defvar default-font (if (eq system-type 'darwin) "SF Mono-12" "SF Mono-11")
+;; Because it's more complicated to use a font stack in emacs, we probably can't do the
+;; ideal of using Hasklig as a backup for all glyphs not rendered by a primary font.
+;; Potential monospace font choices:
+;; SF Mono       :: Quite readable but kinda boring now.
+;; Cascadia Code :: Playful but still bold enough for me.
+;; mononoki      :: Very similar to Cascadia, but thinner. Very round parens!
+;; Hasklig       :: Readable, ligatures, IPA support (!!), no round parens
+(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "Hasklig-11")
   "Platform-dependent default font size")
 
 (add-to-list 'default-frame-alist
@@ -75,6 +82,7 @@
   (menu-bar-mode -1))
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+(horizontal-scroll-bar-mode -1)
 (fringe-mode '(10 . 0))
 (show-paren-mode)
 (save-place-mode)
@@ -542,6 +550,8 @@
   (general-def ivy-minibuffer-map
     ;; "TAB" 'ivy-next-line
     ;; "<backtab>" 'ivy-previous-line
+    "C-j" 'ivy-next-line
+    "C-k" 'ivy-previous-line
     "C-<return>" 'ivy-dispatching-done)
   (setq-default ivy-use-virtual-buffers t
                 enable-recursive-minibuffers t
@@ -976,8 +986,7 @@
 (use-package poly-markdown
   :commands (gfm-mode markdown-mode))
 ;; org-mode additions
-(use-package org-ref
-  :commands (bibtex-mode org-mode))
+(use-package org-ref)
 (use-package org-bullets :ghook 'org-mode-hook)
 (setq org-fontify-emphasized-text t
       org-highlight-latex-and-related '(native)
