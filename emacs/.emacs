@@ -111,6 +111,9 @@
  load-prefer-newer t
  custom-safe-themes t)
 
+;; Should resolve issues with clicking around in the tree
+(add-hook 'special-mode-hook (lambda () (setq scroll-margin 0)))
+
 ;; Empty scratch buffers
 (setq initial-scratch-message "")
 
@@ -520,7 +523,9 @@
   (general-def treemacs-project-map
     "w" 'treemacs-switch-workspace)
   (general-def projectile-command-map
-    "w" 'treemacs-switch-workspace))
+    "w" 'treemacs-switch-workspace)
+  ;; Mnemonic: "[l]ook at [t]ree"
+  (global-leader-def "lt" 'treemacs-select-window))
 (use-package treemacs-evil :after treemacs evil)
 (use-package treemacs-projectile :after treemacs projectile)
 (use-package treemacs-magit :after treemacs magit)
@@ -836,7 +841,8 @@
                       kotlin-mode-hook
                       ruby-mode-hook
                       python-mode-hook
-                      typescript-mode-hook)
+                      typescript-mode-hook
+                      web-mode-hook)
                     (lambda () (unless (bound-and-true-p polymode-mode)
                             (lsp-deferred))))
   :custom (lsp-rust-server 'rust-analyzer)
@@ -948,6 +954,8 @@
   :mode (("\\.tsx\\'" . web-mode)
          ("\\.jsx\\'" . web-mode)
          ("\\.html\'" . web-mode)))
+
+(use-package typescript-mode :mode "\\.ts\\'")
 
 ;; (add-hook 'web-mode-hook
 ;;           (lambda ()
