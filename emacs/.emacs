@@ -37,6 +37,19 @@
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
 ;; partial-line changes.
 
+;; Terminal Benefits: Transparent background, pywal colors, faster. That's really all I
+;; want from it.
+;; GUI benefits: All keybindings, embedded render previews, different font
+;; sizes, completion icons, posframe, better clipboard support, more complex rendering
+;; support support, underlines colored differently than text, inline images.
+;; DECISION: Stick to GUI emacs. Contribute back when there are issues.
+;;           Try out terminal emacs sometimes. Clipboard integration & some bindings are
+;; the main sticking points.
+
+;; What Emacs has over other editors: org-mode for writing papers, tons of plugins, solid
+;; scripting language, I've already invested time in it. MAGIT!
+;; What Emacs doesn't have: Speed, flexible text rendering.
+
 ;;;; GUI
 ;; Load theme early to avoid flickering
 (use-package doom-themes
@@ -418,10 +431,9 @@
   :config
   (setq counsel-describe-function-function 'helpful-callable
         counsel-describe-variable-function 'helpful-variable)
-  :general
   (general-def :keymaps 'help-map
-    "f" 'helpful-callable
-    "v" 'helpful-variable
+    "f" 'counsel-describe-function
+    "v" 'counsel-describe-variable
     "k" 'helpful-key
     "C" 'helpful-command))
 
@@ -448,7 +460,7 @@
 
 (use-package highlight-indent-guides
   :ghook '(prog-mode-hook org-mode-hook)
-  :config (setq highlight-indent-guides-method 'fill))
+  :config (setq highlight-indent-guides-method 'character))
 
 ;;;; Expressions
 (defconst lisp-lang-hooks '(lisp-mode-hook
@@ -479,6 +491,7 @@
     "]" nil
     "[[" 'evil-cp-previous-closing
     "]]" 'evil-cp-next-closing
+    "M-O" nil                           ; Support terminal arrow key movement.
     "M->" 'sp-slurp-hybrid-sexp))
 
 ;;;; niceties
@@ -1218,6 +1231,8 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;;;; org-mode
 (major-leader-def 'normal org-mode-map
+  "e" 'org-export-dispatch
+  "ar" 'org-ref-ivy-cite-completion
   ;; Mirror some evil agenda commands here for symmetry.
   "c" '("change")
   "cs" 'org-schedule
