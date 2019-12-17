@@ -46,9 +46,13 @@
 ;;           Try out terminal emacs sometimes. Clipboard integration & some bindings are
 ;; the main sticking points.
 
-;; What Emacs has over other editors: org-mode for writing papers, tons of plugins, solid
-;; scripting language, I've already invested time in it. MAGIT!
-;; What Emacs doesn't have: Speed, flexible text rendering.
+;; What Emacs has over other editors: org-mode for writing papers, tons of plugins,
+;; scripting language. MAGIT! Restclient mode. undo-tree. heavy lisp support.
+;; preview images inside buffers (org/latex). flexible keybinding.
+
+;; What Emacs doesn't have: Speed!!, flexible text rendering, stable child frames, just open
+;; folder, modern GUI, solid async operations, right click menu, smooth scroll + cursor
+;; offscreen, debugging!,
 
 ;;;; GUI
 ;; Load theme early to avoid flickering
@@ -1070,6 +1074,8 @@ Repeated invocations toggle between the two most recently open buffers."
   "oo" 'switch-to-alternate-buffer
   "ow" 'view-buffer-other-window
   "ob" 'ivy-switch-buffer
+  "oh" 'split-window-right
+  "ov" 'split-window-below
   "b" 'ivy-purpose-switch-buffer-with-purpose
   "/" 'deadgrep
   "u" 'undo-tree-visualize
