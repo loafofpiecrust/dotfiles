@@ -632,11 +632,10 @@
   (setq company-backends (mapcar 'company-mode/backend-with-yas company-backends)))
 
 (use-package company
-  :ghook 'prog-mode-hook
+  :ghook '(prog-mode-hook org-mode-hook)
   :config
   (general-def :keymaps 'company-active-map
-    "<tab>" 'company-complete-common-or-cycle
-    "<backtab>" 'company-select-previous
+    "<tab>" 'company-complete-selection
     "<escape>" 'company-abort)
   ;; Return finishes completion if you've explicitly picked a candidate.
   (general-def
@@ -664,6 +663,15 @@
   (company-box-max-candidates 50)
   (company-box-doc-delay 2)
   (company-box-show-single-candidate t))
+
+(use-package compdef :after company)
+
+;; Define completion backends for particular modes.
+;; This reduces overhead for completion and gives us the best results.
+(compdef
+ :modes 'org-mode
+ :company '(company-dabbrev company-capf :with company-yasnippet)
+ :capf 'pcomplete-completions-at-point)
 
 ;;; Version Control
 ;;;; Git
@@ -882,7 +890,8 @@
 ;; Auto-complete languages with LSP support
 (use-package company-lsp
   :after lsp-mode
-  :config (push 'company-lsp company-backends))
+  :compdef lsp-mode
+  :company (company-lsp company-yasnippet))
 
 ;;;; Debug Adapter Protocol!!
 (use-package dap-mode
@@ -916,7 +925,8 @@
 (use-package terraform-mode :mode "\\.tf\\(vars\\)?\\'")
 (use-package company-terraform
   :after terraform-mode
-  :config (company-terraform-init))
+  :compdef terraform-mode
+  :company (company-dabbrev company-terraform company-yasnippet))
 (use-package git-modes)
 (use-package yaml-mode)
 (use-package json-mode
@@ -1046,6 +1056,9 @@
 ;; latex additions
 (add-hook 'TeX-mode-hook 'TeX-fold-mode)
 (setq-default TeX-engine 'xetex) ; enables unicode support
+
+;;;; Formatting
+(use-package format-all)
 
 ;;; Mode-specific keybindings
 ;;;; global
