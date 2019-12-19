@@ -5,11 +5,13 @@ off
 output VIRTUAL1
 off
 output eDP1
+gamma 1.0:0.769:0.556
 mode 1920x1080
 pos 0x0
 primary
 rate 60.01
 output HDMI1
+gamma 1.0:0.769:0.556
 mode 1920x1080
 pos 1920x0
 rate 60.00

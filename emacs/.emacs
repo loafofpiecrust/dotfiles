@@ -342,12 +342,22 @@
   "s" '("settings")
   "t" '("text"))
 
-;;;; Escape everywhere
+;;;; Escape anything
 ;; (general-def '(normal motion) [escape] 'keyboard-escape-quit)
 (general-def minibuffer-local-map
   "ESC" 'minibuffer-keyboard-quit
   "C-j" 'next-line-or-history-element
   "C-k" 'previous-line-or-history-element)
+
+(defun escape-from-something ()
+  "Escapes whatever is currently plaguing you, whether multiple cursors or an auxiliary state."
+  (interactive)
+  (cond
+   ((evil-mc-has-cursors-p) (evil-mc-undo-all-cursors))
+   (t (evil-force-normal-state))))
+
+(general-def 'normal
+  "<escape>" 'escape-from-something)
 
 ;;; UI Packages
 ;;;; Window Management
@@ -472,9 +482,10 @@
                             scheme-mode-hook
                             racket-mode-hook))
 
-;; Make expression editing easier everywhere
+;; Make expression editing easier everywhere.
 (use-package smartparens
   :config
+  ;; Automatically open blocks in most languages (that don't provide this natively).
   (dolist (delim '("{" "(" "["))
     (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode swift-mode graphql-mode)
                    delim nil :post-handlers '(("||\n[i]" "RET"))))
@@ -482,7 +493,7 @@
   :ghook
   '(prog-mode-hook conf-unix-mode-hook conf-toml-mode-hook)
   (lisp-lang-hooks 'smartparens-strict-mode)
-  :gfhook 'show-smartparens-mode)
+  :gfhook '(show-smartparens-mode))
 
 (use-package evil-cleverparens
   :ghook 'smartparens-enabled-hook
@@ -542,11 +553,13 @@
   (general-def projectile-command-map
     "w" 'treemacs-switch-workspace)
   ;; Mnemonic: "[l]ook at [t]ree"
-  (global-leader-def "lt" 'treemacs-select-window))
-(use-package treemacs-evil :after treemacs evil)
-(use-package treemacs-projectile :after treemacs projectile)
-(use-package treemacs-magit :after treemacs magit)
-(use-package lsp-treemacs :after treemacs lsp)
+  (global-leader-def "lt" 'treemacs-select-window)
+
+  ;; Auxiliary support packages
+  (use-package treemacs-evil :after evil)
+  (use-package treemacs-projectile :after projectile)
+  (use-package treemacs-magit :after magit)
+  (use-package lsp-treemacs :after lsp))
 
 ;;; Syntax checking
 (use-package flycheck
@@ -557,6 +570,7 @@
     "e" 'flycheck-explain-error-at-point))
 
 (use-package flycheck-posframe
+  :disabled
   :ghook 'flycheck-mode-hook
   :config (flycheck-posframe-configure-pretty-defaults))
 
