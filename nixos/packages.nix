@@ -108,6 +108,7 @@
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
+    noto-fonts-extra
     hasklig
     fantasque-sans-mono
     material-design-icons
@@ -119,7 +120,7 @@
 
   fonts.fontconfig = {
     defaultFonts.monospace = ["Hasklig" "Noto Sans Mono CJK SC" "Noto Emoji"];
-    defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC"];
+    defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC" "FreeSans"];
     defaultFonts.serif = ["Merriweather"];
   };
 }

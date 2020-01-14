@@ -78,7 +78,7 @@
 ;; Cascadia Code :: Playful but still bold enough for me.
 ;; mononoki      :: Very similar to Cascadia, but thinner. Very round parens!
 ;; Hasklig       :: Readable, ligatures, IPA support (!!), no round parens
-(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "Hasklig-11")
+(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "monospace-11")
   "Platform-dependent default font size")
 
 (add-to-list 'default-frame-alist
@@ -165,22 +165,21 @@
 (midnight-mode)
 
 ;;;; Autofill
-;; Only automatically wrap comments in code
+;; Automatically wrap comments in code
 (setq-default comment-auto-fill-only-comments t
               auto-fill-function 'do-auto-fill)
 (add-hook 'prog-mode-hook 'auto-fill-mode)
 
 ;; Cleanup whitespace after saving most files
-(general-add-hook '(text-mode-hook prog-mode-hook)
-                  (lambda () (add-hook 'before-save-hook 'whitespace-cleanup nil t)))
+(add-hook 'before-save-hook 'whitespace-cleanup)
 
 ;;;; Backup settings
-(setq backup-by-copying t ; don't clobber symlinks
+(setq backup-by-copying t                                ; don't clobber symlinks
       backup-directory-alist '(("." . "~/.cache/emacs")) ; no clutter!
       auto-save-file-name-transforms '((".*" "~/.cache/emacs" t))
       ;; TODO: Clean out ~/.cache/emacs every so often.
       delete-old-versions t
-      create-lockfiles nil ; with emacs server there's no need for lockfiles!
+      create-lockfiles nil              ; with emacs server there's no need for lockfiles!
       kept-new-versions 6
       kept-old-versions 2
       version-control t
@@ -189,16 +188,8 @@
 ;;; Evil mode
 ;; Show key combo helpers
 (use-package which-key
-  :custom (which-key-enable-extended-define-key t)
+  :init (setq which-key-enable-extended-define-key t)
   :config (which-key-mode))
-
-;; Record command usage to figure out what to bind to keys.
-(use-package keyfreq
-  :config
-  (setq keyfreq-file "~/.emacs.d/keyfreq"
-        keyfreq-file-lock "~/.emacs.d/keyfreq.lock")
-  (keyfreq-mode)
-  (keyfreq-autosave-mode))
 
 ;; vim emulation
 (use-package evil
@@ -216,8 +207,7 @@
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection
   :init
-  (setq evil-collection-outline-bind-tab-p t
-        evil-collection-company-use-tng t)
+  (setq evil-collection-outline-bind-tab-p t)
   :config
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
@@ -543,8 +533,7 @@
 (use-package treemacs
   :general ("C-\\" 'treemacs)
   :config
-  (setq treemacs-indentation 1
-        treemacs-is-never-other-window t
+  (setq treemacs-is-never-other-window t
         treemacs-eldoc-display nil)
   (general-def treemacs-mode-map
     "p" '(:keymap treemacs-project-map))
@@ -637,37 +626,30 @@
     "TAB" nil
     "<tab>" nil
     [(tab)] nil)
-  ;; Add yasnippet support to every company backend
-  (defun company-mode/backend-with-yas (backend)
-    (if (and (listp backend) (member 'company-yasnippet backend))
-        backend
-      (append (if (consp backend) backend (list backend))
-              '(:with company-yasnippet))))
-  (setq company-backends (mapcar 'company-mode/backend-with-yas company-backends)))
+  ;; Add yasnippet support to company
+  (add-to-list 'company-backends 'company-yasnippet))
 
 (use-package company
   :ghook '(prog-mode-hook org-mode-hook)
   :config
+  ;; Use Tab to complete the selected candidate.
   (general-def :keymaps 'company-active-map
-    "<tab>" 'company-complete-selection
-    "<escape>" 'company-abort)
-  ;; Return finishes completion if you've explicitly picked a candidate.
-  (general-def
-    :keymaps 'company-active-map
+    "<tab>" 'company-complete-selection)
+  ;; Return finishes completion only if you've explicitly picked a candidate.
+  (general-def :keymaps 'company-active-map
     :predicate '(company-explicit-action-p)
     "RET" 'company-complete-selection
     "<return>" 'company-complete-selection)
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
                 completion-styles '(basic partial-completion substring)
-                company-idle-delay 0.1
-                company-minimum-prefix-length 2
+                company-idle-delay 0
+                company-minimum-prefix-length 1
                 company-selection-wrap-around nil
+                company-tooltip-align-annotations t
+                company-dabbrev-downcase nil
                 company-auto-complete 'company-explicit-action-p
                 company-require-match nil))
-
-(use-package company-prescient
-  :ghook 'company-mode-hook)
 
 ;; GUI box to prevent interference with different font sizes
 (use-package company-box
@@ -684,8 +666,17 @@
 ;; This reduces overhead for completion and gives us the best results.
 (compdef
  :modes 'org-mode
- :company '(company-dabbrev company-capf :with company-yasnippet)
+ :company '((company-dabbrev company-capf :with company-yasnippet))
  :capf 'pcomplete-completions-at-point)
+
+(compdef
+ :modes 'prog-mode
+ :company '((company-capf company-keywords company-dabbrev-code :with company-yasnippet)))
+
+;; FIXME: Fuzzy doesn't expand snippets.
+(use-package company-fuzzy
+  :disabled
+  :ghook 'company-mode-hook)
 
 ;;; Version Control
 ;;;; Git
@@ -856,7 +847,8 @@
   :config
   (setq-default lsp-inhibit-message t
                 lsp-prefer-flymake nil
-                lsp-enable-on-type-formatting nil)
+                lsp-enable-on-type-formatting nil
+                lsp-rust-server 'rust-analyzer)
   (evil-g-def 'motion lsp-mode-map
     "d" 'lsp-find-definition
     "fi" 'lsp-goto-implementation
@@ -884,7 +876,6 @@
                       web-mode-hook)
                     (lambda () (unless (bound-and-true-p polymode-mode)
                             (lsp-deferred))))
-  :custom (lsp-rust-server 'rust-analyzer)
   :commands (lsp lsp-deferred))
 
 ;; Show contextual code documentation pop-ups
@@ -905,7 +896,7 @@
 (use-package company-lsp
   :after lsp-mode
   :compdef lsp-mode
-  :company (company-lsp company-yasnippet))
+  :company ((company-lsp :with company-yasnippet)))
 
 ;;;; Debug Adapter Protocol!!
 (use-package dap-mode
@@ -1072,7 +1063,9 @@
 (setq-default TeX-engine 'xetex) ; enables unicode support
 
 ;;;; Formatting
-(use-package format-all)
+(use-package format-all
+  :general (evil-g-def 'normal prog-mode-map
+             "rf" 'format-all-buffer))
 
 ;;; Mode-specific keybindings
 ;;;; global
@@ -1082,16 +1075,17 @@ Repeated invocations toggle between the two most recently open buffers."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
-(general-def 'normal
+(general-def '(normal motion)
   "SPC" (general-key "M-x"))
 
 (use-package kill-or-bury-alive
   :general (global-leader-def "dd" 'kill-or-bury-alive))
 
-;; Contextual leader key as backslash
+;; Contextual leader key
 ;; Generic leader key as space
 (global-leader-def
   "," 'other-window
+  "w" (general-simulate-key "C-x C-s")
   "dw" 'delete-window
   "d," 'delete-other-windows
   "db" 'kill-buffer
@@ -1190,7 +1184,7 @@ Repeated invocations toggle between the two most recently open buffers."
 (general-unbind 'insert
   "C-v" "C-z" "C-y" "C-w")
 (general-def
-  "C-p" 'projectile-find-file
+  ;; Global common bindings for emacs & insert states
   "C-v" 'evil-paste-at-point
   "C-z" 'undo-tree-undo
   "C-y" 'undo-tree-redo
@@ -1209,6 +1203,9 @@ Repeated invocations toggle between the two most recently open buffers."
           (interactive)
           (call-interactively 'comment-dwim)
           (evil-insert-state)))
+
+(general-def 'visual
+  "M-;" 'comment-dwim)
 
 (general-def 'motion
   ;; "gr" stands for "go run this"
@@ -1384,6 +1381,11 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Normalize evil keymaps for some modes that specify mode-local bindings
 (general-add-hook '(vdiff-mode-hook lsp-mode-hook git-timemachine-mode-hook)
                   'evil-normalize-keymaps)
+
+;;; My custom packages!
+;; IM for typing the Cherokee syllabary.
+(add-to-list 'load-path "~/.emacs.d/custom")
+(require 'cherokee-input)
 
 ;; Make gc pauses faster by decreasing the threshold.
 (setq gc-cons-threshold (* 800 1000))
