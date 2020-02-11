@@ -4,6 +4,7 @@
 # /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 # ibus controls input methods
 ibus-daemon -s -d -n xfce4-session
+pkill xfce4-volumed-pulse # sxhkd handles media keys
 
 # Restore last wallpaper
 # Starts notification manager as well

@@ -15,14 +15,20 @@
     # boot niceties
     cleanTmpDir = true;
     consoleLogLevel = 3;
+
+    # kernel options
+    kernelParams = [ "pcie_aspm.policy=powersave" ];
+    kernel.sysctl = {
+      "kernel.nmi_watchdog" = 0;
+    };
   };
 
   networking.hostName = "loafofpiecrust";
+  networking.networkmanager.wifi.powersave = true;
 
   hardware.nvidiaOptimus.disable = true;
   hardware.opengl.extraPackages = [pkgs.linuxPackages.nvidia_x11.out];
-  hardware.opengl.extraPackages32 =
-    [pkgs.linuxPackages.nvidia_x11.lib32];
+  hardware.opengl.extraPackages32 = [pkgs.linuxPackages.nvidia_x11.lib32];
 
   services.undervolt = {
     enable = true;
@@ -38,4 +44,8 @@
     enable = true;
     temperature.night = 3700;
   };
+
+  # Only log out when the lid is closed with power.
+  services.logind.lidSwitchExternalPower = "lock";
+  powerManagement.powertop.enable = true;
 }

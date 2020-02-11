@@ -1,5 +1,10 @@
 #!/usr/bin/env fish
 
+# Scale up the monitor since it's a bit big for just 1080p.
+# TODO: A better solution might be to change bspwm and polybar settings for the
+# monitor. This could mess up video playback. It already messes with background images.
+# xrandr --output HDMI1 --scale 1.2x1.2
+
 # Split workspaces between the monitors
 bspc monitor eDP1  -d 1 2 3 4 5
 bspc monitor HDMI1 -d 6 7 8 9 0

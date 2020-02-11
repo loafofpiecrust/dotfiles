@@ -1,4 +1,11 @@
 ;;; -*- lexical-binding: t; -*-
+;;; Status and Todos
+;;;; Profiler Results
+;; A few things cause slowdown on scroll:
+;; - prefix-wrap-indent causes major lag
+;; - highlight-indent-guides
+;; - spaceline has a pretty small footprint
+
 ;;; Emacs Configuration
 ;;;; Bootstrap package manager
 ;; Fix TLS for emacs 26
@@ -6,7 +13,11 @@
 
 ;; Make startup faster by reducing the frequency of garbage
 ;; collection.  The default is 800 kilobytes.  Measured in bytes.
-(setq gc-cons-threshold (* 50 1000 1000))
+;; Allow allocation of 512Mb before forcing garbage collection, but do collection when the
+;; editor is idle for a few seconds, so that it's always fully responsive.
+(setq gc-cons-threshold (eval-when-compile (* 512 1024 1024))
+      gc-cons-percentage 0.4)
+(run-with-idle-timer 2 t (lambda () (garbage-collect)))
 
 ;; I'm not planning to modify packages directly, so only rebuild on newly
 ;; published versions
@@ -28,11 +39,17 @@
 
 (setq straight-use-package-by-default 1)
 (straight-use-package 'use-package)
+(use-package no-littering)
+(use-package esup :commands esup)
 
 ;; Easier binding definitions
 (use-package general)
 (use-package dash)
 (use-package s)
+
+;; Use bash for inferior shells to maintain compatibility and speed.
+;; TODO: Use dash for this since it's extra fast.
+(setq shell-file-name "/bin/bash")
 
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
 ;; partial-line changes.
@@ -47,12 +64,18 @@
 ;; the main sticking points.
 
 ;; What Emacs has over other editors: org-mode for writing papers, tons of plugins,
-;; scripting language. MAGIT! Restclient mode. undo-tree. heavy lisp support.
+;; scripting language. **MAGIT!** Restclient mode. undo-tree. heavy lisp support.
 ;; preview images inside buffers (org/latex). flexible keybinding.
 
 ;; What Emacs doesn't have: Speed!!, flexible text rendering, stable child frames, just open
 ;; folder, modern GUI, solid async operations, right click menu, smooth scroll + cursor
-;; offscreen, debugging!,
+;; offscreen, debugging??,
+
+;; Vim brings to the table: +speed, +ASYNC!, +better lsp support, +solid term support
+;; cons: -vimscript, -messy bindings?, -limited org-mode, -less pretty undo-tree
+;; -debugging is minimal
+
+;; Conclusion: sticking with emacs, even if ONLY for magit. :D
 
 ;;;; GUI
 ;; Load theme early to avoid flickering
@@ -60,25 +83,37 @@
   :config
   (setq doom-themes-treemacs-enable-variable-pitch t
         doom-themes-treemacs-theme "doom-colors"
-        doom-molokai-brighter-comments t)
-  (load-theme 'doom-molokai t)
+        doom-molokai-brighter-comments t
+        doom-gruvbox-brighter-comments t)
+  ;; (load-theme 'doom-gruvbox t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
 (use-package ewal
-  :disabled
-  :straight (:host github :repo "emacsmirror/ewal"))
+  :straight (:host github :repo "emacsmirror/ewal")
+  :config
+  (use-package ewal-spacemacs-themes)
+  (load-theme 'ewal-spacemacs-classic t)
+  ;; Window dividers aren't needed if frames are outlined by the theme.
+  (window-divider-mode -1)
+  ;; (use-package ewal-evil-cursors
+  ;;   :config (ewal-evil-cursors-get-colors :apply t))
+  )
 
 ;; Fonts need a bit of beefing on Mac
 ;; font test: `' o O 0 () [] {} *i
 ;; Because it's more complicated to use a font stack in emacs, we probably can't do the
 ;; ideal of using Hasklig as a backup for all glyphs not rendered by a primary font.
+;; Maybe make my own programming font with monospaced IPA symbols.
+;; Backup fonts are OK because we mainly want consistent widths within each character set.
 ;; Potential monospace font choices:
 ;; SF Mono       :: Quite readable but kinda boring now.
 ;; Cascadia Code :: Playful but still bold enough for me.
 ;; mononoki      :: Very similar to Cascadia, but thinner. Very round parens!
-;; Hasklig       :: Readable, ligatures, IPA support (!!), no round parens
-(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "monospace-11")
+;; Hasklig       :: Readable, ligatures, IPA support (!!), no round parens, crashes on
+;; Cherokee text.
+;; Fira Code     :: Lovely, ligatures, Cherokee, semi-IPA, no italic!
+(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "Fira Code-11")
   "Platform-dependent default font size")
 
 (add-to-list 'default-frame-alist
@@ -88,40 +123,35 @@
                     :family "Overpass"
                     :height 120)
 
+;; TODO: Add FreeSans as the backup font, to get obscure glyph support.
+;; (set-fontset-font "fontset-default"
+;;                   nil "FreeSans" nil 'append)
+
 (when (eq system-type 'darwin)
   (setq mac-option-modifier 'meta
         mac-command-modifier 'control
         mac-control-modifier 'super
         mac-mouse-wheel-smooth-scroll nil))
 
-;; Disable tool-bar and menu-bar
-(unless (eq system-type 'darwin)
-  (menu-bar-mode -1))
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-(horizontal-scroll-bar-mode -1)
-(fringe-mode '(10 . 0))
-(show-paren-mode)
-(save-place-mode)
-(blink-cursor-mode)
-(window-divider-mode)
-
 ;; Setup basic settings
 (setq-default
  ;; Text display
  display-line-numbers-width 4
- show-paren-style 'expression
+ show-paren-style 'mixed
  x-underline-at-descent-line t
  ;; Nicer scrolling
- mouse-wheel-progressive-speed nil
- scroll-margin 15
+ mouse-wheel-progressive-speed t
+ mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
+ ;; scroll-margin 15
  scroll-conservatively 10000
  shift-select-mode nil
  ;; Indentation and wrapping
  tab-width 4
- indent-tabs-mode nil      ; use spaces for indentation
+ indent-tabs-mode nil                   ; use spaces for indentation
  fill-column 90
+ ;; message-truncate-lines 5
  ;; misc settings
+ ring-bell-function 'ignore
  warning-minimum-level :error
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
@@ -153,6 +183,8 @@
                                        "\\`\\*helpful "
                                        "\\`\\*Calc"
                                        "\\`\\*xref"
+                                       "\\`\\*lsp"
+                                       "\\`\\*company"
                                        "\\`\\*straight-process\\*"
                                        "\\`\\*Flycheck"
                                        "\\`\\*forge"
@@ -202,21 +234,25 @@
               evil-want-visual-char-semi-exclusive t
               evil-want-C-i-jump nil)
   :config
-  (evil-mode t))
+  (evil-mode t)
+  ;; Stop completion when exiting insert mode
+  (add-hook 'evil-insert-state-exit-hook 'company-abort))
 
 ;; bind keys for many modes with better evil compatibility
 (use-package evil-collection
   :init
   (setq evil-collection-outline-bind-tab-p t)
   :config
+  ;; There are just a few modes with undesirable bindings.
   (dolist (m '(go-mode))
     (delete m evil-collection--supported-modes))
   (evil-collection-init))
 
-;; Stop completion when exiting insert mode
-(add-hook 'evil-insert-state-exit-hook 'company-abort)
+;; TODO: Put this somewhere organized...
+(general-def 'motion
+  "zg" 'evil-scroll-line-to-top)
 
-;; commenting lines with verb 'g'
+;; commenting lines with verb 'gc'
 (use-package evil-commentary
   :config (evil-commentary-mode))
 
@@ -388,7 +424,7 @@
 
 ;;;; Fancy looks
 ;; Show marks in fringe for lines past EOF
-(use-package vi-tilde-fringe
+(use-package vim-empty-lines-mode
   :ghook '(prog-mode-hook text-mode-hook))
 
 (use-package hl-todo
@@ -398,15 +434,10 @@
     "]t" 'hl-todo-next
     "[t" 'hl-todo-previous))
 
-;; Temporarily highlight large insertions of text
-;; (use-package volatile-highlights
-;;   :config (volatile-highlights-mode))
-
 ;;;; Dashboard!
 (use-package page-break-lines)
 (use-package dashboard
   :config
-  (dashboard-setup-startup-hook)
   (evil-set-initial-state 'dashboard-mode 'motion)
   ;; Load in both independent and client windows.
   (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
@@ -414,20 +445,33 @@
         dashboard-set-heading-icons t
         dashboard-center-content t
         dashboard-items '((recents . 10)
-                          (projects . 10))))
+                          (projects . 10)))
+  (dashboard-setup-startup-hook))
 
 ;;;; Mode line
 ;; hide minor mode lines
-;; (use-package diminish)
+(use-package diminish)
 
 ;; Show search candidate counts in the mode-line
 (use-package anzu
-  :config (global-anzu-mode))
-(use-package evil-anzu :after anzu
-  :config (setq anzu-cons-mode-line-p nil))
+  :config
+  (setq anzu-cons-mode-line-p nil)
+  (global-anzu-mode))
+(use-package evil-anzu :after anzu)
 
-(use-package telephone-line
-  :config (telephone-line-mode))
+(use-package spaceline
+  :init
+  (setq spaceline-highlight-face-func 'spaceline-highlight-face-evil-state
+        powerline-default-separator 'wave)
+  :config
+  (spaceline-spacemacs-theme))
+
+;; (use-package doom-modeline :config (doom-modeline-mode))
+
+;; (use-package doom-modeline
+;;   :after all-the-icons
+;;   :custom (doom-modeline-height 18)
+;;   :ghook 'after-init-hook)
 
 ;;;; Better help
 (use-package helpful
@@ -458,12 +502,23 @@
   :ghook '(web-mode-hook js-mode-hook c-mode-hook java-mode-hook python-mode-hook))
 
 ;; Always indent, no matter what
+;; FIXME: This package makes editing lag heavily. We should use a more hollistic on-demand
+;; formatting solution. This real-time indenting is nice but honestly quite heavy.
 (use-package aggressive-indent
-  :ghook 'prog-mode-hook
-  :gfhook ('lsp-mode-hook (lambda () (aggressive-indent-mode -1))))
+  :disabled
+  :config
+  (global-aggressive-indent-mode)
+  ;; Disable aggressive indent with LSP, since we have auto formatting and this slows
+  ;; everything down a bunch.
+  (general-add-hook '(lsp-mode-hook)
+                    (lambda () (aggressive-indent-mode -1))))
+
+;; This replaces aggressive indent by only indenting new lines.
+(electric-indent-mode)
 
 (use-package highlight-indent-guides
-  :ghook '(prog-mode-hook org-mode-hook)
+  :disabled
+  :ghook '(prog-mode-hook org-mode-hook markdown-mode-hook)
   :config (setq highlight-indent-guides-method 'character))
 
 ;;;; Expressions
@@ -500,10 +555,11 @@
     "M->" 'sp-slurp-hybrid-sexp))
 
 ;;;; niceties
-;; Highlight color codes in the buffer
+;; Highlight color codes in the buffer.
 (use-package rainbow-mode
   :config (rainbow-mode))
 
+;; Highlight multiple layers of surrounding punctuation.
 (use-package highlight-parentheses
   :ghook 'prog-mode-hook)
 
@@ -541,8 +597,8 @@
     "w" 'treemacs-switch-workspace)
   (general-def projectile-command-map
     "w" 'treemacs-switch-workspace)
-  ;; Mnemonic: "[l]ook at [t]ree"
-  (global-leader-def "lt" 'treemacs-select-window)
+  ;; Mnemonic: "[o]pen [t]ree"
+  (global-leader-def "ot" 'treemacs-select-window)
 
   ;; Auxiliary support packages
   (use-package treemacs-evil :after evil)
@@ -553,7 +609,7 @@
 ;;; Syntax checking
 (use-package flycheck
   :config
-  (global-flycheck-mode)
+  ;; (global-flycheck-mode)
   (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
   (general-def :keymaps 'help-map
     "e" 'flycheck-explain-error-at-point))
@@ -643,7 +699,8 @@
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
                 completion-styles '(basic partial-completion substring)
-                company-idle-delay 0
+                ;; completion-styles '(flex)
+                company-idle-delay 0.1
                 company-minimum-prefix-length 1
                 company-selection-wrap-around nil
                 company-tooltip-align-annotations t
@@ -783,8 +840,9 @@
   (setq-default visual-fill-column-width 110))
 
 ;; Smartly indent wrapped lines
-;; (use-package adaptive-wrap
-;;   :config (adaptive-wrap-prefix-mode))
+(use-package adaptive-wrap
+  :disabled
+  :ghook ('visual-line-mode-hook #'adaptive-wrap-prefix-mode))
 
 (general-add-hook '(org-mode-hook conf-toml-mode-hook)
                   'electric-pair-mode)
@@ -799,16 +857,16 @@
 (global-prettify-symbols-mode)
 ;; (global-auto-revert-mode)
 (global-visual-line-mode)
-(global-display-line-numbers-mode)
 (column-number-mode)
 
-;; Let special modes handle lines however they want to.
-(general-add-hook 'special-mode-hook
-                  (lambda ()
-                    (visual-line-mode -1)
-                    (display-line-numbers-mode -1)))
+(general-add-hook '(prog-mode-hook text-mode-hook org-mode-hook conf-unix-mode-hook conf-toml-mode-hook)
+                  'display-line-numbers-mode)
 
-(setq-default display-line-numbers-type 'visual)
+;; Let special modes handle lines however they want to.
+(general-add-hook '(special-mode-hook dired-mode-hook)
+                  (lambda () (visual-line-mode -1)))
+
+;; (setq-default display-line-numbers-type 'visual)
 (defun cycle-line-numbers ()
   (interactive)
   (setq display-line-numbers
@@ -822,17 +880,18 @@
 ;;; Auxiliary Modes
 ;;;; REST client
 (use-package restclient
-  :commands restclient-mode
   :mode "\\.http\\'")
+;; (use-package verb
+;;   :mode "\\.verb\\'")
 (use-package dumb-jump
   :defer t
   :config (setq dumb-jump-selector 'ivy))
 
 ;;;; shell extensions
-(use-package aweshell
-  :disabled
-  :straight (:host github :repo "manateelazycat/aweshell")
-  :commands aweshell)
+;; (use-package aweshell
+;;   :disabled
+;;   :straight (:host github :repo "manateelazycat/aweshell")
+;;   :commands aweshell)
 
 ;;;; dired
 ;; Provide a ranger-like interface for dired
@@ -844,6 +903,7 @@
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
 (use-package lsp-mode
+  :custom (lsp-eldoc-render-all nil)
   :config
   (setq-default lsp-inhibit-message t
                 lsp-prefer-flymake nil
@@ -853,7 +913,6 @@
     "d" 'lsp-find-definition
     "fi" 'lsp-goto-implementation
     "ft" 'lsp-goto-type-definition
-    "fd" 'lsp-find-definition
     "fr" 'lsp-find-references)
   (evil-g-def 'normal lsp-mode-map
     "r" '("refactor")
@@ -866,6 +925,8 @@
             (lambda () (add-hook 'before-save-hook
                             'lsp-format-buffer
                             nil t)))
+
+  :init
   (general-add-hook '(go-mode-hook
                       rust-mode-hook
                       java-mode-hook
@@ -885,9 +946,12 @@
   ;; (lsp-ui-flycheck-enable nil)
   (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-include-signature t)
+  (lsp-ui-doc-enable nil)
   :config
-  (evil-g-def 'motion lsp-ui-mode-map
+  ;; TODO: Integrate better with major leader. Is major leader necessary even?
+  (evil-g-def 'motion lsp-mode-map
     "p" '("peek")
+    "pt" 'lsp-ui-doc-glance
     "pr" 'lsp-ui-peek-find-references
     "pd" 'lsp-ui-peek-find-definitions
     "pi" 'lsp-ui-peek-find-implementation))
@@ -905,6 +969,7 @@
   ;; Open the hydra when we hit a breakpoint
   (add-hook 'dap-stopped-hook 'dap-hydra)
   ;; TODO: Is this needed when we can click on the gutter? Figure out the best binding for this.
+  ;; TODO: Consider binding under "g" to get rid of this major-leader
   (major-leader-def 'normal dap-mode-map
     "d" '("debug")
     "db" 'dap-breakpoint-toggle)
@@ -924,6 +989,7 @@
          ("\\.ghci\\'" . ghci-script-mode)
          ("\\.hcr\\'" . ghc-core-mode)))
 (use-package nix-mode :mode "\\.nix\\'")
+(use-package company-nixos-options)
 (use-package fish-mode :mode "\\.fish\\'")
 (use-package bazel-mode)
 (use-package dockerfile-mode :mode "Dockerfile\\'")
@@ -942,6 +1008,7 @@
   :mode "\\.go\\'"
   :config
   ;; Code navigation key bindings
+  ;; TODO: Integrate better with major-leader?
   (evil-g-def 'normal go-mode-map
     "ai" 'go-import-add)
   (evil-g-def 'motion go-mode-map
@@ -958,6 +1025,10 @@
                     nil nil t))
 
 (use-package racket-mode :mode "\\.rkt[dl]?\\'")
+
+(add-hook 'makefile-mode-hook
+          (lambda ()
+            (setq indent-tabs-mode t)))
 
 ;;;; Java
 (use-package lsp-java :commands java-mode)
@@ -976,11 +1047,6 @@
   (tide-setup)
   (tide-hl-identifier-mode 1))
 ;; TODO: Use eslint before save
-
-;; TODO: Use js2 + web + lsp if possible
-(use-package tide
-  :disabled
-  :ghook ('typescript-mode-hook 'custom-tide-setup))
 
 (use-package web-mode
   :mode (("\\.tsx\\'" . web-mode)
@@ -1019,7 +1085,8 @@
     "as" 'markdown-insert-gfm-code-block)
   (general-def markdown-mode-map
     "C-j" 'markdown-next-visible-heading
-    "C-k" 'markdown-previous-visible-heading))
+    "C-k" 'markdown-previous-visible-heading
+    "C-*" 'markdown-insert-list-item))
 (use-package polymode
   :config
   (general-def
@@ -1028,9 +1095,15 @@
     "znc" 'polymode-toggle-chunk-narrowing))
 (use-package poly-markdown
   :commands (gfm-mode markdown-mode))
+(use-package poly-org
+  :commands (org-mode))
 ;; org-mode additions
 (use-package org-ref)
-(use-package org-bullets :ghook 'org-mode-hook)
+;; FIXME: Causes emacs to freeze if there's a *** header with Hasklig font.
+;; (use-package org-bullets :ghook 'org-mode-hook)
+;; Might fix org-bullets?
+(setq inhibit-compacting-font-caches t)
+
 (setq org-fontify-emphasized-text t
       org-highlight-latex-and-related '(native)
       org-agenda-files '("~/Documents/agenda")
@@ -1043,11 +1116,16 @@
       org-reverse-note-order t
       org-fast-tag-selection-single-key t
       org-use-property-inheritance t
+      org-export-with-smart-quotes t
       org-agenda-custom-commands '(("u" "Unscheduled TODOs"
                                     ((todo ""
                                            ((org-agenda-overriding-header "Unscheduled TODOs")
                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
                                     nil nil)))
+
+(general-def 'motion org-mode-map
+  ;; Mnemonic is "show preview"
+  "zp" 'org-toggle-latex-fragment)
 
 ;; (eval-after-load 'org
 ;;   (org-babel-do-load-languages 'org-babel-load-languages
@@ -1085,7 +1163,13 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Generic leader key as space
 (global-leader-def
   "," 'other-window
-  "w" (general-simulate-key "C-x C-s")
+  "r" '(:wk "recover")
+  "rr" 'recover-this-file
+  "rb" 'revert-buffer
+  "w" '(:wk "write")
+  "ww" (general-simulate-key "C-x C-s")
+  "wf" 'write-file                      ; akin to "Save as..."
+  "w," 'save-some-buffers
   "dw" 'delete-window
   "d," 'delete-other-windows
   "db" 'kill-buffer
@@ -1097,6 +1181,9 @@ Repeated invocations toggle between the two most recently open buffers."
   "ob" 'ivy-switch-buffer
   "oh" 'split-window-right
   "ov" 'split-window-below
+  "oc" 'calc
+  "os" 'eshell
+  "oe" 'flycheck-list-errors
   "b" 'ivy-purpose-switch-buffer-with-purpose
   "/" 'deadgrep
   "u" 'undo-tree-visualize
@@ -1113,18 +1200,20 @@ Repeated invocations toggle between the two most recently open buffers."
          (interactive)
          (magit-remote-prune "origin")
          (magit-shell-command-topdir "git prune-removed"))
-  "n" '(:keymap narrow-map :wk "narrow")
-  "ac" 'calc
-  "ae" 'flycheck-list-errors
-  "as" 'eshell
-  "ma" 'artist-mode
+  "ca" 'artist-mode
   "ci" 'set-input-method
-  "cw" 'treemacs-switch-workspace
   "sl" 'cycle-line-numbers
   "si" 'toggle-input-method
   "sw" 'whitespace-mode
   "sh" 'hl-line-mode
+  "sr" 'auto-revert-mode
   "h" '(:keymap help-map :wk "help"))
+
+(general-def 'motion
+  "zw" 'count-words)
+;; Single-key save binding because saving is so common!
+(general-def 'normal
+  "<print>" (general-simulate-key "C-x C-s"))
 
 (general-def
   :states 'motion
@@ -1221,9 +1310,9 @@ Repeated invocations toggle between the two most recently open buffers."
   "=" 'evil-next-line-first-non-blank
   "[" '("previous")
   "]" '("next")
-  ;; Requires special handling to avoid equaling ESC
-  "C-," 'evil-jump-backward
-  "C-." 'evil-jump-forward
+  ;; C-[ Requires special handling to avoid equaling ESC
+  "C-{" 'evil-jump-backward
+  "C-}" 'evil-jump-forward
   "[]" 'evil-backward-section-begin
   "][" 'evil-forward-section-begin
   "[p" 'evil-backward-paragraph
@@ -1232,6 +1321,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "]e" 'next-error
   "?" 'swiper
   "0" (general-key "^"))
+
 ;; (general-def '(normal motion)
 ;;   :keymaps '(outshine-mode-map outline-mode-map)
 ;;   "C-j" 'outline-forward-same-level
@@ -1301,7 +1391,7 @@ Repeated invocations toggle between the two most recently open buffers."
 (major-leader-def 'normal artist-mode-map
   "a" (general-simulate-key "C-c C-a"))
 
-(use-package pretty-hydra :defer t)
+;; (use-package pretty-hydra :defer t)
 
 ;;;; org & outlines
 (use-package outshine
@@ -1355,8 +1445,9 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; TODO: Bind f3 to kmacro-end-and-call-macro
 
-(setq window-divider-default-right-width 3
-      window-divider-default-bottom-width 3)
+;; (setq-default window-divider-default-right-width 2
+;;               window-divider-default-bottom-width 2
+;;               window-divider-default-places t)
 
 (set-face-attribute 'diff-added nil
                     :background (color-darken-name "dark olive green" 10)
@@ -1364,6 +1455,7 @@ Repeated invocations toggle between the two most recently open buffers."
 
 (set-face-attribute 'show-paren-match-expression nil
                     :inherit nil
+                    :background nil
                     :weight 'bold)
 
 (set-face-attribute 'diff-changed nil
@@ -1383,19 +1475,23 @@ Repeated invocations toggle between the two most recently open buffers."
                   'evil-normalize-keymaps)
 
 ;;; My custom packages!
-;; IM for typing the Cherokee syllabary.
 (add-to-list 'load-path "~/.emacs.d/custom")
+
+;; IM for typing the Cherokee syllabary.
 (require 'cherokee-input)
 
-;; Make gc pauses faster by decreasing the threshold.
-(setq gc-cons-threshold (* 800 1000))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;;; Final Adjustments
+
 ;; Local Variables:
 ;; byte-compile-warnings: (not free-vars)
 ;; End:
 (put 'narrow-to-region 'disabled nil)
+
+;; Suppress common error messages that get annoying.
+(defun my-command-error-function (data context caller)
+  "Ignore common benign error signals like end-of-buffer;
+   pass the rest to the default handler."
+  (when (not (memq (car data) debug-ignored-errors))
+    (command-error-default-function data context caller)))
+
+(setq command-error-function #'my-command-error-function)

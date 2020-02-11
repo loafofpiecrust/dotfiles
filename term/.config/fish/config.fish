@@ -1,7 +1,7 @@
-# The line below screws up emacs and may be unnecessary
-# cat ~/.config/wpg/sequences &
-
-source ~/.cache/wal/colors.fish 2>/dev/null
+# Replace default named colors with our custom scheme.
+cat ~/.config/wpg/sequences &
+# Tell fish to use named colors for everything.
+source ~/.config/fish/custom/colors.fish 2>/dev/null
 
 # Install all fish packages on new systems!
 if not functions -q fisher
@@ -13,8 +13,10 @@ end
 # Default to opening files in existing frames
 set -x VISUAL "emacsclient"
 # If all else fails, use vim
-set -x EDITOR "vim"
+set -x EDITOR "nvim"
 
 # Make go install packages somwehre less annoying.
 set -x GOPATH ~/.go
 set -g fish_user_paths $GOPATH/bin $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
+
+any-nix-shell fish --info-right | source

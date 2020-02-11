@@ -1,17 +1,15 @@
-
 ; scroll to the bottom for some icons...
 
 [colors]
 background = ${xrdb:color0:#222}
 background-alt = ${xrdb:color1:#dfdfdf}
 foreground = ${xrdb:color7:#dfdfdf}
-foreground-alt = ${xrdb:color8:#555}
+inactive = ${xrdb:color8:#555}
 foreground-bright = ${xrdb:color6:#dfdfdf}
 ; Keep trying to flip colors 5 and 2
 primary = ${xrdb:color5:#ffb52a}
 secondary = ${xrdb:color2:#e60053}
 alert = ${xrdb:color4:#bd2c40}
-red = #bd2c40
 
 misc1 = ${xrdb:color2:#bd2c40}
 misc2 = ${xrdb:color3:#bd2c40}
@@ -43,12 +41,16 @@ padding-left = 2
 padding-right = 2
 module-margin = 1
 
+border-bottom-size = 3
+border-bottom-color = ${colors.secondary}
+
 font-0 = "monospace:size=11:weight=bold"
 font-1 = "Material Design Icons:pixelsize=14"
 
 modules-left = cpu memory vpn wlan
-modules-center = 
+modules-center =
 modules-right = randpaper bspwm volume battery date powermenu
+tray-position = center
 
 scroll-up = bspwm-desknext
 scroll-down = bspwm-deskprev
@@ -70,7 +72,7 @@ type = internal/xkeyboard
 blacklist-0 = num lock
 
 format-prefix = " "
-format-prefix-foreground = ${colors.foreground-alt}
+format-prefix-foreground = ${colors.inactive}
 format-prefix-underline = ${colors.secondary}
 
 label-layout = %layout%
@@ -129,7 +131,7 @@ label-urgent-background = ${colors.alert}
 label-urgent-padding = 1
 
 label-empty = %icon%
-label-empty-foreground = ${colors.foreground-alt}
+label-empty-foreground = ${colors.inactive}
 label-empty-padding = 1
 
 
@@ -177,7 +179,7 @@ label-urgent-background = ${colors.alert}
 label-urgent-padding = 1
 
 label-empty = %icon%
-label-empty-foreground = ${colors.foreground-alt}
+label-empty-foreground = ${colors.inactive}
 label-empty-padding = 1
 
 label-occupied = %icon%
@@ -189,19 +191,33 @@ label-occupied-padding = 1
 [module/cpu]
 type = internal/cpu
 interval = 10
+format = <ramp-load>
 format-prefix = "CPU "
-format-prefix-foreground = ${colors.foreground-alt}
-label = %percentage:2%%
-
+format-prefix-foreground = ${colors.inactive}
+ramp-load-0 = ▁
+ramp-load-1 = ▂
+ramp-load-2 = ▃
+ramp-load-3 = ▄
+ramp-load-4 = ▅
+ramp-load-5 = ▆
+ramp-load-6 = ▇
+ramp-load-7 = █
 
 [module/memory]
 type = internal/memory
 interval = 10
+format = <ramp-used>
 format-prefix = "RAM "
-format-prefix-foreground = ${colors.foreground-alt}
-label = %percentage_used:2%%
+format-prefix-foreground = ${colors.inactive}
 foreground = ${colors.primary}
-
+ramp-used-0 = ▁
+ramp-used-1 = ▂
+ramp-used-2 = ▃
+ramp-used-3 = ▄
+ramp-used-4 = ▅
+ramp-used-5 = ▆
+ramp-used-6 = ▇
+ramp-used-7 = █
 
 [module/wlan]
 type = internal/network
@@ -223,9 +239,9 @@ label-packetloss = Connecting
 format-disconnected = <label-disconnected>
 ;format-disconnected-underline = ${self.format-connected-underline}
 label-disconnected =  Borked
-label-disconnected-foreground = ${colors.foreground-alt}
+label-disconnected-foreground = ${colors.inactive}
 
-; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷, 
+; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷,
 ;       浪, 鸞, 藍, 臘, 朗, 狼, 來
 ramp-signal-0 = 冷
 ramp-signal-1 = 爛
@@ -247,14 +263,14 @@ interval = 3.0
 
 format-connected-underline = #55aa55
 format-connected-prefix = " "
-format-connected-prefix-foreground = ${colors.foreground-alt}
+format-connected-prefix-foreground = ${colors.inactive}
 label-connected = %local_ip%
 
 format-disconnected =
 ;format-disconnected = <label-disconnected>
 ;format-disconnected-underline = ${self.format-connected-underline}
 ;label-disconnected = %ifname% disconnected
-;label-disconnected-foreground = ${colors.foreground-alt}
+;label-disconnected-foreground = ${colors.inactive}
 
 
 [module/date]
@@ -281,7 +297,7 @@ label-volume = ""
 label-volume-foreground = ${colors.foreground-bright}
 ; format-volume-underline = ${colors.foreground-bright}
 
-format-muted-foreground = ${colors.foreground-alt}
+format-muted-foreground = ${colors.inactive}
 format-muted = <label-muted> <bar-volume>
 label-muted = ""
 
@@ -293,7 +309,7 @@ bar-volume-gradient = false
 bar-volume-indicator = |
 bar-volume-fill = -
 bar-volume-empty = -
-bar-volume-empty-foreground = ${colors.foreground-alt}
+bar-volume-empty-foreground = ${colors.inactive}
 
 
 [module/battery]
@@ -301,6 +317,7 @@ type = internal/battery
 battery = BAT1
 adapter = AC
 full-at = 98
+time-format = %H:%M
 
 format-charging-prefix = %{A3:xfce4-power-manager-settings&:}
 format-charging-suffix = %{A}
@@ -321,7 +338,7 @@ bar-capacity-fill = 
 bar-capacity-empty = 
 bar-capacity-fill-foreground = ${colors.primary}
 bar-capacity-indicator-foreground = ${colors.primary}
-bar-capacity-empty-foreground = ${colors.foreground-alt}
+bar-capacity-empty-foreground = ${colors.inactive}
 
 
 [module/powermenu]
@@ -361,11 +378,11 @@ click-left = wpg -m
 ; radioactive: 
 ; recycle: 
 ; rocket: 
-; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷, 
+; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷,
 ;       浪, 鸞, 藍, 臘, 朗, 狼, 來
 ; everything: 
 ;volume: , , , 
 ; alert: , 
-;  yinyang: , , , , ｇ, 
+;  yinyang: , , , , ｇ,
 ; wms: , , , , , , , , , Ｒ, Ｓ, Ｔ, Ｕ, , , , , 
 ; hdmi: 

@@ -13,11 +13,14 @@ bspc config click_to_focus       true
 # bspc config focus_follows_pointer true
 # bspc config pointer_follows_focus false
 
+# bspc config remove_disabled_monitors true
+# bspc config remove_unplugged_monitors true
+
 # Panel & borders
-bspc config top_padding 37 # 33 (panel) + 10
-bspc config right_padding 5
-bspc config left_padding 5
-bspc config bottom_padding 5
+bspc config top_padding 32 # 33 (panel) + 10
+# bspc config right_padding 5
+# bspc config left_padding 5
+# bspc config bottom_padding 5
 # bspc config normal_border_color "#A8896C"
 #bspc config active_border_color "#47E4E0"
 # bspc config focused_border_color "#47E4E0"
@@ -25,6 +28,7 @@ bspc config bottom_padding 5
 # Use background image color scheme
 ~/.config/bspwm/apply-colors.sh
 
+bspc rule -a '*:zathura' state=tiled
 bspc rule -a mplayer2 state=floating
 bspc rule -a Screenkey manage=off
 bspc rule -a Xfce4-panel state=floating
@@ -38,6 +42,7 @@ bspc rule -a "Wrapper-1.0" border=off focus=on follow=on # manage=off # Whisker 
 bspc rule -a Oblogout state=floating
 bspc rule -a Pavucontrol state=floating
 bspc rule -a Emacs state=tiled
+bspc rule -a "*wpg*" state=floating
 
 # For wine games, don't fullscreen inside app, use the bspwm rule :P
 bspc rule -a "osu!.exe" state=fullscreen

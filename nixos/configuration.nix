@@ -17,10 +17,9 @@
     channel = https://nixos.org/channels/nixos-19.09;
   };
 
-  # Select internationalisation properties.
   i18n = {
-    consoleFont = "Hasklig";
-    consolePackages = [pkgs.hasklig];
+    consoleFont = "Fira Code";
+    consolePackages = [pkgs.fira-code];
     consoleKeyMap = "us";
     defaultLocale = "en_US.UTF-8";
     extraLocaleSettings = {
@@ -30,14 +29,15 @@
     };
     inputMethod = {
       enabled = "ibus";
-      ibus.engines = with pkgs.ibus-engines; [libpinyin anthy];
+      ibus.engines = with pkgs.ibus-engines; [libpinyin anthy table table-others];
     };
   };
 
-  # Enable sound.
+  # Use pulseaudio for sound.
   sound.enable = true;
   hardware.pulseaudio.enable = true;
 
+  # Enable networking
   networking.networkmanager.enable = true;
 
   # Display management!
@@ -46,7 +46,7 @@
       enable = true;
       layout = "us";
       enableCtrlAltBackspace = true;
-      autoRepeatInterval = 25; # ms between key repeats
+      autoRepeatInterval = 200; # ms between key repeats
       # I don't use caps lock enough, swap it with escape!
       xkbOptions = "caps:swapescape";
 
@@ -62,6 +62,8 @@
         default = "xfce4-14";
         xterm.enable = false;
         xfce4-14 = {
+          # Bits of xfce that I need: power-manager, session?, xfsettingsd, xfconf
+          # Don't need: xfce4-volumed-pulse, nmapplet
           enable = true;
           noDesktop = true;
           enableXfwm = false;
@@ -70,14 +72,16 @@
 
       windowManager.bspwm.enable = true;
 
+      # displayManager.gdm.enable = true;
       displayManager.lightdm = {
         enable = true;
-        greeters.gtk = {
-          indicators = ["~spacer" "~session" "~clock" "~power"];
+        greeters.enso = {
+          enable = true;
+          # indicators = ["~spacer" "~session" "~clock" "~power"];
           cursorTheme.package = pkgs.bibata-cursors;
           cursorTheme.name = "Bibata Oil";
           theme.package = pkgs.arc-theme;
-          theme.name = "Arc";
+          # theme.name = "Arc";
         };
       };
     };
@@ -86,12 +90,14 @@
     emacs = {
       enable = true;
       defaultEditor = true;
-      package = pkgs.emacsGit;
+      package = pkgs.emacs;
     };
 
     # Window compositing effects.
     openssh.enable = true;
     printing.enable = true;
+    # Allow easy discovery of network devices (like printers).
+    avahi = { enable = true; nssmdns = true; };
     tlp.enable = true; # power saving
     tzupdate.enable = true; # automatic timezone by IP
     autorandr.enable = true; # monitor presets

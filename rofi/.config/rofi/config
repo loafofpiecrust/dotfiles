@@ -1,5 +1,5 @@
-
-rofi.theme: ~/.cache/wal/colors-rofi-light.rasi
-rofi.columns: 2
+rofi.theme: ~/.cache/wal/colors-rofi-custom.rasi
+rofi.columns: 1
+rofi.width: 45
 rofi.show-icons: true
 rofi.font: monospace medium 12

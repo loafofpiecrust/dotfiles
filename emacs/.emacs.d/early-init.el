@@ -1,0 +1,10 @@
+;; Disable tool-bar and menu-bar
+(unless (eq system-type 'darwin)
+  (menu-bar-mode -1))
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(horizontal-scroll-bar-mode -1)
+(show-paren-mode)
+(save-place-mode)
+(blink-cursor-mode)
+(window-divider-mode)

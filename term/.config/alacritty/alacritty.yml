@@ -4,7 +4,7 @@
 # environment variables. Some entries may override variables
 # set by alacritty itself.
 env:
-  WINIT_HIDPI_FACTOR: "1.7"
+  WINIT_HIDPI_FACTOR: "1"
   # TERM variable
   #
   # This value is used to set the `$TERM` environment variable for
@@ -429,6 +429,8 @@ key_bindings:
   - { key: Up,       mods: Alt,     chars: "\x1b[1;3A"                   }
   - { key: Up,                      chars: "\x1b[A",   mode: ~AppCursor  }
   - { key: Up,                      chars: "\x1bOA",   mode: AppCursor   }
+  - { key: K,        mods: Control, chars: "\x1b[A" }
+  - { key: J,        mods: Control, chars: "\x1b[B" }
   - { key: Down,     mods: Shift,   chars: "\x1b[1;2B"                   }
   - { key: Down,     mods: Control, chars: "\x1b[1;5B"                   }
   - { key: Down,     mods: Alt,     chars: "\x1b[1;3B"                   }

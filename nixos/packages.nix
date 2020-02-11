@@ -16,7 +16,6 @@
     nnn # file manager
     gnome3.file-roller # provides all archive formats
     xfce.gvfs
-    glib
 
     # user tools
     unstable.alacritty
@@ -45,7 +44,7 @@
     kotlin
     nodejs
     yarn
-    texlive.combined.scheme-medium
+    texlive.combined.scheme-full
     racket
 
     # Spellcheck
@@ -55,9 +54,8 @@
     aspellDicts.en-science
 
     # dev
-    emacsGit
+    emacs
     insomnia
-    vscodium
 
     # apps
     firefox
@@ -68,6 +66,8 @@
     deluge
     filezilla
     bleachbit
+    libreoffice
+    gimp
 
     # gtk themes
     arc-theme
@@ -82,19 +82,29 @@
       # to ensure `allowUnfree = true;` is propagated:
       config = config.nixpkgs.config;
     };
+    # Allow use of less reviewed community-developed packages! Pinned on 2020-02-03.
+    nur = import (builtins.fetchTarball {
+      url = "https://github.com/nix-community/NUR/archive/4a5651cf5f5a46ff5197805b4b10dfd6dd89d28a.tar.gz";
+      sha256 = "1h4g76fx8bzrqngwq4ijr063hbf5f3mwfq1vyw305rjmjcs3w3ak";
+    }) {
+      inherit pkgs;
+    };
+    # Pin to emacs 27 release branch.
+    emacs = nur.repos.kreisys.emacs27.overrideAttrs(oldAttrs: {
+      src = builtins.fetchurl {
+        url = https://github.com/emacs-mirror/emacs/archive/b2e27d8617ad727c578763445d240962828a872c.tar.gz;
+        sha256 = "1ij1f7l20b1npbdy0y354s838c7l7jjxj0rzmw0jqy16p9b0l20i";
+      };
+    });
   };
 
   nixpkgs.overlays = [
-    # Build emacs from bleeding-edge source
-    (import (builtins.fetchTarball {
-      # Pin to a particular commit until I manually upgrade
-      url = https://github.com/nix-community/emacs-overlay/archive/987648217c9aacfa5a5fd6925ed3da3bbeb0b3b7.tar.gz;
-      sha256 = "07jcy5q79z4yf3y8iw7b8h1n214jrhrrbjpybhbl8hn6lrdkp8w2";
-    }))
+    # Add wayland packages.
     (self: super: {
+      # Add round corners to bspwm
       bspwm = super.bspwm.overrideAttrs(oldAttrs: {
         src = builtins.fetchurl {
-          url = "https://github.com/Javyre/bspwm/archive/round_corners.tar.gz";
+          url = https://github.com/Javyre/bspwm/archive/round_corners.tar.gz;
           sha256 = "0b4a02ami7pa71g4j4an5cfjn3sgrf1mvwm8k90q0j0iqgs7zwii";
         };
       });
@@ -115,12 +125,14 @@
     charis-sil # IPA font
     google-fonts
     ubuntu_font_family
+    fira-code
     # Add user fonts to ~/.local/share/fonts
   ];
 
-  fonts.fontconfig = {
-    defaultFonts.monospace = ["Hasklig" "Noto Sans Mono CJK SC" "Noto Emoji"];
-    defaultFonts.sansSerif = ["Overpass" "Noto Sans CJK SC" "FreeSans"];
-    defaultFonts.serif = ["Merriweather"];
+  fonts.enableDefaultFonts = true;
+  fonts.fontconfig.defaultFonts = {
+    monospace = ["Fira Code" "Noto Sans Mono CJK SC" "Noto Emoji" "Material Design Icons"];
+    sansSerif = ["Overpass" "Noto Sans CJK SC" "FreeSans" "Material Design Icons"];
+    serif = ["Merriweather"];
   };
 }

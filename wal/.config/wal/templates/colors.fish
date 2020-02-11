@@ -1,5 +1,5 @@
 # set fish_color_normal normal
-set fish_color_normal {foreground.strip}
+set fish_color_normal {foreground.strip} --background={background.strip}
 # set fish_color_command 005fd7
 set fish_color_command {color2.strip}
 # set fish_color_param 00afff
