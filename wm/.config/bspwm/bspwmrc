@@ -17,7 +17,7 @@ bspc config click_to_focus       true
 # bspc config remove_unplugged_monitors true
 
 # Panel & borders
-bspc config top_padding 32 # 33 (panel) + 10
+bspc config top_padding 32
 # bspc config right_padding 5
 # bspc config left_padding 5
 # bspc config bottom_padding 5

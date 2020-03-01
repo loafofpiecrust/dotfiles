@@ -46,7 +46,7 @@
       enable = true;
       layout = "us";
       enableCtrlAltBackspace = true;
-      autoRepeatInterval = 200; # ms between key repeats
+      autoRepeatInterval = 250; # ms between key repeats
       # I don't use caps lock enough, swap it with escape!
       xkbOptions = "caps:swapescape";
 

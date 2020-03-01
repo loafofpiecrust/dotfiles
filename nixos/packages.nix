@@ -120,12 +120,14 @@
     noto-fonts-emoji
     noto-fonts-extra
     hasklig
-    fantasque-sans-mono
     material-design-icons
     charis-sil # IPA font
     google-fonts
     ubuntu_font_family
     fira-code
+    symbola
+    dejavu_fonts
+    # iosevka-custom
     # Add user fonts to ~/.local/share/fonts
   ];
 
@@ -134,5 +136,9 @@
     monospace = ["Fira Code" "Noto Sans Mono CJK SC" "Noto Emoji" "Material Design Icons"];
     sansSerif = ["Overpass" "Noto Sans CJK SC" "FreeSans" "Material Design Icons"];
     serif = ["Merriweather"];
+  };
+  fonts.fontconfig = {
+   subpixel.lcdfilter = "light";
+   ultimate.enable = true;
   };
 }
