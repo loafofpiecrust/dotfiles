@@ -2,8 +2,8 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
+# Declare a function that takes one destructured argument.
 { config, lib, pkgs, ... }:
-
 {
   imports = [
     # Include the results of the hardware scan.
@@ -14,18 +14,21 @@
 
   system.autoUpgrade = {
     enable = true;
-    channel = https://nixos.org/channels/nixos-19.09;
+    channel = https://nixos.org/channels/nixos-20.03;
+  };
+
+  console = {
+    font = "Fira Code";
+    packages = [pkgs.fira-code];
+    keyMap = "us";
   };
 
   i18n = {
-    consoleFont = "Fira Code";
-    consolePackages = [pkgs.fira-code];
-    consoleKeyMap = "us";
     defaultLocale = "en_US.UTF-8";
-    extraLocaleSettings = {
+    extraLocaleSettings = let alt = "en_DK.UTF-8"; in {
       # I prefer ISO time and the metric system.
-      LC_TIME = "en_DK.UTF-8";
-      LC_MEASUREMENT = "en_DK.UTF-8";
+      LC_TIME = alt;
+      LC_MEASUREMENT = alt;
     };
     inputMethod = {
       enabled = "ibus";
@@ -48,7 +51,7 @@
       enableCtrlAltBackspace = true;
       autoRepeatInterval = 250; # ms between key repeats
       # I don't use caps lock enough, swap it with escape!
-      xkbOptions = "caps:swapescape";
+      xkbOptions = "caps:swapescape, compose:ralt";
 
       videoDrivers = ["intel"]; # TODO: Pick gpu drivers
       libinput = {
@@ -59,30 +62,32 @@
       };
 
       desktopManager = {
-        default = "xfce4-14";
         xterm.enable = false;
-        xfce4-14 = {
+        xfce = {
           # Bits of xfce that I need: power-manager, session?, xfsettingsd, xfconf
           # Don't need: xfce4-volumed-pulse, nmapplet
           enable = true;
           noDesktop = true;
           enableXfwm = false;
+          thunarPlugins = with pkgs; [xfce.thunar-archive-plugin xfce.thunar-volman];
         };
       };
 
       windowManager.bspwm.enable = true;
 
+      displayManager.defaultSession = "xfce+bspwm";
       # displayManager.gdm.enable = true;
       displayManager.lightdm = {
         enable = true;
-        greeters.enso = {
-          enable = true;
-          # indicators = ["~spacer" "~session" "~clock" "~power"];
-          cursorTheme.package = pkgs.bibata-cursors;
-          cursorTheme.name = "Bibata Oil";
-          theme.package = pkgs.arc-theme;
-          # theme.name = "Arc";
-        };
+        # background = "${pkgs.nixos-artwork.wallpapers.nix-wallpaper-stripes-logo}/share/artwork/gnome/nix-wallpaper-stripes-logo.png";
+        greeters.pantheon.enable = true;
+        # greeters.enso = {
+        #   enable = true;
+        #   cursorTheme.package = pkgs.bibata-cursors;
+        #   cursorTheme.name = "Bibata Oil";
+        #   # theme.package = pkgs.arc-theme;
+        #   # theme.name = "Arc";
+        # };
       };
     };
 
@@ -90,7 +95,7 @@
     emacs = {
       enable = true;
       defaultEditor = true;
-      package = pkgs.emacs;
+      package = pkgs.emacsUnstable;
     };
 
     # Window compositing effects.
@@ -99,9 +104,12 @@
     # Allow easy discovery of network devices (like printers).
     avahi = { enable = true; nssmdns = true; };
     tlp.enable = true; # power saving
-    tzupdate.enable = true; # automatic timezone by IP
     autorandr.enable = true; # monitor presets
     gnome3.gnome-keyring.enable = true;
+    offlineimap = {
+      enable = true;
+      path = [pkgs.mu];
+    };
 
     # Limit journal size
     journald.extraConfig = ''
@@ -118,6 +126,7 @@
       hashedPassword = "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
     };
   };
+  environment.homeBinInPath = true;
 
   programs = {
     fish.enable = true;
@@ -127,7 +136,10 @@
     adb.enable = true;
     gnupg.agent.enable = true;
     gnupg.agent.enableSSHSupport = true;
+    seahorse.enable = true;     # Manage keyring passwords.
   };
+
+  virtualisation.libvirtd.enable = true;
 
   nix.gc = {
     automatic = true;

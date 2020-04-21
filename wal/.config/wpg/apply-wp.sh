@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 # wait for formats to output...
-sleep 0.3
+sleep 0.5
 
 # Set the wallpaper from cache
 feh --bg-fill ~/.config/wpg/.current &

@@ -1,5 +1,4 @@
 { config, lib, pkgs, ... }:
-
 {
   boot = {
     # Use the systemd-boot EFI boot loader.
@@ -26,7 +25,14 @@
   networking.hostName = "loafofpiecrust";
   networking.networkmanager.wifi.powersave = true;
 
-  hardware.nvidiaOptimus.disable = true;
+  # Enable NVIDIA GPU
+  # hardware.bumblebee.enable = true;
+  # hardware.nvidia.prime.offload.enable = true;
+  # hardware.nvidia.prime = {
+  #   offload.enable = true;
+  #   intelBusId = "PCI:0:2:0";
+  #   nvidiaBusId = "PCI:60:0:0";
+  # };
   hardware.opengl.extraPackages = [pkgs.linuxPackages.nvidia_x11.out];
   hardware.opengl.extraPackages32 = [pkgs.linuxPackages.nvidia_x11.lib32];
 

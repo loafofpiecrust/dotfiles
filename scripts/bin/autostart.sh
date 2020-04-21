@@ -11,7 +11,7 @@ pkill xfce4-volumed-pulse # sxhkd handles media keys
 ~/.config/wpg/wp_init.sh
 
 # Window compositor to make bspwm prettier :cat:
-compton &
+picom &
 
 # Bar
 pkill nm-applet # not needed with my polybar modules

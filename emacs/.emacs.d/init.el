@@ -49,7 +49,7 @@
 
 ;; Use bash for inferior shells to maintain compatibility and speed.
 ;; TODO: Use dash for this since it's extra fast.
-(setq shell-file-name "/bin/bash")
+(setq shell-file-name "/bin/sh")
 
 ;; TODO: Custom colors for refined vdiff chunks, letting us visualize
 ;; partial-line changes.
@@ -85,11 +85,12 @@
         doom-themes-treemacs-theme "doom-colors"
         doom-molokai-brighter-comments t
         doom-gruvbox-brighter-comments t)
-  ;; (load-theme 'doom-gruvbox t)
+  (load-theme 'doom-molokai t)
   (doom-themes-org-config)
   (doom-themes-treemacs-config))
 
 (use-package ewal
+  :disabled
   :straight (:host github :repo "emacsmirror/ewal")
   :config
   (use-package ewal-spacemacs-themes)
@@ -100,28 +101,28 @@
   ;;   :config (ewal-evil-cursors-get-colors :apply t))
   )
 
-;; Fonts need a bit of beefing on Mac
-;; font test: `' o O 0 () [] {} *i
-;; Because it's more complicated to use a font stack in emacs, we probably can't do the
-;; ideal of using Hasklig as a backup for all glyphs not rendered by a primary font.
-;; Maybe make my own programming font with monospaced IPA symbols.
-;; Backup fonts are OK because we mainly want consistent widths within each character set.
-;; Potential monospace font choices:
-;; SF Mono       :: Quite readable but kinda boring now.
-;; Cascadia Code :: Playful but still bold enough for me.
-;; mononoki      :: Very similar to Cascadia, but thinner. Very round parens!
-;; Hasklig       :: Readable, ligatures, IPA support (!!), no round parens, crashes on
-;; Cherokee text.
-;; Fira Code     :: Lovely, ligatures, Cherokee, semi-IPA, no italic!
-(defvar default-font (if (eq system-type 'darwin) "Hasklig-12" "Fira Code-11")
-  "Platform-dependent default font size")
-
-(add-to-list 'default-frame-alist
-             `(font . ,default-font))
-
 (set-face-attribute 'variable-pitch nil
                     :family "Overpass"
                     :height 120)
+
+;; Render as many glyphs as possible with available fonts.
+(use-package unicode-fonts
+  :custom (unicode-fonts-restrict-to-fonts '("DevaVu Sans Mono"
+                                             "DejaVu Sans"
+                                             "Symbola"
+                                             "Noto Sans"
+                                             "Noto Sans Symbols"
+                                             "Noto Sans Cherokee"
+                                             "Material Design Icons"))
+  :config
+  (unicode-fonts-setup))
+
+
+(use-package all-the-icons
+  :config
+  ;; Sometimes I use these icons, but they're non standard unicode I think.
+  ;; (set-fontset-font "fontset-default" 'unicode "Material Design Icons")
+  )
 
 ;; TODO: Add FreeSans as the backup font, to get obscure glyph support.
 ;; (set-fontset-font "fontset-default"
@@ -156,7 +157,9 @@
  prettify-symbols-unprettify-at-point 'right-edge
  require-final-newline t
  load-prefer-newer t
- custom-safe-themes t)
+ custom-safe-themes t
+ ;; Allow reading up to 1MB from external process output.
+ read-process-output-max (* 1024 1024))
 
 ;; Should resolve issues with clicking around in the tree
 (add-hook 'special-mode-hook (lambda () (setq scroll-margin 0)))
@@ -314,15 +317,14 @@
 (use-package evil-matchit
   :config (global-evil-matchit-mode))
 
+(use-package posframe)
+
 ;; Show registers in popup when necessary!
 (use-package evil-owl
   :config
   (setq evil-owl-display-method 'posframe
-        evil-owl-extra-posframe-args '(:width 50
-                                              :internal-border-width 2
-                                              :left-fringe 8 :right-fringe 8)
-        evil-owl-idle-delay 0)
-  (general-unbind 'motion "'")
+        evil-owl-extra-posframe-args '(:width 50 :height 200
+                                              :left-fringe 8 :right-fringe 8))
   (evil-owl-mode))
 
 ;;;; setup prefixes
@@ -415,7 +417,6 @@
   )
 
 ;;;; Icons & Emojis
-(use-package all-the-icons)
 (use-package emojify
   :defer 1
   :config
@@ -424,13 +425,13 @@
 
 ;;;; Fancy looks
 ;; Show marks in fringe for lines past EOF
-(use-package vim-empty-lines-mode
-  :ghook '(prog-mode-hook text-mode-hook))
+(use-package vi-tilde-fringe
+  :ghook '(prog-mode-hook text-mode-hook org-mode-hook))
 
 (use-package hl-todo
-  :ghook 'prog-mode-hook
+  :ghook '(prog-mode-hook org-mode-hook text-mode-hook)
   :config
-  (general-def 'motion
+  (general-def 'motion hl-todo-mode-map
     "]t" 'hl-todo-next
     "[t" 'hl-todo-previous))
 
@@ -460,18 +461,21 @@
 (use-package evil-anzu :after anzu)
 
 (use-package spaceline
+  :disabled
   :init
   (setq spaceline-highlight-face-func 'spaceline-highlight-face-evil-state
         powerline-default-separator 'wave)
   :config
   (spaceline-spacemacs-theme))
 
-;; (use-package doom-modeline :config (doom-modeline-mode))
-
-;; (use-package doom-modeline
-;;   :after all-the-icons
-;;   :custom (doom-modeline-height 18)
-;;   :ghook 'after-init-hook)
+(use-package doom-modeline
+  :custom
+  (doom-modeline-icon t)
+  (doom-modeline-buffer-encoding nil)
+  (doom-modeline-gnus nil)
+  (doom-modeline-irc nil)
+  (doom-modeline-project-detection 'project)
+  :config (doom-modeline-mode))
 
 ;;;; Better help
 (use-package helpful
@@ -498,8 +502,9 @@
   :ghook 'prog-mode-hook)
 ;; Auto-detect indent for flexibly indented languages
 (use-package dtrt-indent
+  :disabled
   ;; TODO: Disable this for polymode so Markdown indentation doesn't inherit to code blocks.
-  :ghook '(web-mode-hook js-mode-hook c-mode-hook java-mode-hook python-mode-hook))
+  :ghook '(web-mode-hook c-mode-hook java-mode-hook python-mode-hook))
 
 ;; Always indent, no matter what
 ;; FIXME: This package makes editing lag heavily. We should use a more hollistic on-demand
@@ -532,7 +537,7 @@
   :config
   ;; Automatically open blocks in most languages (that don't provide this natively).
   (dolist (delim '("{" "(" "["))
-    (sp-local-pair '(web-mode nix-mode go-mode c-mode javascript-mode swift-mode graphql-mode)
+    (sp-local-pair '(nix-mode go-mode c-mode javascript-mode swift-mode graphql-mode)
                    delim nil :post-handlers '(("||\n[i]" "RET"))))
   (require 'smartparens-config)
   :ghook
@@ -541,7 +546,7 @@
   :gfhook '(show-smartparens-mode))
 
 (use-package evil-cleverparens
-  :ghook 'smartparens-enabled-hook
+  ;; :ghook 'smartparens-enabled-hook
   :init
   (setq evil-cleverparens-swap-move-by-word-and-symbol t
         evil-cleverparens-use-regular-insert t)
@@ -600,6 +605,42 @@
   ;; Mnemonic: "[o]pen [t]ree"
   (global-leader-def "ot" 'treemacs-select-window)
 
+  (defun treemacs-create-temp-workspace ()
+    "Create or rebuild a temporary workspace containing the current project."
+    (interactive)
+    ;; Delete the temporary workspace, if it exists.
+    (let* ((names->workspaces (--map (cons (treemacs-workspace->name it) it) treemacs--workspaces))
+           (ws (assoc "Temporary" names->workspaces)))
+      (when ws (setq treemacs--workspaces (delete (cdr ws) treemacs--workspaces))))
+    ;; Recreate the temporary workspace.
+    (treemacs-do-create-workspace "Temporary")
+    ;; Switch to it.
+    (setf (treemacs-current-workspace)
+          (--first (string= (treemacs-workspace->name it) "Temporary") treemacs--workspaces))
+    ;; Add the current project.
+    (treemacs-add-project-to-workspace (projectile-project-root))
+    ;; Refresh related buffers and files.
+    (treemacs--persist)
+    (treemacs--invalidate-buffer-project-cache)
+    (treemacs--rerender-after-workspace-change))
+
+  (defun treemacs-project-in-workspace ()
+    "Returns the current project if it's within the current workspace, otherwise nil."
+    (let* ((proj (projectile-project-root)))
+      (--first (string= (file-name-as-directory (treemacs-project->path it))
+                        proj)
+               (treemacs-workspace->projects (treemacs-current-workspace)))))
+
+  (defun treemacs-switch-to-closest-workspace ()
+    "Switch to the first workspace that contains this project, if it isn't in the current one."
+    (interactive)
+    (let* ((current-ws (treemacs-current-workspace))
+           (proj (projectile-project-root)))
+      (unless (treemacs-project-in-workspace)
+        (setf (treemacs-current-workspace)
+              (treemacs--find-workspace proj))
+        (treemacs--rerender-after-workspace-change))))
+
   ;; Auxiliary support packages
   (use-package treemacs-evil :after evil)
   (use-package treemacs-projectile :after projectile)
@@ -633,9 +674,11 @@
     ;; "<backtab>" 'ivy-previous-line
     "C-j" 'ivy-next-line
     "C-k" 'ivy-previous-line
+    "RET" 'ivy-alt-done
     "C-<return>" 'ivy-dispatching-done)
   (setq-default ivy-use-virtual-buffers t
                 enable-recursive-minibuffers t
+                ivy-count-format "(%d/%d) "
                 ivy-re-builders-alist '((ivy-switch-buffer . ivy--regex-fuzzy)
                                         (ivy-bibtex . ivy--regex-ignore-order)
                                         (counsel-M-x . ivy--regex-ignore-order)
@@ -644,6 +687,7 @@
                 projectile-completion-system 'ivy))
 
 (use-package ivy-posframe
+  :disabled
   :ghook 'ivy-mode-hook
   :config
   (setq ivy-posframe-display-functions-alist '((swiper . nil)
@@ -659,6 +703,8 @@
   :config (setcdr (assq 'counsel-M-x ivy-initial-inputs-alist) ""))
 
 ;; Show more details about ivy entries.
+(use-package all-the-icons-ivy-rich
+  :ghook 'ivy-mode-hook)
 (use-package ivy-rich
   :ghook 'ivy-mode-hook
   :config (setcdr (assq t ivy-format-functions-alist) 'ivy-format-function-line))
@@ -681,9 +727,7 @@
   (general-def yas-minor-mode-map
     "TAB" nil
     "<tab>" nil
-    [(tab)] nil)
-  ;; Add yasnippet support to company
-  (add-to-list 'company-backends 'company-yasnippet))
+    [(tab)] nil))
 
 (use-package company
   :ghook '(prog-mode-hook org-mode-hook)
@@ -696,11 +740,13 @@
     :predicate '(company-explicit-action-p)
     "RET" 'company-complete-selection
     "<return>" 'company-complete-selection)
+  (general-def :keymaps 'company-mode-map
+    "C-SPC" 'company-complete)
   ;; Show completion automatically upon typing anything
   (setq-default completion-ignore-case t
                 completion-styles '(basic partial-completion substring)
                 ;; completion-styles '(flex)
-                company-idle-delay 0.1
+                company-idle-delay 0
                 company-minimum-prefix-length 1
                 company-selection-wrap-around nil
                 company-tooltip-align-annotations t
@@ -723,7 +769,7 @@
 ;; This reduces overhead for completion and gives us the best results.
 (compdef
  :modes 'org-mode
- :company '((company-dabbrev company-capf :with company-yasnippet))
+ :company '((company-capf :with company-yasnippet))
  :capf 'pcomplete-completions-at-point)
 
 (compdef
@@ -814,10 +860,11 @@
 ;;;; Spellcheck
 ;; Load flyspell async to prevent blocking on file load
 (use-package flyspell-lazy
-  :config (flyspell-lazy-mode t))
+  :disabled
+  :ghook 'flyspell-mode-hook)
 ;; Enable spellcheck in comments and strings (requires ispell)
-(general-add-hook '(markdown-mode-hook org-mode-hook) 'flyspell-mode)
-(general-add-hook 'prog-mode-hook 'flyspell-prog-mode)
+;; (general-add-hook '(markdown-mode-hook org-mode-hook) 'flyspell-mode)
+;; (general-add-hook 'prog-mode-hook 'flyspell-prog-mode)
 (setq-default flyspell-issue-message-flag nil
               ispell-program-name (executable-find "aspell")
               ispell-dictionary "en_US"
@@ -825,6 +872,13 @@
 
 (general-def 'motion flyspell-mode-map
   "]s" 'flyspell-goto-next-error)
+
+;; This should generally replace flyspell for us. Only checks words currently on-screen.
+(use-package spell-fu
+  :ghook '(prog-mode-hook markdown-mode-hook org-mode-hook)
+  :general (general-def 'motion
+             "]s" 'spell-fu-goto-next-error
+             "[s" 'spell-fu-goto-previous-error))
 
 ;;;; Thesaurus
 ;; Requires internet to lookup words
@@ -844,8 +898,12 @@
   :disabled
   :ghook ('visual-line-mode-hook #'adaptive-wrap-prefix-mode))
 
-(general-add-hook '(org-mode-hook conf-toml-mode-hook)
-                  'electric-pair-mode)
+(general-add-hook '(org-mode-hook conf-toml-mode-hook markdown-mode-hook)
+                  #'electric-pair-local-mode)
+
+;;;; Python
+(add-to-list 'auto-mode-alist '("Pipfile\\'" . conf-toml-mode))
+(use-package pipenv :ghook 'python-mode-hook)
 
 ;; Stop auto-fill in certain modes where we'd rather break lines ourselves based
 ;; on sentences or what have you. We use visual-fill-column to make that easier
@@ -854,7 +912,7 @@
 
 ;; Separate words in camelCase symbol names
 (global-subword-mode)
-(global-prettify-symbols-mode)
+;; (global-prettify-symbols-mode)
 ;; (global-auto-revert-mode)
 (global-visual-line-mode)
 (column-number-mode)
@@ -883,9 +941,6 @@
   :mode "\\.http\\'")
 ;; (use-package verb
 ;;   :mode "\\.verb\\'")
-(use-package dumb-jump
-  :defer t
-  :config (setq dumb-jump-selector 'ivy))
 
 ;;;; shell extensions
 ;; (use-package aweshell
@@ -899,6 +954,10 @@
   :general (global-leader-def "od" 'ranger))
 
 ;;; Programming Languages
+(use-package dumb-jump
+  :defer t
+  :config (setq dumb-jump-selector 'ivy))
+
 ;;;; Language Server Protocol!
 ;; lsp in conjunction with company and flycheck gives us easy auto-complete and
 ;; syntax checking on-the-fly.
@@ -908,6 +967,8 @@
   (setq-default lsp-inhibit-message t
                 lsp-prefer-flymake nil
                 lsp-enable-on-type-formatting nil
+                lsp-signature-auto-activate t
+                lsp-signature-doc-lines 1
                 lsp-rust-server 'rust-analyzer)
   (evil-g-def 'motion lsp-mode-map
     "d" 'lsp-find-definition
@@ -934,10 +995,14 @@
                       ruby-mode-hook
                       python-mode-hook
                       typescript-mode-hook
-                      web-mode-hook)
+                      web-mode-hook
+                      julia-mode-hook
+                      js-mode-hook)
                     (lambda () (unless (bound-and-true-p polymode-mode)
                             (lsp-deferred))))
-  :commands (lsp lsp-deferred))
+  :commands (lsp lsp-deferred)
+  :compdef lsp-mode
+  :company ((company-capf :with company-yasnippet)))
 
 ;; Show contextual code documentation pop-ups
 (use-package lsp-ui
@@ -948,19 +1013,18 @@
   (lsp-ui-doc-include-signature t)
   (lsp-ui-doc-enable nil)
   :config
-  ;; TODO: Integrate better with major leader. Is major leader necessary even?
+  (defun lsp-ui-doc-toggle ()
+    (interactive)
+    (if (lsp-ui-doc--visible-p)
+        (lsp-ui-doc-hide)
+      (lsp-ui-doc-show)))
+  ;; TODO: Consider zf- here, since these are display changes. This mirrors gf-.
   (evil-g-def 'motion lsp-mode-map
     "p" '("peek")
-    "pt" 'lsp-ui-doc-glance
+    "pt" 'lsp-ui-doc-toggle
     "pr" 'lsp-ui-peek-find-references
     "pd" 'lsp-ui-peek-find-definitions
     "pi" 'lsp-ui-peek-find-implementation))
-
-;; Auto-complete languages with LSP support
-(use-package company-lsp
-  :after lsp-mode
-  :compdef lsp-mode
-  :company ((company-lsp :with company-yasnippet)))
 
 ;;;; Debug Adapter Protocol!!
 (use-package dap-mode
@@ -989,7 +1053,10 @@
          ("\\.ghci\\'" . ghci-script-mode)
          ("\\.hcr\\'" . ghc-core-mode)))
 (use-package nix-mode :mode "\\.nix\\'")
-(use-package company-nixos-options)
+(use-package company-nixos-options
+  :after nix-mode
+  :compdef nix-mode
+  :company ((company-nixos-options company-dabbrev :with company-yasnippet)))
 (use-package fish-mode :mode "\\.fish\\'")
 (use-package bazel-mode)
 (use-package dockerfile-mode :mode "Dockerfile\\'")
@@ -1030,6 +1097,9 @@
           (lambda ()
             (setq indent-tabs-mode t)))
 
+(use-package julia-mode :mode "\\.jl\\'")
+(use-package lsp-julia)
+
 ;;;; Java
 (use-package lsp-java :commands java-mode)
 (use-package kotlin-mode :mode "\\.kts?\\'")
@@ -1049,11 +1119,12 @@
 ;; TODO: Use eslint before save
 
 (use-package web-mode
-  :mode (("\\.tsx\\'" . web-mode)
-         ("\\.jsx\\'" . web-mode)
-         ("\\.html\'" . web-mode)))
+  :mode (("\\.html\\'" . web-mode)))
 
 (use-package typescript-mode :mode "\\.ts\\'")
+;; TODO Resolve tsx dilemma of TS syntax with embedded JSX. web-mode is inconsistent, and
+;; js-mode doesn't support TS highlighting.
+(add-to-list 'auto-mode-alist '("\\.tsx\\'" . javascript-mode))
 
 ;; (add-hook 'web-mode-hook
 ;;           (lambda ()
@@ -1081,12 +1152,16 @@
          ("\\.markdown\\'" . markdown-mode)
          ("\\.mdx\\'" . markdown-mode))
   :config
+  (setq markdown-indent-on-enter 'indent-and-new-item)
   (evil-g-def 'normal markdown-mode-map
     "as" 'markdown-insert-gfm-code-block)
   (general-def markdown-mode-map
     "C-j" 'markdown-next-visible-heading
     "C-k" 'markdown-previous-visible-heading
-    "C-*" 'markdown-insert-list-item))
+    "C-*" 'markdown-insert-list-item
+    "S-RET" (lambda () (interactive)
+              (newline)
+              (markdown-indent-line))))
 (use-package polymode
   :config
   (general-def
@@ -1098,34 +1173,75 @@
 (use-package poly-org
   :commands (org-mode))
 ;; org-mode additions
-(use-package org-ref)
-;; FIXME: Causes emacs to freeze if there's a *** header with Hasklig font.
-;; (use-package org-bullets :ghook 'org-mode-hook)
+(use-package org
+  :ensure nil
+  :general
+  (general-def 'motion org-mode-map
+    "zt" 'org-show-todo-tree
+    ;; Mnemonic is "show preview"
+    "zp" 'org-toggle-latex-fragment)
+  (major-leader-def 'normal org-mode-map
+    "e" 'org-export-dispatch
+    ;; Mirror some evil agenda commands here for symmetry.
+    "c" '("change")
+    "cs" 'org-schedule
+    "cd" 'org-deadline
+    "ct" 'org-set-tags-command
+    "ce" 'org-set-effort
+    "I" 'org-clock-in
+    "O" 'org-clock-out
+    "s" '("sorting")
+    "ss" 'org-sort
+    "da" 'org-archive-subtree-default
+    "r" 'org-refile
+    "a" 'org-agenda
+    "i" '("insert")
+    "ih" 'org-table-insert-hline
+    "il" 'org-insert-link
+    "t" 'org-todo)
+  :config
+  (setq org-fontify-emphasized-text t
+        org-highlight-latex-and-related '(native script entities)
+        org-agenda-files '("~/Documents/agenda")
+        org-default-notes-file "~/Documents/agenda/todo.org"
+        org-log-done t
+        org-link-descriptive nil
+        org-agenda-show-all-dates t
+        org-agenda-skip-deadline-if-done t
+        org-agenda-start-on-weekday nil
+        org-reverse-note-order t
+        org-fast-tag-selection-single-key t
+        org-use-property-inheritance t
+        org-export-with-smart-quotes t
+        org-agenda-custom-commands '(("u" "Unscheduled TODOs"
+                                      ((todo ""
+                                             ((org-agenda-overriding-header "Unscheduled TODOs")
+                                              (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
+                                      nil nil))
+        ;; Make sure bibtex runs on PDF export.
+        org-latex-compiler "lualatex"
+        org-latex-pdf-process (list "latexmk -bibtex -f -pdf -%latex %f")
+        org-latex-prefer-user-labels t)
+  ;; Delete intermediate files in org -> LaTeX -> PDF export.
+  (eval-after-load 'ox-latex '(progn
+                                (add-to-list 'org-latex-logfiles-extensions "tex")
+                                (add-to-list 'org-latex-logfiles-extensions "bbl"))))
+
+(use-package org-ref :after org
+  :custom (org-ref-completion-library 'org-ref-ivy-cite)
+  :config
+  (major-leader-def 'normal org-mode-map
+    "ir" 'org-ref-insert-ref-link
+    "ic" 'org-ref-insert-link))
+
+;; Replaces star headings with pretty bullet characters.
+(use-package org-superstar :ghook 'org-mode-hook)
+(use-package org-sticky-header :ghook 'org-mode-hook)
+
 ;; Might fix org-bullets?
 (setq inhibit-compacting-font-caches t)
 
-(setq org-fontify-emphasized-text t
-      org-highlight-latex-and-related '(native)
-      org-agenda-files '("~/Documents/agenda")
-      org-default-notes-file "~/Documents/agenda/todo.org"
-      org-log-done t
-      org-link-descriptive nil
-      org-agenda-show-all-dates t
-      org-agenda-skip-deadline-if-done t
-      org-agenda-start-on-weekday nil
-      org-reverse-note-order t
-      org-fast-tag-selection-single-key t
-      org-use-property-inheritance t
-      org-export-with-smart-quotes t
-      org-agenda-custom-commands '(("u" "Unscheduled TODOs"
-                                    ((todo ""
-                                           ((org-agenda-overriding-header "Unscheduled TODOs")
-                                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled)))))
-                                    nil nil)))
 
-(general-def 'motion org-mode-map
-  ;; Mnemonic is "show preview"
-  "zp" 'org-toggle-latex-fragment)
 
 ;; (eval-after-load 'org
 ;;   (org-babel-do-load-languages 'org-babel-load-languages
@@ -1142,7 +1258,7 @@
 
 ;;;; Formatting
 (use-package format-all
-  :general (evil-g-def 'normal prog-mode-map
+  :general (evil-g-def 'normal :keymaps '(prog-mode-map)
              "rf" 'format-all-buffer))
 
 ;;; Mode-specific keybindings
@@ -1163,6 +1279,7 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; Generic leader key as space
 (global-leader-def
   "," 'other-window
+  "m" 'counsel-major
   "r" '(:wk "recover")
   "rr" 'recover-this-file
   "rb" 'revert-buffer
@@ -1174,6 +1291,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "d," 'delete-other-windows
   "db" 'kill-buffer
   "dp" 'posframe-delete-all           ; Only for emergencies
+  "df" 'delete-file
   "of" 'counsel-find-file
   "or" 'counsel-recentf
   "oo" 'switch-to-alternate-buffer
@@ -1202,6 +1320,7 @@ Repeated invocations toggle between the two most recently open buffers."
          (magit-shell-command-topdir "git prune-removed"))
   "ca" 'artist-mode
   "ci" 'set-input-method
+  "cw" 'read-only-mode
   "sl" 'cycle-line-numbers
   "si" 'toggle-input-method
   "sw" 'whitespace-mode
@@ -1232,7 +1351,7 @@ Repeated invocations toggle between the two most recently open buffers."
   "K" 'which-key-show-top-level)
 
 ;; Unbind evil keys that we want to use ourselves.
-;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R
+;; Letters I can rebind: ', =, 0/^, gd, maybe _, +, Q, <backspace>, C-k, C-j, R, s, S
 (general-unbind '(motion normal)
   ;; Disable dragging mouse selection.
   ;; This fixes buttons, changing focus, basically anything using mouse.
@@ -1274,9 +1393,9 @@ Repeated invocations toggle between the two most recently open buffers."
   "C-v" "C-z" "C-y" "C-w")
 (general-def
   ;; Global common bindings for emacs & insert states
-  "C-v" 'evil-paste-at-point
+  "C-v" 'yank
   "C-z" 'undo-tree-undo
-  "C-y" 'undo-tree-redo
+  ;; "C-y" 'undo-tree-redo
   "C-o" 'counsel-find-file
   "C-s" (general-key "C-x C-s")
   "C-=" 'text-scale-increase
@@ -1284,6 +1403,9 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; I don't like drag-selection by mouse.
   "<down-mouse-1>" nil
   "<drag-mouse-1>" nil)
+
+(general-def minibuffer-local-map
+  "C-v" 'yank)
 
 (general-def '(normal insert)
   ;; TODO: Decide how I want to combine these commands based on general rules
@@ -1300,9 +1422,7 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; "gr" stands for "go run this"
   ;; By default, use "gr" to refresh and run what's at point
   "gr" (general-simulate-key "C-c C-c")
-  ;; Stands for "go quit" to quit some auxiliary mode, like editing a git
-  ;; commit message.
-  "gq" (general-key "C-c C-k")
+  "gs" 'imenu
   "C-RET" (general-simulate-key "C-c C-c")
   ;; Make it really easy to execute commands!
   "SPC" (general-key "M-x")
@@ -1321,6 +1441,11 @@ Repeated invocations toggle between the two most recently open buffers."
   "]e" 'next-error
   "?" 'swiper
   "0" (general-key "^"))
+
+(general-def 'normal
+  ;; Stands for "go quit" to quit some auxiliary mode, like editing a git
+  ;; commit message.
+  "gq" (general-key "C-c C-k"))
 
 ;; (general-def '(normal motion)
 ;;   :keymaps '(outshine-mode-map outline-mode-map)
@@ -1350,30 +1475,6 @@ Repeated invocations toggle between the two most recently open buffers."
   "M-j" 'sp-push-hybrid-sexp)
 
 ;;;; org-mode
-(major-leader-def 'normal org-mode-map
-  "e" 'org-export-dispatch
-  "ar" 'org-ref-ivy-cite-completion
-  ;; Mirror some evil agenda commands here for symmetry.
-  "c" '("change")
-  "cs" 'org-schedule
-  "cd" 'org-deadline
-  "ct" 'org-set-tags-command
-  "ce" 'org-set-effort
-  "I" 'org-clock-in
-  "O" 'org-clock-out
-  "s" '("sorting")
-  "ss" 'org-sort
-  "da" 'org-archive-subtree-default
-  "r" 'org-refile
-  "a" 'org-agenda
-  "a" '("insert")
-  "ah" 'org-table-insert-hline
-  "al" 'org-insert-link
-  "t" 'org-todo)
-
-(general-def 'motion org-mode-map
-  "zt" 'org-show-todo-tree)
-
 ;; Give org-mode some evil keybindings
 (use-package evil-org
   :ghook 'org-mode-hook
@@ -1428,9 +1529,8 @@ Repeated invocations toggle between the two most recently open buffers."
  '(flyspell-incorrect ((t (:underline "#e74c3c"))))
  '(hl-line ((t (:extend t))))
  '(hl-paren-face ((t (:weight bold :background nil))) t)
- '(internal-border ((t (:background "white" :foreground "white"))))
  '(ivy-current-match ((t (:extend t))))
- '(ivy-posframe ((t (:inherit default))))
+ ;; '(ivy-posframe ((t (:inherit default))))
  '(markdown-code-face ((t (:extend t))))
  '(outline-1 ((t (:inherit org-level-1))))
  '(outline-2 ((t (:inherit org-level-2))))
@@ -1440,7 +1540,6 @@ Repeated invocations toggle between the two most recently open buffers."
  '(outline-6 ((t (:inherit org-level-6))))
  '(outline-7 ((t (:inherit org-level-7))))
  '(outline-8 ((t (:inherit org-level-8))))
- '(region ((t (:extend t))))
  '(vdiff-addition-face ((t (:inherit diff-added)))))
 
 ;; TODO: Bind f3 to kmacro-end-and-call-macro
@@ -1495,3 +1594,120 @@ Repeated invocations toggle between the two most recently open buffers."
     (command-error-default-function data context caller)))
 
 (setq command-error-function #'my-command-error-function)
+
+(use-package tree-sitter
+  :straight (:host github :repo "ubolonton/emacs-tree-sitter"))
+
+(defun tree-sitter-node-at-point ()
+  "Return the node containing point in the current syntax tree"
+  (interactive)
+  ;; Traverse the tree starting at root until we find the right node.
+  (let ((pt (point))
+        (root (ts-root-node tree-sitter-tree)))
+    (ts-get-descendant-for-position-range root pt (+ pt 1))))
+
+(defun tree-sitter-node-in-selection ()
+  (ts-get-descendant-for-position-range (ts-root-node tree-sitter-tree)
+                                        (region-beginning)
+                                        (region-end)))
+
+(defun tree-sitter-selected-node ()
+  (if mark-active
+      (tree-sitter-node-in-selection)
+    (tree-sitter-node-at-point)))
+
+(defun tree-sitter-select-node ()
+  "Select the node containing point in the syntax tree"
+  (interactive)
+  (let ((node (tree-sitter-node-at-point)))
+    (evil-visual-select (ts-node-start-position node) (- (ts-node-end-position node) 1))))
+
+(defun tree-sitter-expand-selection ()
+  "Expand the selection past the node contained by selection"
+  (interactive)
+  (if mark-active
+      (let* ((node (tree-sitter-node-in-selection))
+             (parent (ts-get-parent node)))
+        (evil-visual-select (ts-node-start-position parent)
+                            (- (ts-node-end-position parent) 1)))
+    (tree-sitter-select-node)))
+
+(defun tree-sitter-slurp ()
+  (interactive)
+  (let* ((node (ts-get-ancestor-by (tree-sitter-node-at-point)
+                                   (lambda (n) (ts-get-next-sibling n))))
+         (sibling (ts-get-next-sibling node))
+         (text (delete-and-extract-region (ts-node-start-position sibling)
+                                          (ts-node-end-position sibling))))
+    (save-excursion
+      (goto-char (- (ts-node-end-position node) 1))
+      (insert text))))
+
+(defun tree-sitter-barf ()
+  "Barf the last expression from the selected syntax element."
+  (interactive)
+  (let* ((node (tree-sitter-selected-node))
+         (last-child (ts-get-nth-child node (- (ts-count-children node) 1)))
+         (text (delete-and-extract-region (ts-node-start-position last-child)
+                                          (ts-node-end-position last-child))))
+    (save-excursion
+      (goto-char (+ (ts-node-end-position node) 1))
+      (insert text))))
+
+;; (defun ts-get-top-parent (node)
+;;   "Return the top-level parent of the given node"
+;;   (let ((parent (ts-get-parent node)))
+;;     (if (equal "source_file" (ts-node-type parent))
+;;         node
+;;       (ts-get-top-parent parent))))
+
+(defun ts-get-ancestor-by (node f)
+  "Return the ancestor of a particular type, if any."
+  (if (funcall f node)
+      node
+    (ts-get-ancestor-by (ts-get-parent node) f)))
+
+;; (defun ts-node-evil-range (node &optional type)
+;;   (evil-range (ts-node-start-position node)
+;;               (ts-node-end-position node)
+;;               type
+;;               :expanded t))
+
+;; (evil-define-text-object evil-ts-a-def (count &optional beg end type)
+;;   "tree-sitter top-level definition object"
+;;   (let* ((top (ts-get-top-parent (tree-sitter-selected-node))))
+;;     (ts-node-evil-range top 'inclusive)))
+
+;; (evil-define-text-object evil-ts-inner-def (count &optional beg end type)
+;;   (let* ((top (ts-get-top-parent (tree-sitter-selected-node)))
+;;          (block (ts-get-nth-child top (- (ts-count-children top) 1))))
+;;     (evil-range (+ (ts-node-start-position block) 1)
+;;                 (- (ts-node-end-position block) 1)
+;;                 'inclusive
+;;                 :expanded t)))
+
+;; (evil-define-text-object evil-ts-a-function (count &optional beg end type)
+;;   (ts-node-evil-range (ts-get-ancestor-by (tree-sitter-selected-node)
+;;                                           (lambda (n) (member (ts-node-type n) '("function_item" "closure_expression"))))
+;;                       'inclusive))
+
+;; (evil-define-text-object evil-ts-inner-function (count &optional beg end type)
+;;   (let* ((fun (ts-get-ancestor-by (tree-sitter-selected-node)
+;;                                   (lambda (n) (member (ts-node-type n) '("function_item" "closure_expression")))))
+;;          (block (ts-get-nth-child fun (- (ts-count-children fun) 1))))
+;;     (evil-range (+ (ts-node-start-position block) 1)
+;;                 (- (ts-node-end-position block) 1)
+;;                 'inclusive
+;;                 :expanded t)))
+
+;; (define-key evil-outer-text-objects-map "d" #'evil-ts-a-def)
+;; (define-key evil-inner-text-objects-map "d" #'evil-ts-inner-def)
+;; (define-key evil-outer-text-objects-map "f" #'evil-ts-a-function)
+;; (define-key evil-inner-text-objects-map "f" #'evil-ts-inner-function)
+
+(use-package string-inflection :defer 1)
+
+
+(use-package mu4e
+  :config
+  (setq mu4e-maildir (expand-file-name "~/.mail")))

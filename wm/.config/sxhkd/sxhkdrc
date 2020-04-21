@@ -18,6 +18,9 @@ super + grave
 super + n
     alacritty -e fish -c nnn
 
+ctrl + alt + Delete
+    alacritty -e fish -c htop
+
 super + e
     emacsclient -c
 
