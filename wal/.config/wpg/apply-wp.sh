@@ -1,13 +1,10 @@
 #!/usr/bin/env fish
 
 # wait for formats to output...
-sleep 0.5
+sleep 0.7
 
 # Set the wallpaper from cache
 feh --bg-fill ~/.config/wpg/.current &
-
-# ...and import its color palette to fish
-source ~/.cache/wal/colors.fish
 
 # Apply colors to bspwm
 ~/.config/bspwm/apply-colors.sh

@@ -4,14 +4,17 @@
 	username = loafofpiecrust
 
 [credential]
-	helper = cache
+	helper = cache --timeout=7200
 
 [core]
-	editor = code
+	editor = emacsclient
 	excludesfile = ~/.gitignore
 
 [github]
 	user = loafofpiecrust
-	
+
 [alias]
 	prune-removed = "! git branch -vv | awk '/: gone]/{print $1}' | xargs git branch -D"
+
+[submodule]
+	recurse = true

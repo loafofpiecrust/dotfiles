@@ -3,8 +3,7 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 # Declare a function that takes one destructured argument.
-{ config, lib, pkgs, ... }:
-{
+{ config, lib, pkgs, ... }: {
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
@@ -14,25 +13,31 @@
 
   system.autoUpgrade = {
     enable = true;
-    channel = https://nixos.org/channels/nixos-20.03;
+    channel = "https://nixos.org/channels/nixos-20.03";
   };
 
   console = {
-    font = "Fira Code";
-    packages = [pkgs.fira-code];
+    # font = "Ubuntu Mono";
+    # packages = [ pkgs.ubuntu_font_family ];
     keyMap = "us";
   };
 
   i18n = {
     defaultLocale = "en_US.UTF-8";
-    extraLocaleSettings = let alt = "en_DK.UTF-8"; in {
+    extraLocaleSettings = let alt = "en_DK.UTF-8";
+    in {
       # I prefer ISO time and the metric system.
       LC_TIME = alt;
       LC_MEASUREMENT = alt;
     };
     inputMethod = {
       enabled = "ibus";
-      ibus.engines = with pkgs.ibus-engines; [libpinyin anthy table table-others];
+      ibus.engines = with pkgs.ibus-engines; [
+        libpinyin
+        anthy
+        table
+        table-others
+      ];
     };
   };
 
@@ -40,8 +45,15 @@
   sound.enable = true;
   hardware.pulseaudio.enable = true;
 
-  # Enable networking
-  networking.networkmanager.enable = true;
+  # Enable networking. Use connman instead of networkmanager because it has
+  # working iwd support. Saves battery and more reliable.
+  services.connman = {
+    enable = true;
+    wifi.backend = "iwd";
+  };
+
+  # TODO Add VPN config to another .nix file because they'll have plaintext passwords.
+  # TODO Make little rofi menu to pick VPN service to start based on the same list.
 
   # Display management!
   services = {
@@ -49,14 +61,16 @@
       enable = true;
       layout = "us";
       enableCtrlAltBackspace = true;
-      autoRepeatInterval = 250; # ms between key repeats
+      autoRepeatDelay = 300;
+      autoRepeatInterval = 35; # ms between key repeats
       # I don't use caps lock enough, swap it with escape!
       xkbOptions = "caps:swapescape, compose:ralt";
 
-      videoDrivers = ["intel"]; # TODO: Pick gpu drivers
+      videoDrivers = [ "intel" ]; # TODO: Pick gpu drivers
       libinput = {
         enable = true;
         scrollMethod = "twofinger";
+        naturalScrolling = true;
         tapping = false;
         clickMethod = "clickfinger";
       };
@@ -69,47 +83,55 @@
           enable = true;
           noDesktop = true;
           enableXfwm = false;
-          thunarPlugins = with pkgs; [xfce.thunar-archive-plugin xfce.thunar-volman];
+          thunarPlugins = with pkgs; [
+            xfce.thunar-archive-plugin
+            xfce.thunar-volman
+          ];
         };
       };
 
       windowManager.bspwm.enable = true;
 
-      displayManager.defaultSession = "xfce+bspwm";
+      displayManager.defaultSession = "none+bspwm";
       # displayManager.gdm.enable = true;
+      # displayManager.ly.enable = true;
       displayManager.lightdm = {
         enable = true;
         # background = "${pkgs.nixos-artwork.wallpapers.nix-wallpaper-stripes-logo}/share/artwork/gnome/nix-wallpaper-stripes-logo.png";
-        greeters.pantheon.enable = true;
-        # greeters.enso = {
-        #   enable = true;
-        #   cursorTheme.package = pkgs.bibata-cursors;
-        #   cursorTheme.name = "Bibata Oil";
-        #   # theme.package = pkgs.arc-theme;
-        #   # theme.name = "Arc";
-        # };
+        greeters.gtk = {
+          enable = true;
+          cursorTheme.package = pkgs.bibata-cursors;
+          cursorTheme.name = "Bibata_Oil";
+          theme.package = pkgs.arc-theme;
+          theme.name = "Arc";
+          # Match the panel as closely as possible to my polybar config.
+          indicators = [ "~power" "~host" "~spacer" "~session" "~clock" ];
+          clock-format = "%a %I:%M %p";
+        };
       };
     };
 
-    # Shared emacs server for :zap: speedy-macs
+    # Shared Emacs server for :zap: speedy-macs
     emacs = {
       enable = true;
       defaultEditor = true;
       package = pkgs.emacsUnstable;
     };
 
-    # Window compositing effects.
     openssh.enable = true;
     printing.enable = true;
     # Allow easy discovery of network devices (like printers).
-    avahi = { enable = true; nssmdns = true; };
+    avahi = {
+      enable = true;
+      nssmdns = true;
+    };
     tlp.enable = true; # power saving
     autorandr.enable = true; # monitor presets
-    gnome3.gnome-keyring.enable = true;
-    offlineimap = {
-      enable = true;
-      path = [pkgs.mu];
-    };
+    # gnome3.gnome-keyring.enable = true;
+    # offlineimap = {
+    #   enable = true;
+    #   path = [pkgs.mu];
+    # };
 
     # Limit journal size
     journald.extraConfig = ''
@@ -121,9 +143,10 @@
     users.snead = {
       isNormalUser = true;
       home = "/home/snead";
-      extraGroups = ["wheel" "networkmanager" "docker" "adbusers"];
+      extraGroups = [ "wheel" "docker" "adbusers" ];
       shell = pkgs.fish;
-      hashedPassword = "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
+      hashedPassword =
+        "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
     };
   };
   environment.homeBinInPath = true;
@@ -136,10 +159,25 @@
     adb.enable = true;
     gnupg.agent.enable = true;
     gnupg.agent.enableSSHSupport = true;
-    seahorse.enable = true;     # Manage keyring passwords.
+    # seahorse.enable = true; # GUI to manage keyring passwords.
   };
 
-  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd.enable = false;
+
+  environment.variables = {
+    # Give Firefox precise touchpad scrolling.
+    MOZ_USE_XINPUT2 = "1";
+  };
+
+  powerManagement.powertop.enable = true;
+  location = {
+    latitude = 42.35843;
+    longitude = -71.05977;
+  };
+  services.redshift = {
+    enable = true;
+    temperature.night = 3700;
+  };
 
   nix.gc = {
     automatic = true;

@@ -1,0 +1,6 @@
+#!/usr/bin/env fish
+
+# Stop any existing VPN connection.
+systemctl stop "openvpn-*"
+# Start the connection with the given name.
+systemctl start "openvpn-$argv[1]"

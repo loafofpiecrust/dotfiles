@@ -1,8 +1,8 @@
 #!/bin/sh
 
-vpn_conn=$(nmcli c show --active | grep vpn)
+vpn_conn=$(systemctl list-units --state=active | sed -n "s/^openvpn-\(\w*\).*$/\1/p" | head -n1)
 if test "$vpn_conn" = ""; then
-    echo ""
+    echo "🔓 Home"
 else
-    echo ""
+    echo "🔐 $(vpn_conn)"
 fi

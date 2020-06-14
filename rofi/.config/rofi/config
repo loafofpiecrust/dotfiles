@@ -2,5 +2,7 @@ rofi.theme: ~/.cache/wal/colors-rofi-custom.rasi
 rofi.columns: 1
 rofi.width: 45
 rofi.show-icons: true
-rofi.font: monospace medium 12
+rofi.font: monospace medium 13
 rofi.terminal: alacritty
+rofi.bw: 3
+rofi.line-padding: 2

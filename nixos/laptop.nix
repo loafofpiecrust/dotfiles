@@ -1,29 +1,41 @@
-{ config, lib, pkgs, ... }:
-{
+{ config, lib, pkgs, ... }: {
+  # Add services for any VPN connections we want.
+  imports = [ ./vpn.nix ];
+
   boot = {
     # Use the systemd-boot EFI boot loader.
     loader.systemd-boot.enable = true;
-    loader.systemd-boot.editor = false; # editor defeats the purpose of all security...
+    # editor defeats the purpose of all security...
+    loader.systemd-boot.editor = false;
     loader.efi.canTouchEfiVariables = true;
 
-    initrd.availableKernelModules = ["xhci_pci" "nvme" "usb_storage"
-                                     "sd_mod" "bbswitch"];
+    initrd.availableKernelModules =
+      [ "xhci_pci" "nvme" "usb_storage" "sd_mod" "bbswitch" ];
     # I never use bluetooth
-    blacklistedKernelModules = ["btusb" "bluetooth"];
+    initrd.kernelModules = [ "i915" ];
 
     # boot niceties
     cleanTmpDir = true;
     consoleLogLevel = 3;
 
     # kernel options
-    kernelParams = [ "pcie_aspm.policy=powersave" ];
+    kernelParams =
+      [ "pcie_aspm.policy=powersave" "i915.enable_fbc=1" "i915.enable_psr=2" ];
     kernel.sysctl = {
       "kernel.nmi_watchdog" = 0;
+      "vm.swappiness" = 1;
     };
   };
+  services.kmscon.enable = true;
 
   networking.hostName = "loafofpiecrust";
   networking.networkmanager.wifi.powersave = true;
+
+  # Let's try out bluetooth.
+  hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
+  # Trim SSD for drive health.
+  services.fstrim.enable = true;
 
   # Enable NVIDIA GPU
   # hardware.bumblebee.enable = true;
@@ -33,25 +45,31 @@
   #   intelBusId = "PCI:0:2:0";
   #   nvidiaBusId = "PCI:60:0:0";
   # };
-  hardware.opengl.extraPackages = [pkgs.linuxPackages.nvidia_x11.out];
-  hardware.opengl.extraPackages32 = [pkgs.linuxPackages.nvidia_x11.lib32];
+
+  # Use newer Intel Iris driver. This fixes screen tearing for me!
+  environment.variables = { MESA_LOADER_DRIVER_OVERRIDE = "iris"; };
+  hardware.opengl.package = (pkgs.mesa.override {
+    galliumDrivers = [ "nouveau" "virgl" "swrast" "iris" ];
+  }).drivers;
 
   services.undervolt = {
     enable = true;
-    coreOffset = "-110";
-    gpuOffset = "-110";
+    coreOffset = "-120";
+    gpuOffset = "-120";
   };
 
-  location = {
-    latitude = 42.35843;
-    longitude = -71.05977;
-  };
-  services.redshift = {
+  hardware.opengl = {
     enable = true;
-    temperature.night = 3700;
+    extraPackages = with pkgs; [
+      linuxPackages.nvidia_x11.out
+      vaapiIntel
+      vaapiVdpau
+      libvdpau-va-gl
+      intel-media-driver
+    ];
+    extraPackages32 = [ pkgs.linuxPackages.nvidia_x11.lib32 ];
   };
 
   # Only log out when the lid is closed with power.
   services.logind.lidSwitchExternalPower = "lock";
-  powerManagement.powertop.enable = true;
 }
