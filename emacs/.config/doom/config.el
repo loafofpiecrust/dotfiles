@@ -1,5 +1,7 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
+(add-load-path! "custom")
+
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
 
@@ -32,15 +34,18 @@
 (setq doom-theme 'doom-peacock
       doom-peacock-brighter-comments t)
 
+(setq! shell-file-name "/bin/bash")
+
 (use-package! ewal)
 (use-package! ewal-doom-themes :after ewal)
 
 ;; Automatically switch between light and dark themes at sunrise/sunset.
-(use-package! theme-changer
-  :defer 1
-  :config
+;;(use-package! theme-changer
+;;:disabled
+  ;;:defer 1
+  ;;:config
   ;; TODO Set location.
-  (change-theme 'doom-one-light 'doom-peacock))
+  ;;(change-theme 'doom-one-light 'doom-peacock))
 
 
 ;; Use text checkboxes instead of widgets.
@@ -67,8 +72,7 @@
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type t)
 
-(setq shell-file-name "/bin/sh"
-      mouse-wheel-progressive-speed t
+(setq mouse-wheel-progressive-speed t
       mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 
 ;; remove all scrollbars!
@@ -93,16 +97,18 @@
         "tm" 'counsel-major
         "sg" 'counsel-git-grep))
 
-(after! magit
-  ;; Allow "gr" to finish a commit message.
-  (map! :map with-editor-mode-map
-        :n "gr" 'with-editor-finish))
-
 ;; We want the same save binding everywhere!
 (map! "C-s" (general-key "C-x C-s")
       :gi "C-v" 'evil-paste-after)
 
-(after! evil
+;; Extra bindings for compilation and editing commit messages.
+(map! :map (compilation-mode-map with-editor-mode-map)
+      ;; Stands for "go run", finishes the current operation.
+      :n "gr" (general-simulate-key "C-c C-c")
+      ;; Stands for "go quit"
+      :nm "gq" (general-simulate-key "C-c C-k"))
+
+(after! (evil evil-collection)
   ;; Prevent accidental commands when exploring little-used modes.
   (map! :m doom-localleader-key nil)
   ;; Untangle TAB from C-i, so we can indent!
@@ -121,17 +127,19 @@
 
 (use-package! doom-modeline
   :config
-  (setq! doom-modeline-height 32
+  (setq! doom-modeline-height 30
          doom-modeline-irc nil
          doom-modeline-gnus nil))
 
 (use-package! prog-mode
   :company ((company-capf company-dabbrev-code :with company-yasnippet))
+  ;; Consider each segment of a camelCase one word,
+  ;; and wrap lines at the window edge.
   :config
+  (general-add-hook 'prog-mode-hook '(auto-fill-mode subword-mode))
   ;; Automatically wrap comments in code
   (setq-default comment-auto-fill-only-comments t
-                auto-fill-function 'do-auto-fill)
-  (add-hook 'prog-mode-hook 'auto-fill-mode))
+                auto-fill-function 'do-auto-fill))
 
 (use-package! lsp-mode
   :company ((company-capf :with company-yasnippet))
@@ -139,7 +147,15 @@
   (setq! lsp-eldoc-render-all nil
          lsp-signature-render-documentation nil
          lsp-symbol-highlighting-skip-current t
+         ;; Don't show flycheck stuff in the sideline.
+         lsp-ui-sideline-show-diagnostics nil
+         lsp-ui-sideline-update-mode 'line
          message-truncate-lines 5))
+
+(after! git-timemachine
+  (map! :map git-timemachine-mode-map
+        "[r" 'git-timemachine-show-previous-revision
+        "]r" 'git-timemachine-show-next-revision))
 
 ;; Disable background color for highlighted parens
 (custom-set-faces! '(show-paren-match :background nil))
@@ -211,7 +227,24 @@
   (map! :map deadgrep-mode-map
         :n "RET" 'deadgrep-visit-result-other-window
         :n "<S-return>" 'deadgrep-visit-result))
-;; TODO Bind treemacs current project exclusive
+
+;; Focus project tree with "op" instead of toggling.
+(after! treemacs
+  (setq! treemacs-is-never-other-window t)
+  (defun +treemacs/focus ()
+    "Initialize or focus treemacs.
+
+Ensures that only the current project is present and all other projects have
+been removed.
+
+Use `treemacs-select-window' command for old functionality."
+    (interactive)
+    (require 'treemacs)
+    (if (doom-project-p)
+        (treemacs-add-and-display-current-project)
+      (treemacs-select-window)))
+  (map! :leader "op" '+treemacs/focus))
+
 ;; TODO bind ivy-alt-done to something other than C-o
 ;; TODO Configure ivy-posframe with high min width and central position.
 ;; (use-package! ivy-posframe
@@ -286,6 +319,10 @@
   :after evil
   :config (evil-owl-mode))
 
+(use-package! flycheck-inline
+  :config
+  (global-flycheck-inline-mode))
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one
@@ -303,6 +340,9 @@
 ;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
 ;; they are implemented.
 
+(use-package! cherokee-input)
+
+;; Make headlines big!
 (custom-set-faces!
   '(outline-1 :weight extra-bold :height 1.25)
   '(outline-2 :weight bold :height 1.15)
@@ -313,5 +353,14 @@
   '(outline-8 :weight semi-bold)
   '(outline-9 :weight semi-bold))
 
+;; Make line numbers more visible on many themes.
 (custom-set-faces!
   '(line-number :foreground nil :inherit org-tag))
+
+;; Turn all wavy underlines into straight ones for readability.
+(custom-set-faces!
+  '(flyspell-duplicate :underline nil :inherit flycheck-warning)
+  '(flyspell-incorrect :underline nil :inherit flycheck-error)
+  '(flycheck-info :underline (:style line :color "#22ad6a"))
+  '(flycheck-warning :underline (:style line :color "#f2b64b"))
+  '(flycheck-error :underline (:style line :color "#ab1f38")))

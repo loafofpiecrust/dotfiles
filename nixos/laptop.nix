@@ -26,7 +26,6 @@
       "vm.swappiness" = 1;
     };
   };
-  services.kmscon.enable = true;
 
   networking.hostName = "loafofpiecrust";
   networking.networkmanager.wifi.powersave = true;
@@ -57,6 +56,7 @@
     coreOffset = "-120";
     gpuOffset = "-120";
   };
+  services.throttled.enable = true;
 
   hardware.opengl = {
     enable = true;

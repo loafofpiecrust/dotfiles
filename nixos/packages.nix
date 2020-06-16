@@ -50,9 +50,6 @@
     aspellDicts.en-computers
     aspellDicts.en-science
 
-    # dev
-    emacsUnstable
-
     # apps
     firefox
     calibre # ebook manager
@@ -107,7 +104,7 @@
     })
     (import (builtins.fetchTarball {
       url =
-        "https://github.com/nix-community/emacs-overlay/archive/40c8a99d93f6a797722362af067a299b58cef84d.tar.gz";
+        "https://github.com/nix-community/emacs-overlay/archive/f426880dd573ed4e7ac39f5d89e4e9a27a78e4d6.tar.gz";
     }))
   ];
 
