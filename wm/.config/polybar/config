@@ -302,6 +302,7 @@ type = custom/script
 exec = ~/.config/polybar/player-status.sh
 interval = 5
 format-padding = 1
+click-left = playerctl play-pause
 
 [module/eth]
 type = internal/network

@@ -43,6 +43,11 @@ super + Delete
 super + shift + Escape
     pkill compton && compton
 
+#
+# Player control keys!
+#
+super + c
+    playerctl play-pause
 
 #
 # bspwm hotkeys
