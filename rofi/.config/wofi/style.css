@@ -1,0 +1,61 @@
+@import "/home/snead/.cache/wal/colors-waybar.css";
+
+window {
+    margin: 0px;
+    border: 3px solid @color10;
+    background-color: @foreground;
+    font-family: "sans";
+    font-size: 16px;
+    color: @background;
+    border-radius: 8px;
+}
+
+#input {
+    margin-top: 16px;
+    padding: 0px 24px;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px dashed @color5;
+    padding-bottom: 8px;
+    font-size: 1.5em;
+}
+
+#input :nth-child(1) {
+    margin-right: 8px;
+}
+
+#inner-box {
+    border: none;
+    padding-top: 8px;
+    /* background-color: #282a36; */
+}
+
+#outer-box {
+    padding-bottom: 8px;
+    border: none;
+    /* background-color: #282a36; */
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#text {
+    margin: 4px;
+    padding: 2px;
+    border: none;
+} 
+
+#entry:selected {
+    background-color: @color10;
+    border: none;
+}
+#entry {
+}
+
+#img {
+    margin-left: 1em;
+    margin-right: 0.5em;
+}

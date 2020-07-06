@@ -13,19 +13,20 @@ bluetoothctl power off
 # General
 # ibus controls input methods
 # ibus-daemon -s -d -n xfce4-session
-xfce4-power-manager &
+# xfce4-power-manager &
 # Prevent the screen going dark while watching videos.
-caffeine &
+# caffeine &
 
 # Restore last wallpaper
 # Starts notification manager as well
-~/.config/wpg/wp_init.sh
+# ~/.config/wpg/wp_init.sh
 
 # Window compositor to make bspwm prettier :cat:
-picom --experimental-backends &
+# picom --experimental-backends &
 
 # Bar
-polybar main &
+# polybar main &
+# waybar -c ~/.config/waybar/config -s ~/.config/waybar/styles.css
 
 # Start a polkit agent to get GUI password prompts!
-exec "$(nix eval nixos.polkit_gnome.outPath | tr -d '"')/libexec/polkit-gnome-authentication-agent-1" &
+exec "$(nix eval --raw nixos.polkit_gnome)/libexec/polkit-gnome-authentication-agent-1" &

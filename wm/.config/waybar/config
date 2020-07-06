@@ -1,0 +1,183 @@
+//-*- mode: json; -*-
+{
+    "layer": "top", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    "height": 30, // Waybar height (to be removed for auto height)
+    // Choose the order of the modules
+    "modules-left": ["custom/power", "sway/workspaces", "sway/mode", "custom/player"],
+    "modules-center": [],
+    "modules-right": ["tray", "custom/wallpaper", "idle_inhibitor", "custom/vpn", "network", "cpu", "memory", "pulseaudio", "battery", "clock"],
+    // Modules configuration
+    "sway/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": false,
+        "format": "<span weight='normal'>{icon}</span>",
+        "format-icons": {
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "10": "",
+            "urgent": "",
+            "focused": "",
+            "default": ""
+        }
+    },
+    "sway/mode": {
+        "format": "<span style=\"italic\">{}</span>"
+    },
+    "mpd": {
+        "format": "{stateIcon} {consumeIcon}{randomIcon}{repeatIcon}{singleIcon}{artist} - {album} - {title} ({elapsedTime:%M:%S}/{totalTime:%M:%S}) ",
+        "format-disconnected": "Disconnected ",
+        "format-stopped": "{consumeIcon}{randomIcon}{repeatIcon}{singleIcon}Stopped ",
+        "unknown-tag": "N/A",
+        "interval": 2,
+        "consume-icons": {
+            "on": " "
+        },
+        "random-icons": {
+            "off": "<span color=\"#f53c3c\"></span> ",
+            "on": " "
+        },
+        "repeat-icons": {
+            "on": " "
+        },
+        "single-icons": {
+            "on": "1 "
+        },
+        "state-icons": {
+            "paused": "",
+            "playing": ""
+        },
+        "tooltip-format": "MPD (connected)",
+        "tooltip-format-disconnected": "MPD (disconnected)"
+    },
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "",
+            "deactivated": ""
+        },
+        "tooltip": false
+    },
+    "tray": {
+        // "icon-size": 21,
+        "spacing": 15
+    },
+    "clock": {
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt>{calendar}</tt>",
+        "format": "  {:%a %I:%M %p}",
+        "format-alt": " {:%Y-%m-%d}"
+    },
+    "cpu": {
+        "format": " {usage}%",
+        "tooltip": false
+    },
+    "memory": {
+        "format": " {}%"
+    },
+    "temperature": {
+        // "thermal-zone": 2,
+        // "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",
+        "critical-threshold": 80,
+        // "format-critical": "{temperatureC}°C {icon}",
+        "format": "{temperatureC}°C {icon}",
+        "format-icons": ["", "", ""]
+    },
+    "backlight": {
+        // "device": "acpi_video1",
+        "format": "{icon} {percent}%",
+        "format-icons": ["", ""]
+    },
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 10
+        },
+        "format": "{icon}",
+        "format-charging": "{icon}",
+        "format-plugged": "{icon}",
+        "format-icons": ["", "","",  "",  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+    },
+    "network": {
+        "interface": "wlan0",
+        "tooltip-format": "{essid}\n{ipaddr}",
+        "format-wifi": " {bandwidthDownBits}",
+        "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
+        "format-linked": " No IP",
+        "format-disconnected": "",
+        "tooltip": true,
+        "on-click": "$HOME/bin/rofi-wifi.sh"
+    },
+    "pulseaudio": {
+        "scroll-step": 5, // %, can be a float
+        "smooth-scrolling-threshold": 2,
+        "format": " {icon} {format_source}",
+        "format-headphone": " {icon} {format_source}",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {icon} {format_source}",
+        "format-source": " ",
+        "format-source-muted": "",
+        "format-icons": {
+            // "headphone": "",
+            // "hands-free": "",
+            // "headset": "",
+            // "phone": "",
+            // "portable": "",
+            // "car": "",
+            "default": ["|—————————", "—|————————", "——|———————", "———|——————", "————|—————", "—————|————", "——————|———", "———————|——", "————————|—", "—————————|"]
+        },
+        "on-click": "amixer sset Master toggle",
+        "on-click-right": "pavucontrol"
+    },
+    "custom/media": {
+        "format": "{icon} {}",
+        "return-type": "json",
+        "max-length": 40,
+        "format-icons": {
+            "spotify": "",
+            "default": "🎜"
+        },
+        "escape": true,
+        "exec": "$HOME/.config/waybar/mediaplayer.py 2> /dev/null" // Script in resources folder
+        // "exec": "$HOME/.config/waybar/mediaplayer.py --player spotify 2> /dev/null" // Filter player based on name
+    },
+    "custom/vpn": {
+        "format": "{icon} {}",
+        "format-icons": {
+            "connected": "🔐",
+            "none": "🔓"
+        },
+        "escape": true,
+        "interval": 5,
+        "return-type": "json",
+        "exec": "$HOME/.config/polybar/vpn-status.sh",
+        "on-click": "$HOME/bin/rofi-vpn.sh"
+    },
+    "custom/power": {
+        "format": "<span weight='normal'>󰄰</span>",
+        "tooltip": false,
+        "on-click": "$HOME/bin/rofi-logout.sh"
+    },
+    "custom/wallpaper": {
+    "format": "<span weight='normal'></span>",
+    "tooltip": false,
+    "on-click": "wpg -m &",
+    "on-click-right": "wpg &",
+    "on-click-middle": "wpg -r"
+    },
+    "custom/player": {
+        "format": "{}",
+        "escape": true,
+        "interval": 5,
+        "return-type": "json",
+        "exec": "$HOME/.config/polybar/player-status.sh",
+        "on-click": "playerctl play-pause"
+    }
+}

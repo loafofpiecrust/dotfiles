@@ -1,0 +1,8 @@
+allow_images=true
+image_size=24
+hide_scroll=true
+width=800
+height=450
+term=alacritty
+drun-insensitive=true
+drun-allow_markup=true

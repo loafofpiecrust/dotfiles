@@ -2,7 +2,7 @@
 
 vpn_conn=$(systemctl list-units --state=active | sed -n "s/^openvpn-\(\w*\).*$/\1/p" | head -n1)
 if test "$vpn_conn" = ""; then
-    echo "🔓 Here"
+    echo '{"text": "", "alt": "none", "tooltip": "No VPN"}'
 else
-    echo "🔐 ${vpn_conn^}"
+    echo "{\"text\": \"\", \"tooltip\": \"${vpn_conn^}\", \"alt\": \"connected\"}"
 fi

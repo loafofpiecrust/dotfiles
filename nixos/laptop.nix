@@ -1,6 +1,7 @@
+# Config for Lenovo Ideapad 720s 14-IKB
+# Import this file into the main configuration.nix and call it a day.
 { config, lib, pkgs, ... }: {
-  # Add services for any VPN connections we want.
-  imports = [ ./vpn.nix ];
+  imports = [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ];
 
   boot = {
     # Use the systemd-boot EFI boot loader.
@@ -28,6 +29,56 @@
   };
 
   networking.hostName = "loafofpiecrust";
+  # Allow other devices on the same local network to connect via hostname.
+  # (with a password)
+  services.avahi.publish.enable = true;
+  services.avahi.publish.addresses = true;
+  services.avahi.publish.domain = true;
+
+  users.users.snead = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "docker" "adbusers" ];
+    shell = pkgs.fish;
+    hashedPassword =
+      "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
+  };
+
+  # Change this to the primary package channel we want to use.
+  system.autoUpgrade = {
+    enable = true;
+    channel = "https://nixos.org/channels/nixos-20.03";
+  };
+
+  programs.sway.enable = true;
+  # Enables screen sharing on wayland.
+  services.pipewire.enable = true;
+  services.xserver = {
+    windowManager.bspwm.enable = true;
+    displayManager.gdm.enable = true;
+    displayManager.defaultSession = "sway";
+    videoDrivers = [ "intel" ]; # TODO: Pick gpu drivers
+
+    desktopManager = {
+      xterm.enable = false;
+      xfce = {
+        # Bits of xfce that I need: power-manager, session?, xfsettingsd, xfconf
+        # Don't need: xfce4-volumed-pulse, nmapplet
+        enable = true;
+        noDesktop = true;
+        enableXfwm = false;
+        thunarPlugins = with pkgs; [
+          xfce.thunar-archive-plugin
+          xfce.thunar-volman
+        ];
+      };
+    };
+  };
+
+  services.fwupd.enable = true;
+
+  # Automatic power saving.
+  services.tlp.enable = true;
+  powerManagement.powertop.enable = true;
   networking.networkmanager.wifi.powersave = true;
 
   # Let's try out bluetooth.
@@ -35,6 +86,8 @@
   services.blueman.enable = true;
   # Trim SSD for drive health.
   services.fstrim.enable = true;
+
+  environment.systemPackages = with pkgs; [ powertop brightnessctl ];
 
   # Enable NVIDIA GPU
   # hardware.bumblebee.enable = true;
@@ -51,6 +104,7 @@
     galliumDrivers = [ "nouveau" "virgl" "swrast" "iris" ];
   }).drivers;
 
+  # Undervolt to hopefully fix thermal throttling and fan issues.
   services.undervolt = {
     enable = true;
     coreOffset = "-120";
@@ -58,16 +112,17 @@
   };
   services.throttled.enable = true;
 
+  # Use newer intel graphics drivers.
   hardware.opengl = {
     enable = true;
     extraPackages = with pkgs; [
-      linuxPackages.nvidia_x11.out
+      # linuxPackages.nvidia_x11.out
       vaapiIntel
       vaapiVdpau
       libvdpau-va-gl
       intel-media-driver
     ];
-    extraPackages32 = [ pkgs.linuxPackages.nvidia_x11.lib32 ];
+    # extraPackages32 = [ pkgs.linuxPackages.nvidia_x11.lib32 ];
   };
 
   # Only log out when the lid is closed with power.
