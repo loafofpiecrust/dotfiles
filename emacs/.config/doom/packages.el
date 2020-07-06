@@ -7,19 +7,24 @@
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
 (package! tree-sitter
-  :recipe (:host github :repo "ubolonton/emacs-tree-sitter" :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock"))
-  :pin "0.8.0")
+  :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
+           :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock")))
 (package! tree-sitter-langs
-  :recipe (:host github :repo "ubolonton/emacs-tree-sitter" :files ("langs/*.el" "langs/queries"))
-  :pin "0.8.0")
+  :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
+           :files ("langs/*.el" "langs/queries")))
+
+;; Highlight markdown comments in certain modes.
+;; (package! typer-mode
+;;   :recipe (:host gitlab :repo "monnier/typer" :files ("emacs/*.el")))
+
 ;; (package! zoom)
-(package! rainbow-mode)
-(package! compdef)
+;; (package! gcmh)
+;; (package! compdef)
 (package! emojify)
 (package! theme-changer)
 (package! ewal)
 (package! ewal-doom-themes)
-(package! ewal-evil-cursors)
+;; (package! ewal-evil-cursors)
 
 ;; Extra languages
 (package! bazel-mode)
@@ -45,7 +50,9 @@
 ;; Show registers before using them!
 (package! evil-owl)
 ;; Show errors inline so they never overlap with code.
-(package! flycheck-inline)
+(package! flycheck-inline
+  :recipe (:host github :repo "loafofpiecrust/flycheck-inline" :branch "moving-point"))
+(package! hungry-delete)
 
 (package! valign
   :recipe (:host github :repo "casouri/valign"))
@@ -55,6 +62,10 @@
 
 (package! flycheck-posframe :disable t)
 (package! flycheck-popup-tip :disable t)
+
+;; Name buffers relative to project root
+;; (package! relative-buffers
+;;   :recipe (:host github :repo "emacsmirror/relative-buffers"))
 
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:

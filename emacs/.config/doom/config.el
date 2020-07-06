@@ -7,8 +7,7 @@
 
 ;; Garbage collect after a few seconds of being idle.
 ;; This prevents GC hangs while using Emacs.
-(setq gc-cons-percentage 0.3)
-(run-with-idle-timer 2 t (lambda () (garbage-collect)))
+(run-with-idle-timer 5 t 'garbage-collect)
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
@@ -25,18 +24,23 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq! doom-font (font-spec :family "Ubuntu Mono" :size 16 :weight 'medium)
+(setq! doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
        doom-variable-pitch-font (font-spec :family "sans" :size 14))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-peacock
+(setq doom-theme 'doom-gruvbox
+      doom-gruvbox-brighter-comments t
       doom-peacock-brighter-comments t)
 
 (setq! shell-file-name "/bin/bash")
 
-(use-package! ewal)
+(use-package! ewal
+  :defer 1
+  :init
+  ;; Use all 16 colors from our palette, not just the primary 8.
+  (setq! ewal-ansi-color-name-symbols '(black red green yellow blue purple cyan white brightblack brightred brightgreen brightyellow brightblue brightpurple brightcyan brightwhite)))
 (use-package! ewal-doom-themes :after ewal)
 
 ;; Automatically switch between light and dark themes at sunrise/sunset.
@@ -51,7 +55,7 @@
 ;; Use text checkboxes instead of widgets.
 (setq! widget-image-enable nil)
 
-(use-package! compdef)
+;; (use-package! compdef)
 
 (use-package! org
   :init
@@ -72,8 +76,8 @@
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type t)
 
-(setq mouse-wheel-progressive-speed t
-      mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+;; (setq mouse-wheel-progressive-speed t
+;;       mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 
 ;; remove all scrollbars!
 (horizontal-scroll-bar-mode -1)
@@ -108,51 +112,58 @@
       ;; Stands for "go quit"
       :nm "gq" (general-simulate-key "C-c C-k"))
 
-(after! (evil evil-collection)
-  ;; Prevent accidental commands when exploring little-used modes.
-  (map! :m doom-localleader-key nil)
-  ;; Untangle TAB from C-i, so we can indent!
+(defun evil-normalize-ctrl-i (&optional frame)
+  ;;"Untable TAB from C-i, so we can indent."
   (define-key input-decode-map [(control ?i)] [control-i])
   (define-key input-decode-map [(control ?I)] [(shift control-i)])
   (map! :map evil-motion-state-map "C-i" nil)
-  (define-key evil-motion-state-map [control-i] 'evil-jump-forward)
+  (define-key evil-motion-state-map [control-i] 'evil-jump-forward))
+
+;; When Emacs is in server mode, we have to normalize C-i in a graphical window.
+(add-hook! 'after-make-frame-functions 'evil-normalize-ctrl-i)
+
+(after! (evil evil-collection)
+  ;; Prevent accidental commands when exploring little-used modes.
+  (map! :m doom-localleader-key nil)
+  (evil-normalize-ctrl-i nil)
   ;; Indent current line after more evil commands.
-  (map! :n "J" (cmd! (call-interactively #'evil-join)
+  (map! :map prog-mode-map
+        :n "J" (cmd! (call-interactively #'evil-join)
                      (indent-according-to-mode))))
 
 
-(use-package! tree-sitter-langs)
+(use-package! tree-sitter-langs :after tree-sitter)
 (use-package! tree-sitter
   :hook ((python-mode) . tree-sitter-mode))
 
 (use-package! doom-modeline
   :config
-  (setq! doom-modeline-height 30
+  (setq! ;;doom-modeline-height 30
          doom-modeline-irc nil
          doom-modeline-gnus nil))
 
 (use-package! prog-mode
-  :company ((company-capf company-dabbrev-code :with company-yasnippet))
+  :config
+  (set-company-backend! 'prog-mode '(company-capf company-dabbrev-code))
   ;; Consider each segment of a camelCase one word,
   ;; and wrap lines at the window edge.
-  :config
   (general-add-hook 'prog-mode-hook '(auto-fill-mode subword-mode))
   ;; Automatically wrap comments in code
   (setq-default comment-auto-fill-only-comments t
                 auto-fill-function 'do-auto-fill))
 
 (use-package! lsp-mode
-  :company ((company-capf :with company-yasnippet))
   :config
+  ;; (set-company-backend! 'lsp-mode 'company-capf)
   (setq! lsp-eldoc-render-all nil
          lsp-signature-render-documentation nil
          lsp-symbol-highlighting-skip-current t
          ;; Don't show flycheck stuff in the sideline.
          lsp-ui-sideline-show-diagnostics nil
-         lsp-ui-sideline-update-mode 'line
-         message-truncate-lines 5))
+         lsp-ui-sideline-update-mode 'line))
 
-(after! git-timemachine
+(use-package! git-timemachine
+  :config
   (map! :map git-timemachine-mode-map
         "[r" 'git-timemachine-show-previous-revision
         "]r" 'git-timemachine-show-next-revision))
@@ -165,7 +176,7 @@
   (add-hook 'evil-insert-state-exit-hook 'company-abort))
 
 (use-package! rustic
-  :hook (rustic-mode . rainbow-delimiters-mode)
+  ;; :hook (rustic-mode . rainbow-delimiters-mode)
   :config
   (setq! rustic-lsp-server 'rust-analyzer))
 
@@ -173,16 +184,16 @@
 ;; (after! (smartparens rustic)
 ;;   (sp-local-pair 'rustic-mode "|" "|"))
 
-(use-package! rainbow-mode
-  :defer 1
-  :config (rainbow-mode))
+;; (use-package! rainbow-mode
+;;   :defer 1
+;;   :config (rainbow-mode))
 
-(use-package! deadgrep
-  :commands deadgrep)
+;; (use-package! deadgrep
+;;   :commands deadgrep)
 
-(use-package! org
-  :company ((company-capf :with company-yasnippet))
-  :capf pcomplete-completions-at-point)
+;; (use-package! org
+;;   :company ((company-capf))
+;;   :capf pcomplete-completions-at-point)
 
 (use-package! org-ref
   :after org
@@ -207,7 +218,7 @@
 (use-package! graphql-mode
   :mode (("\\.gql\\'" . graphql-mode)
          ("\\.graphql\\'" . graphql-mode)))
-(use-package! bazel-mode)
+;; (use-package! bazel-mode)
 
 ;; TODO Midnight mode?
 ;; TODO Learn multi-cursor bindings
@@ -221,6 +232,7 @@
 ;; TODO Use origami instead of vimish-fold, maybe.
 ;; TODO bind smartparens stuff?
 (use-package! deadgrep
+  :disabled
   :commands deadgrep
   :init (map! :leader "sd" 'deadgrep)
   :config
@@ -229,7 +241,8 @@
         :n "<S-return>" 'deadgrep-visit-result))
 
 ;; Focus project tree with "op" instead of toggling.
-(after! treemacs
+(use-package! treemacs
+  :config
   (setq! treemacs-is-never-other-window t)
   (defun +treemacs/focus ()
     "Initialize or focus treemacs.
@@ -251,7 +264,20 @@ Use `treemacs-select-window' command for old functionality."
 ;;   :config
 ;;   (setq! ivy-posframe-style 'frame-center
 ;;          ivy-posframe-min-width 100))
-;; TODO compdef to get yasnippet+company
+;;
+
+;; Make yasnippet easier to access in insert mode.
+;; insert: C-p, normal: SPC i s
+;; TODO Get rid of all yasnippet-company business.
+(use-package! yasnippet
+  :config
+  (map! :map yas-minor-mode-map
+        :i "C-p" 'yas-insert-snippet))
+
+(use-package! projectile
+  :config
+  (setq! projectile-sort-order 'recently-active))
+
 (use-package! vdiff
   :commands vdiff-mode
   :config
@@ -259,7 +285,7 @@ Use `treemacs-select-window' command for old functionality."
   (map! :map vdiff-mode-map
         :localleader "m" 'vdiff-hydra/body))
 (use-package! vdiff-magit
-  :after (magit vdiff)
+  :after-call magit-status
   :general (magit-mode-map
             "e" 'vdiff-magit-dwim
             "E" 'vdiff-magit))
@@ -286,20 +312,22 @@ Use `treemacs-select-window' command for old functionality."
 ;; TODO Test out and configure lsp-ui
 ;; TODO setup polymode
 (use-package! polymode
+  :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave)
   ;; :config
   ;; (map! :map polymode-minor-mode-map
   ;;       :m "znc" 'polymode-toggle-chunk-narrowing)
   )
 (use-package! poly-markdown
-  :commands (gfm-mode markdown-mode))
+  :mode (("\\.md\\'" . poly-markdown-mode)))
 (use-package! poly-org
-  :commands (org-mode))
+  :mode (("\\.org\\'" . poly-org-mode)))
 ;; TODO Limit docs shown for current function to the type signature (one line), only showing the rest upon using K.
 ;; TODO Rebind C-c C-c in with-editor-mode (magit commit messages) to "gr" or similar
 
-(after! company
+(after! (company company-box)
   (setq! company-auto-complete 'company-explicit-action-p
-         company-idle-delay 0.1)
+         ;; company-idle-delay 0.1
+         company-box-doc-delay 2)
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -316,12 +344,10 @@ Use `treemacs-select-window' command for old functionality."
   :config (explain-pause-mode t))
 
 (use-package! evil-owl
-  :after evil
-  :config (evil-owl-mode))
+  :hook (evil-mode . evil-owl-mode))
 
 (use-package! flycheck-inline
-  :config
-  (global-flycheck-inline-mode))
+  :hook (flycheck-mode . flycheck-inline-mode))
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
@@ -340,10 +366,11 @@ Use `treemacs-select-window' command for old functionality."
 ;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
 ;; they are implemented.
 
-(use-package! cherokee-input)
+(use-package! cherokee-input :defer 1)
 
 ;; Make headlines big!
 (custom-set-faces!
+  '(org-document-title :weight extra-bold :height 1.5)
   '(outline-1 :weight extra-bold :height 1.25)
   '(outline-2 :weight bold :height 1.15)
   '(outline-3 :weight bold :height 1.12)
@@ -351,7 +378,12 @@ Use `treemacs-select-window' command for old functionality."
   '(outline-5 :weight semi-bold :height 1.06)
   '(outline-6 :weight semi-bold :height 1.03)
   '(outline-8 :weight semi-bold)
-  '(outline-9 :weight semi-bold))
+  '(outline-9 :weight semi-bold)
+  '(markdown-header-face-1 :inherit outline-1)
+  '(markdown-header-face-2 :inherit outline-2)
+  '(markdown-header-face-3 :inherit outline-3)
+  '(markdown-header-face-4 :inherit outline-4)
+  '(markdown-header-face-5 :inherit outline-5))
 
 ;; Make line numbers more visible on many themes.
 (custom-set-faces!
@@ -364,3 +396,41 @@ Use `treemacs-select-window' command for old functionality."
   '(flycheck-info :underline (:style line :color "#22ad6a"))
   '(flycheck-warning :underline (:style line :color "#f2b64b"))
   '(flycheck-error :underline (:style line :color "#ab1f38")))
+
+;; (use-package! unicode-fonts
+;;      :disabled
+;;   :init (setq! unicode-fonts-restrict-to-fonts '("DevaVu Sans Mono"
+;;                                                  "DejaVu Sans"
+;;                                                  "Symbola"
+;;                                                  "Noto Sans"
+;;                                                  "Noto Sans Symbols"
+;;                                                  "Noto Sans Cherokee"
+;;                                                  "Material Design Icons")))
+
+(use-package! hungry-delete
+  :config (global-hungry-delete-mode))
+
+;; Use this instead of "SPC w w" to exclude treemacs.
+(map! :localleader "\\" 'other-window)
+
+;; (map! :map (evil-ex-map)
+;;       :n "C-v" 'evil-paste-after)
+
+(use-package! ivy
+  :config
+  ;; Use a hydra for ivy alternate actions.
+  (setq! ivy-read-action-function 'ivy-hydra-read-action)
+  (map! :map ivy-minibuffer-map
+        "C-RET" 'ivy-immediate-done))
+
+(use-package! relative-buffers
+  :disabled
+  :defer 1
+  :config (global-relative-buffers-mode))
+
+;; Associate TAB with all workspace bindings, instead of brackets + w.
+(map! :n "[ TAB" '+workspace/switch-left
+      :n "] TAB" '+workspace/switch-right)
+
+;; I never use this and it causes weird issues with Wayland + Slack.
+(map! "<Scroll_Lock>" 'ignore)
