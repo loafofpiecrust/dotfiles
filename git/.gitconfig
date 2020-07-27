@@ -8,7 +8,17 @@
 
 [core]
 	editor = emacsclient
-	excludesfile = ~/.gitignore
+	pager = delta
+	askPass = ""
+
+[credential]
+	helper = netlify
+
+[interactive]
+	diffFilter = delta --color-onlyexcludesfile = ~/.gitignore
+
+[delta]
+	syntax-theme = ansi-dark
 
 [github]
 	user = loafofpiecrust
@@ -18,3 +28,8 @@
 
 [submodule]
 	recurse = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

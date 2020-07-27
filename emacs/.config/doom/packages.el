@@ -16,10 +16,6 @@
 ;; Highlight markdown comments in certain modes.
 ;; (package! typer-mode
 ;;   :recipe (:host gitlab :repo "monnier/typer" :files ("emacs/*.el")))
-
-;; (package! zoom)
-;; (package! gcmh)
-;; (package! compdef)
 (package! emojify)
 (package! theme-changer)
 (package! ewal)
@@ -35,16 +31,14 @@
 (package! org-sticky-header)
 ;; Toggle rendered latex preview when point is over it.
 (package! org-fragtog)
-;; (package! hungry-delete)
 ;; (package! outshine)
 (package! literate-calc-mode)
 ;; (package! string-inflection)
 (package! deadgrep)
-;; Manage citations and references with ease in org-mode.
-(package! org-ref)
 ;; Better tool for git merges or any 3-way diff.
 (package! vdiff)
 (package! vdiff-magit)
+(package! magit-delta)
 ;; Edit markdown comments in an indirect buffer.
 ;; (package! separedit)
 ;; Show registers before using them!
@@ -52,9 +46,9 @@
 ;; Show errors inline so they never overlap with code.
 (package! flycheck-inline
   :recipe (:host github :repo "loafofpiecrust/flycheck-inline" :branch "moving-point"))
-(package! hungry-delete)
 
 (package! valign
+  :disable t
   :recipe (:host github :repo "casouri/valign"))
 
 (package! explain-pause-mode
@@ -62,6 +56,23 @@
 
 (package! flycheck-posframe :disable t)
 (package! flycheck-popup-tip :disable t)
+
+;; (package! mu4e-conversation)
+;; Desktop notifications upon receiving new emails.
+(package! org-msg)
+(package! mu4e-alert)
+(package! mu4e-send-delay
+	  :recipe (:host github :repo "bennyandresen/mu4e-send-delay"))
+
+(package! olivetti)
+
+;; Manage citations and references with ease in org-mode.
+(package! org-ref)
+;; Full elisp citation management solution. TBD on quality.
+(package! citeproc-org)
+;; (package! org-pretty-table)
+
+(package! transmission)
 
 ;; Name buffers relative to project root
 ;; (package! relative-buffers

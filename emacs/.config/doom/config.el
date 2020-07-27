@@ -1,5 +1,8 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
+;; References:
+;; https://github.com/rougier/elegant-emacs
+
 (add-load-path! "custom")
 
 ;; Place your private configuration here! Remember, you do not need to run 'doom
@@ -24,8 +27,11 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq! doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
-       doom-variable-pitch-font (font-spec :family "sans" :size 14))
+(setq! doom-font (font-spec :family "SF Mono" :size 15)
+       doom-variable-pitch-font (font-spec :family "sans" :size 15))
+
+;; Test for unicode icons (should be marked "seen" and "important")
+;; neu          11:43:48        Information Technology... Received: INC0628880 – Fwd: Office 365 Transition Ridiculous
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -46,10 +52,10 @@
 ;; Automatically switch between light and dark themes at sunrise/sunset.
 ;;(use-package! theme-changer
 ;;:disabled
-  ;;:defer 1
-  ;;:config
-  ;; TODO Set location.
-  ;;(change-theme 'doom-one-light 'doom-peacock))
+;;:defer 1
+;;:config
+;; TODO Set location.
+;;(change-theme 'doom-one-light 'doom-peacock))
 
 
 ;; Use text checkboxes instead of widgets.
@@ -63,14 +69,41 @@
   ;; change `org-directory'. It must be set before org loads!
   (setq org-directory "~/org/")
   :config
+  (add-hook! 'org-mode-hook (lambda () (setq display-line-numbers nil)))
   (setq! initial-major-mode 'org-mode
+         org-link-descriptive t
          org-latex-compiler "xelatex"
          org-latex-pdf-process (list "tectonic %f")
          org-latex-prefer-user-labels t
          org-log-done t
+         org-use-property-inheritance t
+         org-list-allow-alphabetical t
+         org-catch-invisible-edits 'smart
+         org-ellipsis " ▾ "
          org-highlight-latex-and-related '(native script entities)
          org-link-descriptive nil
-         org-list-demote-modify-bullet '(("+" . "-") ("-" . "+"))))
+         org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+"))))
+
+(after! org-superstar
+  ;; Bullet symbols: ‣•◦⦾⦿✷🟆➤⮞⁕⊙ ⁖🜔🜕🜖🜗🝆🝎❯⁕✸✿✤✜◆▶∴
+  (setq! org-superstar-headline-bullets-list '("⁖" "✸" "✿" "✤" "❁" "✜" "◆")
+         ;;org-superstar-headline-bullets-list '("⠿" "⠽" "⠮" "⠭" "⠕" "⠨" "⠐")
+         org-superstar-prettify-item-bullets t
+         org-superstar-item-bullet-alist '((?* . ?‣)
+                                           (?- . ?•)
+                                           (?+ . ?◦))))
+
+(use-package! org-fragtog
+  :hook (org-mode . org-fragtog-mode))
+
+(after! calc
+  (setq calc-symbolic-mode t))
+
+(setq auth-sources '("~/.authinfo.gpg"))
+
+(setq-default delete-by-moving-to-trash t
+              x-stretch-cursor t
+              auto-save-default t)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -120,12 +153,12 @@
   (define-key evil-motion-state-map [control-i] 'evil-jump-forward))
 
 ;; When Emacs is in server mode, we have to normalize C-i in a graphical window.
-(add-hook! 'after-make-frame-functions 'evil-normalize-ctrl-i)
+(add-hook 'after-make-frame-functions #'evil-normalize-ctrl-i)
 
 (after! (evil evil-collection)
   ;; Prevent accidental commands when exploring little-used modes.
   (map! :m doom-localleader-key nil)
-  (evil-normalize-ctrl-i nil)
+  (evil-normalize-ctrl-i)
   ;; Indent current line after more evil commands.
   (map! :map prog-mode-map
         :n "J" (cmd! (call-interactively #'evil-join)
@@ -134,13 +167,18 @@
 
 (use-package! tree-sitter-langs :after tree-sitter)
 (use-package! tree-sitter
-  :hook ((python-mode) . tree-sitter-mode))
+  :hook ((python-mode rustic-mode) . tree-sitter-mode)
+  :config
+  ;; Add support for JSX.
+  (appendq! tree-sitter-major-mode-language-alist
+            '((typescript-tsx-mode . typescript)
+              (rjsx-mode . javascript))))
 
 (use-package! doom-modeline
   :config
   (setq! ;;doom-modeline-height 30
-         doom-modeline-irc nil
-         doom-modeline-gnus nil))
+   doom-modeline-irc nil
+   doom-modeline-gnus nil))
 
 (use-package! prog-mode
   :config
@@ -149,8 +187,7 @@
   ;; and wrap lines at the window edge.
   (general-add-hook 'prog-mode-hook '(auto-fill-mode subword-mode))
   ;; Automatically wrap comments in code
-  (setq-default comment-auto-fill-only-comments t
-                auto-fill-function 'do-auto-fill))
+  (setq-default comment-auto-fill-only-comments t))
 
 (use-package! lsp-mode
   :config
@@ -205,6 +242,7 @@
 
 ;; TODO Decide between mode-line up top and sticky header!
 (use-package! org-sticky-header
+  :disabled
   :hook (org-mode . org-sticky-header-mode))
 
 (map! :mv "zw" 'count-words)
@@ -271,6 +309,7 @@ Use `treemacs-select-window' command for old functionality."
 ;; TODO Get rid of all yasnippet-company business.
 (use-package! yasnippet
   :config
+  (setq! yas-triggers-in-field t)
   (map! :map yas-minor-mode-map
         :i "C-p" 'yas-insert-snippet))
 
@@ -289,6 +328,14 @@ Use `treemacs-select-window' command for old functionality."
   :general (magit-mode-map
             "e" 'vdiff-magit-dwim
             "E" 'vdiff-magit))
+
+;; Provide syntax highlighting to magit diffs.
+(use-package! magit-delta
+  :disabled
+  :hook (magit-mode . magit-delta-mode)
+  :config
+  ;; FIXME Propogate the emacs theme to delta.
+  (setq magit-delta-default-dark-theme "ansi-dark"))
 
 ;; TODO Setup keys for navigating merge conflicts.
 ;; (use-package smerge-mode
@@ -344,7 +391,7 @@ Use `treemacs-select-window' command for old functionality."
   :config (explain-pause-mode t))
 
 (use-package! evil-owl
-  :hook (evil-mode . evil-owl-mode))
+  :config (evil-owl-mode))
 
 (use-package! flycheck-inline
   :hook (flycheck-mode . flycheck-inline-mode))
@@ -366,24 +413,33 @@ Use `treemacs-select-window' command for old functionality."
 ;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
 ;; they are implemented.
 
-(use-package! cherokee-input :defer 1)
+(use-package! cherokee-input)
 
 ;; Make headlines big!
 (custom-set-faces!
   '(org-document-title :weight extra-bold :height 1.5)
-  '(outline-1 :weight extra-bold :height 1.25)
-  '(outline-2 :weight bold :height 1.15)
-  '(outline-3 :weight bold :height 1.12)
-  '(outline-4 :weight semi-bold :height 1.09)
+  '(outline-1 :weight extra-bold :height 1.3)
+  '(outline-2 :weight bold :height 1.2)
+  '(outline-3 :weight bold :height 1.1)
+  '(outline-4 :weight semi-bold :height 1.08)
   '(outline-5 :weight semi-bold :height 1.06)
   '(outline-6 :weight semi-bold :height 1.03)
+  '(outline-7 :weight semi-bold)
   '(outline-8 :weight semi-bold)
   '(outline-9 :weight semi-bold)
+  ;; Style markdown headers the same way.
   '(markdown-header-face-1 :inherit outline-1)
   '(markdown-header-face-2 :inherit outline-2)
   '(markdown-header-face-3 :inherit outline-3)
   '(markdown-header-face-4 :inherit outline-4)
-  '(markdown-header-face-5 :inherit outline-5))
+  '(markdown-header-face-5 :inherit outline-5)
+  ;; Not all themes provide this inheritance.
+  '(org-level-1 :inherit outline-1)
+  '(org-level-2 :inherit outline-2)
+  '(org-level-3 :inherit outline-3)
+  '(org-level-4 :inherit outline-4)
+  '(org-level-5 :inherit outline-5)
+  '(org-level-6 :inherit outline-6))
 
 ;; Make line numbers more visible on many themes.
 (custom-set-faces!
@@ -397,6 +453,47 @@ Use `treemacs-select-window' command for old functionality."
   '(flycheck-warning :underline (:style line :color "#f2b64b"))
   '(flycheck-error :underline (:style line :color "#ab1f38")))
 
+(use-package! unicode-fonts
+  :config
+  ;; Replace all instances of Symbola with a monospacified Symbola.
+  (mapc (lambda (bl)
+          (setf (cadr bl)
+                (mapcar (lambda (font)
+                          (if (string= font "Symbola")
+                              "Symbola monospacified for Source Code Pro"
+                            font))
+                        (cadr bl))))
+        unicode-fonts-block-font-mapping)
+  (setq my/private-use-fonts '("Font Awesome 5 Free"
+                               "github-octicons"
+                               "file-icons"
+                               "all-the-icons"
+                               "Material Design Icons"))
+  (push `("Private Use Area" ,my/private-use-fonts)
+        unicode-fonts-block-font-mapping)
+  (push '("IPA Extensions" ("Source Code Pro"))
+        unicode-fonts-block-font-mapping)
+  (push '("Modifier Letter Small H" "Modifier Letter Small H"
+          ("Source Code Pro"))
+        unicode-fonts-overrides-mapping)
+  ;; (push `("Simplified Chinese Script" ("Migu 1M")))
+  ;;λ
+  (set-fontset-font t 'han (font-spec :family "SF Mono Square" :size 18))
+  (set-fontset-font t 'greek (font-spec :family "SF Mono" :size 15))
+  (set-fontset-font t 'mathematical (font-spec :family "Fira Math" :size 15))
+  (setq unicode-fonts-fallback-font-list '("Symbola monospacified for Source Code Pro" "Hasklig"))
+  (setq unicode-fonts-restrict-to-fonts (append '("DejaVu Sans Mono"
+                                                  "Noto Sans"
+                                                  "Noto Sans Symbols"
+                                                  "Noto Sans Symbols2"
+                                                  "Noto Sans Cherokee"
+                                                  "Everson Mono"
+                                                  "Source Code Pro"
+                                                  "Symbola monospacified for Source Code Pro"
+                                                  "Quivira"
+                                                  "Noto Sans CJK JP")
+                                                my/private-use-fonts)))
+
 ;; (use-package! unicode-fonts
 ;;      :disabled
 ;;   :init (setq! unicode-fonts-restrict-to-fonts '("DevaVu Sans Mono"
@@ -407,11 +504,8 @@ Use `treemacs-select-window' command for old functionality."
 ;;                                                  "Noto Sans Cherokee"
 ;;                                                  "Material Design Icons")))
 
-(use-package! hungry-delete
-  :config (global-hungry-delete-mode))
-
 ;; Use this instead of "SPC w w" to exclude treemacs.
-(map! :localleader "\\" 'other-window)
+;; (map! :localleader "\\" 'other-window)
 
 ;; (map! :map (evil-ex-map)
 ;;       :n "C-v" 'evil-paste-after)
@@ -434,3 +528,238 @@ Use `treemacs-select-window' command for old functionality."
 
 ;; I never use this and it causes weird issues with Wayland + Slack.
 (map! "<Scroll_Lock>" 'ignore)
+
+(after! mu4e
+  (setq! +mu4e-backend 'offlineimap
+         mu4e-get-mail-command "sync-email.sh"
+         ;; mu4e-maildir "~/.mail"
+         mu4e-attachment-dir "~/Downloads"
+         ;; mu4e-sent-messages-behavior 'sent
+         mu4e-headers-leave-behavior 'apply
+         ;; FIXME Sadly causes more issues than it fixes.
+         ;; mu4e-headers-advance-after-mark nil
+         mu4e-view-prefer-html t
+         mu4e-update-interval 300
+         mu4e-compose-context-policy 'ask
+         mu4e-context-policy 'pick-first
+         org-mu4e-convert-to-html nil
+         ;; Add full citation when replying to emails.
+         message-citation-line-function 'message-insert-formatted-citation-line
+         ;; These work well if my font has CJK, otherwise Unicode icons may be better.
+         mu4e-headers-draft-mark '("D" . "✎")
+         mu4e-headers-flagged-mark '("F" . "★")
+         mu4e-headers-new-mark '("N" . "!")
+         mu4e-headers-seen-mark '("S" . "◎")
+         mu4e-headers-unread-mark '("u" . "◉")
+         mu4e-headers-replied-mark '("R" . "⤷")
+         mu4e-headers-attach-mark '("a" . "🖿")
+         ;; mu4e-html2text-command "w3m -dump -T text/html"
+         ;; Convert received messages from html to org.
+         mu4e-html2text-command "pandoc -f html -t gfm-raw_html-smart-escaped_line_breaks --wrap=preserve --lua-filter ~/Downloads/remove-ids.lua"
+         mu4e-view-show-images t)
+  ;; I really do want evil bindings for viewing emails.
+  (remove-hook 'mu4e-view-mode-hook #'evil-emacs-state)
+  ;; Make sure we can view inline images
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
+  ;; Disable line highlight when viewing emails.
+  (add-hook 'mu4e-view-mode-hook (lambda () (hl-line-mode -1)))
+  ;; Execute marks without confirmation.
+  (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
+        :n "x" (cmd! (mu4e-mark-execute-all t)))
+  ;; Allow me to reload search results.
+  (map! :map mu4e-headers-mode-map
+        :n "gr" #'mu4e-headers-rerun-search)
+  ;; Add my email accounts.
+  (set-email-account! "neu"
+                      '((mu4e-sent-folder . "/neu/Sent")
+                        (mu4e-drafts-folder . "/neu/Drafts")
+                        (mu4e-trash-folder . "/neu/Trash")
+                        (mu4e-refile-folder . "/neu/Archive")
+                        (mu4e-spam-folder . "/neu/Junk")
+                        (user-mail-address . "snead.t@northeastern.edu")
+                        (smtpmail-smtp-user . "snead.t@northeastern.edu")
+                        ;; Send through the local Davmail SMTP server.
+                        (smtpmail-smtp-service . 1025)
+                        (smtpmail-smtp-server . "localhost")
+                        (smtpmail-stream-type . plain)
+                        (message-citation-line-format . "On %a, %b %d, %Y at %R %f wrote:\n")))
+  (set-email-account! "gmail"
+                      '((mu4e-sent-folder . "/gmail/[Gmail].Sent Mail")
+                        (mu4e-drafts-folder . "/gmail/[Gmail].Drafts")
+                        (mu4e-trash-folder . "/gmail/[Gmail].Trash")
+                        (mu4e-refile-folder . "/gmail/Graveyard")
+                        (mu4e-spam-folder . "/gmail/[Gmail].Spam")
+                        (user-mail-address . "taylorsnead@gmail.com")
+                        (smtpmail-smtp-user . "taylorsnead@gmail.com")
+                        (smtpmail-smtp-server . "smtp.gmail.com")
+                        (smtpmail-smtp-service . 587)
+                        (smtpmail-stream-type . starttls)
+                        (message-citation-line-format . "On %a, %b %d, %Y at %R %f wrote:\n")))
+
+  (defun mu4e-all-contexts-var (sym)
+    "A list of all the values of the given symbol in each mu4e context."
+    (mapcar (lambda (ctx) (cdr (assoc sym (mu4e-context-vars ctx))))
+            mu4e-contexts))
+
+  ;; Build bookmark queries.
+  (let* ((all-trash (mu4e-all-contexts-var 'mu4e-trash-folder))
+         (all-spam (mu4e-all-contexts-var 'mu4e-spam-folder)))
+    (setq my/show-all-trash (mapconcat (lambda (d) (format "maildir:%s" d))
+                                       all-trash " or ")
+          my/hide-all-trash (mapconcat (lambda (d) (format "not maildir:%s" d))
+                                       (append all-trash all-spam) " and ")
+          my/show-all-inboxes (mapconcat (lambda (d) (format "maildir:/%s/INBOX" d))
+                                         '("gmail" "neu") " or ")))
+  (setq! mu4e-bookmarks
+         '((:name "Inbox" :query my/show-all-inboxes :key ?i)
+           (:name "Unread Messages" :query (format "flag:unread and (%s)" my/hide-all-trash) :key ?u)
+           (:name "Today" :query (format "date:today..now and (%s)" my/hide-all-trash) :key ?t)
+           (:name "This Week" :query (format "date:7d..now and (%s)" my/hide-all-trash) :hide-unread t :key ?w)
+           (:name "Trash" :query my/show-all-trash :key ?T)))
+
+  (defun mu4e-compose-from-mailto (mailto-string)
+    (require 'mu4e)
+    (unless mu4e~server-props (mu4e t) (sleep-for 0.1))
+    (let* ((mailto (rfc2368-parse-mailto-url mailto-string))
+           (to (cdr (assoc "To" mailto)))
+           (subject (or (cdr (assoc "Subject" mailto)) ""))
+           (body (cdr (assoc "Body" mailto)))
+           (org-msg-greeting-fmt (if (assoc "Body" mailto)
+                                     (replace-regexp-in-string "%" "%%"
+                                                               (cdr (assoc "Body" mailto)))
+                                   org-msg-greeting-fmt))
+           (headers (-filter (lambda (spec) (not (-contains-p '("To" "Subject" "Body") (car spec)))) mailto)))
+      (mu4e~compose-mail to subject headers)))
+  )
+
+;; Write emails in org-mode, sent as legit HTML!
+(use-package! org-msg
+  :disabled
+  :after mu4e
+  :config
+  (setq! org-msg-startup "noindent inlineimages"
+         org-msg-options "html-postamble:nil toc:nil author:nil email:nil num:nil \\n:t"
+         org-msg-text-plain-alternative t
+         org-msg-enforce-css '())
+  (org-msg-mode))
+
+(use-package md-msg
+  ;; :disabled
+  :after mu4e
+  :config
+  (md-msg-mode))
+
+;; Notify me when I receive emails.
+(use-package! mu4e-alert
+  :hook (after-init . mu4e-alert-enable-notifications)
+  :config
+  (mu4e-alert-set-default-style 'libnotify)
+  (setq mu4e-alert-email-notification-types '(count)
+        mu4e-alert-interesting-mail-query (format "flag:unread and (%s)" my/show-all-inboxes)))
+
+(use-package! mu4e-send-delay
+  :disabled
+  :after mu4e
+  :config
+  (add-hook 'mu4e-main-mode-hook #'mu4e-send-delay-initialize-send-queue-timer)
+  (mu4e-send-delay-setup))
+
+;; (after! mu4e
+;;   ;; Prompt for the email to send from when composing.
+;;   (defun my-mu4e-set-account ()
+;;     "Set the account for composing a message."
+;;     (unless (and mu4e-compose-parent-message
+;;                  (let ((to (cdr (car (mu4e-message-field mu4e-compose-parent-message :to))))
+;;                        (from (cdr (car (mu4e-message-field mu4e-compose-parent-message :from)))))
+;;                  (if (member to (plist-get mu4e~server-props :personal-addresses))
+;;                      (setq user-mail-address to)
+;;                    (if (member from (plist-get mu4e~server-props :personal-addresses))
+;;                        (setq user-mail-address from)
+;;                        nil))))
+;;       (ivy-read "Account: " (plist-get mu4e~server-props :personal-addresses) :action (lambda (candidate) (setq user-mail-address candidate)))))
+
+;;   (add-hook 'mu4e-compose-pre-hook 'my/mu4e-set-account))
+
+;; FIXME This doesn't work with mu > 1.2
+;; (use-package! mu4e-conversation
+;;   :after mu4e
+;;   :config
+;;   (global-mu4e-conversation-mode))
+;;
+;;
+
+
+(map! "M-[" #'+workspace/switch-left
+      "M-]" #'+workspace/switch-right)
+
+(after! web-mode
+  (add-to-list 'web-mode-engines-alist '("django" . "\\.tera\\.(xml|html)\\'")))
+
+(use-package! olivetti
+  :commands olivetti-mode
+  :init (map! :leader "to" #'olivetti-mode)
+  :config
+  (setq! olivetti-body-width 80))
+
+(setq! +pretty-code-symbols
+       '(:name "»"
+         :src_block "»"
+         :src_block_end "«"
+         :quote "“"
+         :quote_end "”"
+         :lambda "λ"
+         :def "ƒ"
+         :composition "∘"
+         :map "↦"
+         :null "∅"
+         :not "¬"
+         :in "∈"
+         :not-in "∉"
+         :and "∧"
+         :or "∨"
+         ;; :for "∀"
+         :some "∃"
+         :return "⤷"
+         :yield "∑"
+         :union "⋃"
+         :intersect "∩"
+         :diff "∖"
+         :tuple "⨂"
+         ;; :pipe ""
+         :dot "•"
+         ;; Org-specific symbols
+         :title "𝙏"
+         :subtitle "𝙩"
+         :begin_quote   "❮"
+         :end_quote     "❯"
+         :begin_export  "⯮"
+         :end_export    "⯬"
+         ;; :properties    "⛭"
+         :end           "∎"))
+
+(set-pretty-symbols! 'org-mode
+  :merge t
+  :title "#+TITLE:"
+  :begin_quote "#+BEGIN_QUOTE"
+  :end_quote "#+END_QUOTE"
+  :begin_export "#+BEGIN_EXPORT"
+  :end_export "#+END_EXPORT"
+  ;; :properties ":PROPERTIES:"
+  :end ":END:")
+
+(set-pretty-symbols! 'markdown-mode
+  :src_block "```")
+
+(map! :leader "tp" #'prettify-symbols-mode)
+
+(after! (mu4e org-msg)
+  (defvar org-msg-mu4e-view-mode-map (copy-keymap mu4e-view-mode-map))
+  (define-derived-mode org-msg-mu4e-view-mode
+    org-msg-edit-mode
+    "mu4e:view-org"
+    "View mu4e messages with org mode magic."
+    (setq-local display-line-numbers nil)))
+
+(map! :map compilation-mode-map
+      :n "gr" #'recompile)
