@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # wait for formats to output...
 sleep 0.5
@@ -18,11 +18,13 @@ sleep 0.5
 
 # Restart dunst to apply theme
 # ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
+mkdir ~/.config/mako
 ln -sf ~/.cache/wal/mako.conf ~/.config/mako/config
+mkdir ~/.config/alacritty
 ln -sf ~/.cache/wal/alacritty.yml ~/.config/alacritty/alacritty.yml
 
 # pkill dunst && dunst & disown
 pkill waybar && ~/bin/waybar.sh & disown
 
 # Reload theme in emacs!
-emacsclient -n -e "(when (string-match \"ewal-\" doom-theme) (doom/reload-theme))"
+emacsclient -n -e "(when (string-match \"ewal-\" (symbol-name doom-theme)) (doom/reload-theme))"

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # == Config programs with WM ==
 # gtk theme: lxappearance
@@ -9,6 +9,9 @@
 
 # Disable bluetooth at login, we can manually enable if we want to.
 bluetoothctl power off
+
+# O365 Server for university email
+davmail ~/.config/davmail/.properties & disown
 
 # General
 # ibus controls input methods
