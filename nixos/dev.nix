@@ -1,11 +1,13 @@
 { config, lib, pkgs, ... }:
-
 {
   environment.systemPackages = with pkgs; [
     # tools of the trade
     git
+    git-lfs
     gcc
     gnumake
+    tectonic # build latex projects
+    pandoc
 
     # languages
     rustup
@@ -21,8 +23,14 @@
     aspellDicts.en-computers
     aspellDicts.en-science
 
-    # Misc
-    filezilla
+    # fancy tools
+    any-nix-shell
+
+    # formatters + language servers
+    nixfmt
+    html-tidy
+    pipenv
+    python37Packages.python-language-server
   ];
 
   nixpkgs.overlays = [

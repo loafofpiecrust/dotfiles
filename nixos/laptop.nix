@@ -1,7 +1,8 @@
 # Config for Lenovo Ideapad 720s 14-IKB
 # Import this file into the main configuration.nix and call it a day.
-{ config, lib, pkgs, ... }: {
-  imports = [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ];
+{ config, lib, pkgs, ... }:
+{
+  imports = [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ./email.nix ];
 
   boot = {
     # Use the systemd-boot EFI boot loader.
@@ -10,9 +11,7 @@
     loader.systemd-boot.editor = false;
     loader.efi.canTouchEfiVariables = true;
 
-    initrd.availableKernelModules =
-      [ "xhci_pci" "nvme" "usb_storage" "sd_mod" "bbswitch" ];
-    # I never use bluetooth
+    initrd.availableKernelModules = [ "usb_storage" "sd_mod" "bbswitch" ];
     initrd.kernelModules = [ "i915" ];
 
     # boot niceties
@@ -29,11 +28,8 @@
   };
 
   networking.hostName = "loafofpiecrust";
-  # Allow other devices on the same local network to connect via hostname.
-  # (with a password)
-  services.avahi.publish.enable = true;
-  services.avahi.publish.addresses = true;
-  services.avahi.publish.domain = true;
+  # FIXME: Open just the ports needed for chromecast.
+  networking.firewall.enable = false;
 
   users.users.snead = {
     isNormalUser = true;
@@ -74,8 +70,6 @@
     };
   };
 
-  services.fwupd.enable = true;
-
   # Automatic power saving.
   services.tlp.enable = true;
   powerManagement.powertop.enable = true;
@@ -87,7 +81,22 @@
   # Trim SSD for drive health.
   services.fstrim.enable = true;
 
-  environment.systemPackages = with pkgs; [ powertop brightnessctl ];
+  environment.systemPackages = with pkgs; [
+    # Power management
+    powertop
+    brightnessctl
+
+    # apps
+    calibre # ebook manager
+    mate.atril # pdf viewer
+    xfce.parole # video player
+    font-manager
+    deluge
+    bleachbit
+    gimp
+    discord
+    slack
+  ];
 
   # Enable NVIDIA GPU
   # hardware.bumblebee.enable = true;

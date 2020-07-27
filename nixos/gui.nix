@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
+  # imports = [ ./wayland.nix ];
   environment.systemPackages = with pkgs; [
     gnome3.file-roller # provides all archive formats
     alacritty
@@ -19,20 +20,18 @@
     gsettings-desktop-schemas
     farge # color picker
 
-    # apps
-    firefox
-    calibre # ebook manager
-    mate.atril # pdf viewer
-    xfce.parole # video player
-    font-manager
-    deluge
-    bleachbit
-    gimp
-
     # gtk themes
     arc-theme
     paper-icon-theme
     bibata-cursors
+
+    # apps I want everywhere
+    firefox-wayland
+    cmus # music player
+
+    # system tools
+    libnotify
+    pkgs.unstable.xdg-desktop-portal
   ];
 
   fonts.enableDefaultFonts = true;
@@ -49,22 +48,23 @@
     unstable.fira-code
     symbola
     dejavu_fonts
-    font-awesome
+    migu
+    # corefonts # sometimes I need Times New Roman
     # Add user fonts to ~/.local/share/fonts
   ];
 
   fonts.fontconfig = {
     defaultFonts = {
       monospace = [
-        "Ubuntu Mono"
-        "Hasklig"
+        "SF Mono" # Main preference, changes often.
+        "Hasklig" # Provides almost all of the IPA symbols.
         "Noto Sans Mono CJK SC"
         "Noto Emoji"
         "Material Design Icons"
       ];
       sansSerif =
-        [ "Overpass" "Noto Sans CJK SC" "FreeSans" "Material Design Icons" ];
-      serif = [ "Merriweather" ];
+        [ "Overpass" "Noto Sans" "FreeSans" "Material Design Icons" ];
+      serif = [ "Merriweather" "Liberation Serif" ];
     };
   };
 
@@ -95,6 +95,7 @@
       kanshi
       unstable.wofi
       qt5.qtwayland
+      grim
     ];
     extraSessionCommands = let
       schema = pkgs.gsettings-desktop-schemas;
@@ -144,5 +145,16 @@
   };
 
   # Give Firefox precise touchpad scrolling and wayland support.
-  environment.variables = { MOZ_USE_XINPUT2 = "1"; };
+  environment.variables = {
+    MOZ_USE_XINPUT2 = "1";
+    XDG_CURRENT_DESKTOP = "sway";
+  };
+
+  # Enable better XDG integration.
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = with pkgs; [
+    pkgs.unstable.xdg-desktop-portal-wlr
+    xdg-desktop-portal-gtk
+  ];
+  xdg.portal.gtkUsePortal = true;
 }
