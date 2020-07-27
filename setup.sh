@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 stow scripts
 stow fonts

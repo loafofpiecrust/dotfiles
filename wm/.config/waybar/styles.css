@@ -19,11 +19,11 @@ tooltip label {
     margin: 0;
     padding: 8px;
     min-height: 0;
+    color: @foreground;
 }
 
 window#waybar {
     background-color: @background;
-    /* border-bottom: 3px solid rgba(100, 114, 125, 0.5); */
     transition-property: background-color;
     transition-duration: .2s;
     min-height: 30px;

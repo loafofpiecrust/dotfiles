@@ -4,9 +4,9 @@
     "position": "top", // Waybar position (top|bottom|left|right)
     "height": 30, // Waybar height (to be removed for auto height)
     // Choose the order of the modules
-    "modules-left": ["custom/power", "sway/workspaces", "sway/mode", "custom/player"],
+    "modules-left": ["custom/power", "sway/workspaces", "sway/mode"],
     "modules-center": [],
-    "modules-right": ["tray", "custom/wallpaper", "idle_inhibitor", "custom/vpn", "network", "cpu", "memory", "pulseaudio", "battery", "clock"],
+    "modules-right": ["custom/player", "tray", "custom/wallpaper", "idle_inhibitor", "custom/vpn", "network", "cpu", "memory", "pulseaudio", "battery", "clock"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": true,
@@ -122,8 +122,8 @@
         "format-bluetooth": "{volume}% {icon} {format_source}",
         "format-bluetooth-muted": " {icon} {format_source}",
         "format-muted": " {icon} {format_source}",
-        "format-source": " ",
-        "format-source-muted": "",
+        "format-source": "",
+        "format-source-muted": "",
         "format-icons": {
             // "headphone": "",
             // "hands-free": "",
@@ -131,7 +131,7 @@
             // "phone": "",
             // "portable": "",
             // "car": "",
-            "default": ["|—————————", "—|————————", "——|———————", "———|——————", "————|—————", "—————|————", "——————|———", "———————|——", "————————|—", "—————————|"]
+            "default": ["▒▒▒▒▒▒▒▒▒▒", "█▒▒▒▒▒▒▒▒▒", "██▒▒▒▒▒▒▒▒", "███▒▒▒▒▒▒▒", "████▒▒▒▒▒▒", "█████▒▒▒▒▒", "██████▒▒▒▒", "███████▒▒▒", "████████▒▒", "█████████▒",  "██████████"]
         },
         "on-click": "amixer sset Master toggle",
         "on-click-right": "pavucontrol"
@@ -166,11 +166,11 @@
         "on-click": "$HOME/bin/rofi-logout.sh"
     },
     "custom/wallpaper": {
-    "format": "<span weight='normal'></span>",
-    "tooltip": false,
-    "on-click": "wpg -m &",
-    "on-click-right": "wpg &",
-    "on-click-middle": "wpg -r"
+        "format": "<span weight='normal'></span>",
+        "tooltip": false,
+        "on-click": "wpg -m &",
+        "on-click-right": "wpg &",
+        "on-click-middle": "wpg -r"
     },
     "custom/player": {
         "format": "{}",

@@ -10,6 +10,15 @@
 # Please see http://i3wm.org/docs/userguide.html for a complete reference!
 include "$HOME/.cache/wal/colors-sway"
 
+# FIXME sway currently isn't importing gsettings desktop schemas.
+set $gnome org.gnome.desktop.interface
+exec_always {
+    gsettings set $gnome gtk-theme 'Arc'
+    gsettings set $gnome icon-theme 'Paper'
+    gsettings set $gnome cursor-theme 'Bibata_Oil'
+    gsettings set $gnome font-name 'sans 12'
+}
+
 set $mod Mod4
 
 # Font for window titles. Will also be used by the bar unless a different font
@@ -42,7 +51,7 @@ bindsym $mod+Shift+Escape exit
 
 # Reset the super key if it gets stuck.
 bindsym $mod+Alt+Delete xdotool keyup Super_L
-
+bindsym --release Print exec grim -g \"$(slurp)\" - | wl-copy
 # change focus
 #bindsym $mod+j focus left
 #bindsym $mod+k focus down
@@ -207,9 +216,9 @@ bar {
 }
 
 # floating windows
-for_window [class="Pavucontrol"] floating enable
+for_window [app_id="pavucontrol"] floating enable
 for_window [class="Lxtask"] floating enable
-for_window [class=".wpg-wrapped"] floating enable
+for_window [app_id=".wpg-wrapped"] floating enable
 for_window [class="Gcolor3"] floating enable
 
 ## Multimedia Keys
@@ -234,15 +243,15 @@ bindsym {
 bindsym {
     # start a terminal
     $mod+Return exec alacritty
-    $mod+space exec wofi --show drun
-    $mod+grave exec wofi --show run
-    $mod+Tab exec wofi --show window
+    $mod+space exec rofi -show drun
+    $mod+grave exec rofi -show run
+    $mod+Tab exec rofi -show window
     $mod+Ctrl+n exec networkmanager_dmenu
     $mod+c exec playerctl play-pause
 
     # App shortcuts
     $mod+n exec thunar
-    $mod+b exec firefox
+    $mod+b exec brave
     $mod+e exec emacsclient -c
 
     # General shortcuts
@@ -270,14 +279,6 @@ input type:keyboard {
       xkb_options caps:swapescape
       repeat_delay 300
       repeat_rate 20
-}
-
-# FIXME sway currently isn't importing gsettings desktop schemas.
-set $gnome org.gnome.desktop.interface
-exec_always {
-    gsettings set $gnome gtk-theme 'Arc'
-    gsettings set $gnome icon-theme 'Paper'
-    gsettings set $gnome cursor-theme 'Bibata_Oil'
 }
 
 # Inhibit idle on fullscreen video
