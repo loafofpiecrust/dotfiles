@@ -12,4 +12,7 @@ user_pref("browser.contentblocking.category", "strict");
 user_pref("signon.rememberSignOns", false);
 
 // Default search engine
-user_pref("browser.urlbar.placeholderName", "DuckDuckGo");
+user_pref("browser.urlbar.placeholderName", "Google");
+
+// MPRIS integration for media control on linux.
+user_pref("media.hardwaremediakeys.enabled", true);
