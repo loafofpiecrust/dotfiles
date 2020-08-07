@@ -127,9 +127,10 @@
 (require 'message)
 (require 'mml)
 (require 'markdown-mode)
-(require 'org)
 (require 'url-parse)
 (require 'xml)
+(require 'polymode)
+(require 'mu4e)
 
 (defgroup md-msg nil
   "Org Message group."
@@ -226,7 +227,7 @@ Example:
       (blockquote nil ((padding-left . "1ex") (margin-left . "0")
                        (margin-top . "10px") (margin-bottom . "0")
                        (border-left . "1px solid #ccc")))
-      (code nil (,font-size (font-family . "monospace") (margin-left . "1em")))
+      (code nil (,font-size (font-family . "monospace")))
       ,@code-src
       (nil linenr ((padding-right . "1em")
                    (color . "black")
@@ -581,8 +582,8 @@ and include the SVG content into the email XML tree."
     (insert-file-contents file)
     (md-msg-html-buffer-to-xml (file-name-directory file))))
 
-(defun md-msg-org-to-xml (str &optional base)
-  "Transform the STR Org string into a XML tree.
+(defun md-msg-markdown-to-xml (str &optional base)
+  "Transform the STR Markdown string into a XML tree.
 BASE is the path used to convert the IMG SRC relative paths to
 absolute paths."
   (save-window-excursion
@@ -591,17 +592,20 @@ absolute paths."
       (let ((md-msg-export-in-progress t))
         ;; Replace the contents of this temporary buffer with the html output.
         (shell-command-on-region (point-min) (point-max)
-                                 "pandoc -f gfm -t html"
+                                 ;; TODO use markdown here, not gfm.
+                                 "pandoc -f gfm -t html --wrap=preserve --columns=80"
                                  nil t)
         (let ((xml (md-msg-html-buffer-to-xml base)))
             (kill-buffer)
             xml)))))
 
-(defun md-msg-org-to-text-plain ()
+(defun md-msg-markdown-to-text-plain ()
   "Transform the current Md-Msg buffer into a text plain form."
-  (save-window-excursion
-    (let ((str (buffer-substring-no-properties (md-msg-start) (md-msg-end))))
-      str)))
+  (buffer-substring-no-properties (md-msg-start) (md-msg-end))
+  ;; (save-window-excursion
+  ;;   (let ((str ))
+  ;;     str))
+  )
 
 (defun md-msg-load-css ()
   "Load the CSS definition according to `md-msg-enforce-css'."
@@ -610,7 +614,7 @@ absolute paths."
 	 (md-msg-css-file-to-list md-msg-enforce-css))))
 
 (defmacro md-msg-with-match-prop (prop &rest body)
-  "Look for the Org PROP property and call @BODY on match."
+  "Look for the markdown PROP property and call @BODY on match."
   (declare (indent 1))
   `(save-excursion
      (goto-char (point-min))
@@ -618,17 +622,17 @@ absolute paths."
        (progn ,@body))))
 
 (defun md-msg-get-prop (prop)
-  "Return the Org PROP property value, nil if undefined."
+  "Return the markdown PROP property value, nil if undefined."
   (md-msg-with-match-prop prop
     (read (match-string-no-properties 3))))
 
 (defun md-msg-set-prop (prop val)
-  "Set the Org PROP property value to VAL."
+  "Set the markdown PROP property value to VAL."
   (md-msg-with-match-prop prop
     (replace-match (format "%S" val) nil nil nil 3)))
 
 (defun md-msg-build ()
-  "Build and return the XML tree for current OrgMsg buffer."
+  "Build and return the XML tree for current markdownMsg buffer."
   (let ((css (md-msg-load-css)))
     (cl-flet ((enforce (xml)
 	       (let* ((tag (car xml))
@@ -645,7 +649,7 @@ absolute paths."
 			     (when (string-prefix-p "file://" (cdr src))
 			       (setcdr src (substring (cdr src) (length "file://")))))))
       (let* ((org (buffer-substring-no-properties (md-msg-start) (md-msg-end)))
-	     (reply (md-msg-org-to-xml org default-directory))
+	     (reply (md-msg-markdown-to-xml org default-directory))
 	     (temp-files (md-msg-get-prop "reply-to"))
 	     (original (when temp-files
 			 (md-msg-load-html-file (car temp-files)))))
@@ -679,33 +683,25 @@ With the prefix argument ARG set, it calls
       (browse-url (concat "file://" tmp-file)))))
 
 (defun md-msg-prepare-to-send ()
-  "Convert the current OrgMsg buffer into `mml' content.
+  "Convert the current markdownMsg buffer into `mml' content.
 This function is a hook for `message-send-hook'."
   (save-window-excursion
-    (when (eq major-mode 'md-msg-edit-mode)
-      (let ((mail (md-msg-build))
-            (attachments (md-msg-get-prop "attachment")))
-        (dolist (file attachments)
-          (unless (file-exists-p file)
-            (error "File '%s' does not exist" file)))
-        (setq md-msg-attachment attachments)
-        (when md-msg-text-plain-alternative
-          (setq md-msg-text-plain (md-msg-org-to-text-plain)))
-        (goto-char (md-msg-start))
-        (delete-region (md-msg-start) (point-max))
-        (when (md-msg-mml-recursive-support)
-          (when attachments
-            (mml-insert-multipart "mixed")
-            (dolist (file attachments)
-              (mml-insert-tag 'part 'type (md-msg-file-mime-type file)
-                              'filename file 'disposition "attachment")))
-          (when md-msg-text-plain-alternative
-            (mml-insert-multipart "alternative")
-            (mml-insert-part "text/plain")
-            (insert md-msg-text-plain)
-            (forward-line)))
-        (mml-insert-part "text/html")
-        (insert (md-msg-xml-to-str mail))))))
+    (when (eq major-mode 'mu4e-compose-mode)
+      (let ((mail (md-msg-build)))
+        ;; (when md-msg-text-plain-alternative
+        ;;   (setq md-msg-text-plain (md-msg-markdown-to-text-plain)))
+        (message-goto-body)
+        ;; (delete-region (md-msg-start) (point-max))
+        (insert "<#multipart type=alternative><#part type=text/plain>\n")
+        ;; (mml-insert-multipart "alternative")
+        ;; (mml-insert-part "text/plain")
+        (goto-char (md-msg-end))
+        ;; (insert md-msg-text-plain)
+        (forward-line)
+        ;; (mml-insert-part "text/html")
+        (insert "<#part type=text/html>")
+        (insert (md-msg-xml-to-str mail))
+        (insert "<#/multipart>\n")))))
 
 (defun md-msg-file-mime-type (file)
   "Return FILE mime type based on FILE extension.
@@ -715,31 +711,26 @@ If FILE does not have an extension, \"text/plain\" is returned."
 	(mailcap-extension-to-mime extension)
       "text/plain")))
 
-(defun md-msg-mml-into-multipart-related (orig-fun cont)
-  "Extend the capability to handle file attachments.
-This function is used as an advice function of
-`mml-expand-html-into-multipart-related'.
-- ORIG-FUN is the original function.
-- CONT is the MIME representation of the mail content.
-The implementation depends on the `md-msg-attachment' temporary
-variable set by `md-msg-prepare-to-send'."
-  (setq cont (funcall orig-fun cont))
-  (let ((newparts '()))
-    (dolist (file md-msg-attachment)
-      (let ((type (md-msg-file-mime-type file)))
-	(push (list 'part `(type . ,type) `(filename . ,file)
-		    '(disposition . "attachment"))
-	      newparts)))
-    (let ((alternative (if (eq (car cont) 'multipart) (list cont) cont)))
-      (when md-msg-text-plain-alternative
-	(setf alternative (push `(part (type . "text/plain")
-				       (disposition . "inline")
-				       (contents . ,md-msg-text-plain))
-				alternative)))
-      (append `(multipart (type . "mixed")
-			  (multipart (type . "alternative")
-				     ,@alternative))
-	      newparts))))
+;; (defun md-msg-mml-into-multipart-related (orig-fun cont)
+;;   "Extend the capability to handle file attachments.
+;; This function is used as an advice function of
+;; `mml-expand-html-into-multipart-related'.
+;; - ORIG-FUN is the original function.
+;; - CONT is the MIME representation of the mail content.
+;; The implementation depends on the `md-msg-attachment' temporary
+;; variable set by `md-msg-prepare-to-send'."
+;;   (setq cont (funcall orig-fun cont))
+;;   (let ((newparts '()))
+;;     (let ((alternative (if (eq (car cont) 'multipart) (list cont) cont)))
+;;       (when md-msg-text-plain-alternative
+;; 	(setf alternative (push `(part (type . "text/plain")
+;; 				       (disposition . "inline")
+;; 				       (contents . ,md-msg-text-plain))
+;; 				alternative)))
+;;       (append `(multipart (type . "mixed")
+;; 			  (multipart (type . "alternative")
+;; 				     ,@alternative))
+;; 	      newparts))))
 
 (defun md-msg-message-fetch-field (field-name)
   "Return the value of the header field whose type is FIELD-NAME."
@@ -774,7 +765,7 @@ automatically greet the right name, see `md-msg-greeting-fmt'."
 	  "")))))
 
 (defun md-msg-header (reply-to)
-  "Build the Org OPTIONS and PROPERTIES blocks.
+  "Build the markdown OPTIONS and PROPERTIES blocks.
 REPLY-TO is the file path of the original email export in HTML."
   (format ":PROPERTIES:\n:reply-to: %S\n:attachment: nil\n:END:\n"
           reply-to))
@@ -799,44 +790,44 @@ a html mime part, it returns t, nil otherwise."
   t)
 
 (defun md-msg-post-setup (&rest _args)
-  "Transform the current `message' buffer into a OrgMsg buffer.
+  "Transform the current `message' buffer into a markdownMsg buffer.
 If the current `message' buffer is a reply, the
 `md-msg-separator' string is inserted at the end of the editing
 area."
-  (unless (eq major-mode 'md-msg-edit-mode)
+  (unless md-msg-edit-mode
     (message-goto-body)
     (let ((new (not (md-msg-message-fetch-field "subject")))
-	  (with-original (not (= (point) (point-max))))
-	  (reply-to))
+          (with-original (not (= (point) (point-max))))
+          (reply-to))
       (when (or new (md-msg-mua-call 'article-htmlp))
-	(unless new
-	  (setq reply-to (md-msg-mua-call 'save-article-for-reply)))
-	;; (insert (md-msg-header reply-to))
-	(when md-msg-greeting-fmt
-	  (insert (format md-msg-greeting-fmt
-			  (if new
-			      ""
-			    (md-msg-get-to-first-name)))))
-	(save-excursion
-	  (when with-original
-	    (save-excursion
-        (insert "\n")
-        (funcall message-citation-line-function)
-	      ;; (insert "\n\n" md-msg-separator "\n")
-	      (delete-region (line-beginning-position)
-			     (1+ (line-end-position)))
-        ;; (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
-        ;;   (save-excursion
-        ;;     (while (re-search-forward (car rep) nil t)
-        ;;       (replace-match (cdr rep)))))
-        ))
-    (when md-msg-signature
-      (insert md-msg-signature))
-    (md-msg-edit-mode))
+        (unless new
+          (setq reply-to (md-msg-mua-call 'save-article-for-reply)))
+        ;; (insert (md-msg-header reply-to))
+        (when md-msg-greeting-fmt
+          (insert (format md-msg-greeting-fmt
+                          (if new
+                              ""
+                            (md-msg-get-to-first-name)))))
+        (save-excursion
+          (when with-original
+            (save-excursion
+              (insert "\n")
+              (funcall message-citation-line-function)
+              ;; (insert "\n\n" md-msg-separator "\n")
+              (delete-region (line-beginning-position)
+                             (1+ (line-end-position)))
+              ;; (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
+              ;;   (save-excursion
+              ;;     (while (re-search-forward (car rep) nil t)
+              ;;       (replace-match (cdr rep)))))
+              ))
+          (when md-msg-signature
+            (insert md-msg-signature))
+          (md-msg-edit-mode))
   (set-buffer-modified-p nil))
       (if (md-msg-message-fetch-field "to")
           (md-msg-goto-body)
-	      (message-goto-to)))))
+        (message-goto-to)))))
 
 (defun md-msg-post-setup--if-not-reply (&rest _args)
   "Helper for new mail setup vs reply in notmuch"
@@ -845,58 +836,23 @@ area."
 
 (defun md-msg-ctrl-c-ctrl-c ()
   "Send message like `message-send-and-exit'.
-If the current buffer is OrgMsg buffer and OrgMsg is enabled (see
+If the current buffer is markdownMsg buffer and markdownMsg is enabled (see
 `md-msg-toggle'), it calls `message-send-and-exit'."
-  (when (eq major-mode 'md-msg-edit-mode)
+  (when (eq major-mode 'mu4e-compose-mode)
     (message-send-and-exit)))
 
 (defun md-msg-tab ()
-  "Complete names or Org mode visibility cycle.
+  "Complete names or markdown mode visibility cycle.
 If `point' is in the mail header region, the `message-tab'
 function is called.  `org-cycle' is called otherwise."
   (interactive)
   (if (message-in-body-p)
       (markdown-cycle)
     (message-tab)))
-
-(defun md-msg-attach-attach (file)
-  "Link FILE into the list of attachment."
-  (interactive (list (read-file-name "File to attach: ")))
-  (let ((files (md-msg-get-prop "attachment")))
-    (md-msg-set-prop "attachment" (push file files))))
-
-(defun md-msg-attach-delete ()
-  "Delete a single attachment."
-  (interactive)
-  (let* ((files (md-msg-get-prop "attachment"))
-	 (d (completing-read "File to remove: " files)))
-    (md-msg-set-prop "attachment" (delete d files))))
-
-(defun md-msg-attach ()
-  "The dispatcher for attachment commands.
-Shows a list of commands and prompts for another key to execute a
-command."
-  (interactive)
-  (let (c)
-    (save-excursion
-      (save-window-excursion
-	(with-output-to-temp-buffer "*Org Attach*"
-	  (princ "Select an Attachment Command:
-
-a       Select a file and attach it this mail.
-d       Delete one attachment, you will be prompted for a file name."))
-	(org-fit-window-to-buffer (get-buffer-window "*Org Attach*"))
-	(message "Select command: [ad]")
-	(setq c (read-char-exclusive))
-	(and (get-buffer "*Org Attach*") (kill-buffer "*Org Attach*"))))
-    (cond ((memq c '(?a ?\C-a)) (call-interactively 'md-msg-attach-attach))
-	  ((memq c '(?d ?\C-d)) (call-interactively 'md-msg-attach-delete)))))
-
 (defun md-msg-start ()
   "Return the point of the beginning of the message body."
   (save-excursion
     (message-goto-body)
-    (search-forward "#+OPTIONS:" nil t)
     (line-beginning-position)))
 
 (defun md-msg-end ()
@@ -936,168 +892,162 @@ d       Delete one attachment, you will be prompted for a file name."))
 	(cond ((file-directory-p file) (delete-directory file t))
 	      ((delete-file file)))))))
 
-(defun md-msg-mode-gnus ()
-  "Setup the hook for gnus mail user agent."
-  (if md-msg-mode
-      (add-hook 'gnus-message-setup-hook 'md-msg-post-setup)
-    (remove-hook 'gnus-message-setup-hook 'md-msg-post-setup)))
-
 (defun md-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
   (if md-msg-mode
-      (add-hook 'mu4e-compose-mode-hook 'md-msg-post-setup)
-    (remove-hook 'mu4e-compose-mode-hook 'md-msg-post-setup)))
-
-(defun md-msg-mode-notmuch ()
-  "Setup the hook for notmuch mail user agent."
-  (if md-msg-mode
       (progn
-        (advice-add 'notmuch-mua-reply :after 'md-msg-post-setup)
-        (advice-add 'notmuch-mua-mail :after 'md-msg-post-setup--if-not-reply))
+        (add-hook 'mu4e-view-mode-hook 'md-msg-view-mode)
+        (add-hook 'mu4e-compose-mode-hook 'md-msg-post-setup))
     (progn
-      (advice-remove 'notmuch-mua-reply 'md-msg-post-setup)
-      (advice-remove 'notmuch-mua-mail 'md-msg-post-setup--if-not-reply))))
+      (remove-hook 'mu4e-view-mode-hook 'md-msg-view-mode)
+      (remove-hook 'mu4e-compose-mode-hook 'md-msg-post-setup))))
 
 ;;;###autoload
 (define-minor-mode md-msg-mode
-  "Toggle OrgMsg mode.
+  "Toggle MdMsg mode.
 With a prefix argument ARG, enable Delete Selection mode if ARG
 is positive, and disable it otherwise.  If called from Lisp,
 enable the mode if ARG is omitted or nil.
 
-When OrgMsg mode is enabled, the Message mode behavior is
-modified to make use of Org Mode for mail composition and build
+When MdMsg mode is enabled, the Message mode behavior is
+modified to make use of markdown Mode for mail composition and build
 HTML emails."
   :global t
   (md-msg-mua-call 'mode)
   (if md-msg-mode
       (progn
-	(add-hook 'message-send-hook 'md-msg-prepare-to-send)
-	(add-hook 'message-sent-hook 'undo)
-	;; FIXME
-  ;; (add-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
-	(add-to-list 'message-syntax-checks '(invisible-text . disabled))
-	(unless (md-msg-mml-recursive-support)
-	  (advice-add 'mml-expand-html-into-multipart-related
-		      :around #'md-msg-mml-into-multipart-related))
-	;; (advice-add 'org-html--todo :around #'md-msg-html--todo)
-	(advice-add 'message-mail :after #'md-msg-post-setup)
-	(when (boundp 'bbdb-mua-mode-alist)
-	  (add-to-list 'bbdb-mua-mode-alist '(message md-msg-edit-mode))))
+        (add-hook 'message-send-hook 'md-msg-prepare-to-send)
+        (add-hook 'message-sent-hook 'undo)
+        ;; FIXME
+        ;; (add-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
+        (add-to-list 'message-syntax-checks '(invisible-text . disabled))
+        ;; (unless (md-msg-mml-recursive-support)
+        ;;   (advice-add 'mml-expand-html-into-multipart-related
+        ;;               :around #'md-msg-mml-into-multipart-related))
+        ;; (advice-add 'org-html--todo :around #'md-msg-html--todo)
+        (advice-add 'message-mail :after #'md-msg-post-setup)
+        (when (boundp 'bbdb-mua-mode-alist)
+          (add-to-list 'bbdb-mua-mode-alist '(message md-msg-edit-mode))))
     (remove-hook 'message-send-hook 'md-msg-prepare-to-send)
     (remove-hook 'message-sent-hook 'undo)
     ;; (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
-					message-syntax-checks))
-    (unless (md-msg-mml-recursive-support)
-      (advice-remove 'mml-expand-html-into-multipart-related
-		     #'md-msg-mml-into-multipart-related))
+                                        message-syntax-checks))
+    ;; (unless (md-msg-mml-recursive-support)
+    ;;   (advice-remove 'mml-expand-html-into-multipart-related
+    ;;                  #'md-msg-mml-into-multipart-related))
     ;; (advice-remove 'org-html--todo #'md-msg-html--todo)
     (advice-remove 'message-mail #'md-msg-post-setup)
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message md-msg-edit-mode)
-					bbdb-mua-mode-alist)))))
+					                              bbdb-mua-mode-alist)))))
 
 (defvar md-msg-font-lock-keywords
   (let ((content "[ \t]*\\(.+\\(\n[ \t].*\\)*\\)\n?"))
     `((,(md-msg-font-lock-make-header-matcher
-	 (concat "^\\([Tt]o:\\)" content))
+         (concat "^\\([Tt]o:\\)" content))
        (1 'message-header-name)
        (2 'message-header-to nil t))
       (,(md-msg-font-lock-make-header-matcher
-	 (concat "^\\(^[GBF]?[Cc][Cc]:\\|^[Rr]eply-[Tt]o:\\)" content))
+         (concat "^\\(^[GBF]?[Cc][Cc]:\\|^[Rr]eply-[Tt]o:\\)" content))
        (1 'message-header-name)
        (2 'message-header-cc nil t))
       (,(md-msg-font-lock-make-header-matcher
-	 (concat "^\\([Ss]ubject:\\)" content))
+         (concat "^\\([Ss]ubject:\\)" content))
        (1 'message-header-name)
        (2 'message-header-subject nil t))
       (,(md-msg-font-lock-make-header-matcher
-	 (concat "^\\([A-Z][^: \n\t]+:\\)" content))
+         (concat "^\\([A-Z][^: \n\t]+:\\)" content))
        (1 'message-header-name)
        (2 'message-header-other nil t))
       ,@(if (and md-msg-separator
-		 (not (equal md-msg-separator "")))
-	    `((,(concat "^\\(" (regexp-quote md-msg-separator) "\\)$")
-	       1 'message-separator))
-	  nil)))
+                 (not (equal md-msg-separator "")))
+            `((,(concat "^\\(" (regexp-quote md-msg-separator) "\\)$")
+               1 'message-separator))
+          nil)))
   "Additional expressions to highlight in OrgMsg mode.")
 
-(defun md-msg-edit-mode-mu4e ()
-  "Setup mu4e faces, addresses completion and run mu4e."
-  (mu4e~compose-remap-faces)
-  (mu4e~start)
-  (when mu4e-compose-complete-addresses
-    (mu4e~compose-setup-completion))
-  ;; the following code is verbatim from mu4e-compse.el, mu4e-compose-mode
-  ;; this will setup fcc (saving sent messages) and handle flags
-  ;; (e.g. replied to)
-  (add-hook 'message-send-hook
-            (lambda () ;; mu4e~compose-save-before-sending
-              ;; when in-reply-to was removed, remove references as well.
-              (when (eq mu4e-compose-type 'reply)
-                (mu4e~remove-refs-maybe))
-              (when use-hard-newlines
-                (mu4e-send-harden-newlines))
-              ;; for safety, always save the draft before sending
-              (set-buffer-modified-p t)
-              (save-buffer)
-              (mu4e~compose-setup-fcc-maybe)
-              (widen)) nil t)
-  ;; when the message has been sent.
-  (add-hook 'message-sent-hook
-            (lambda () ;;  mu4e~compose-mark-after-sending
-              (setq mu4e-sent-func 'mu4e-sent-handler)
-              (mu4e~proc-sent (buffer-file-name))) nil t)
-  (define-key md-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
+(define-hostmode poly-mu4e-compose-hostmode
+  :mode 'mu4e-compose-mode)
 
-(defalias 'md-msg-edit-kill-buffer-gnus 'message-kill-buffer)
-(defalias 'md-msg-edit-kill-buffer-notmuch 'message-kill-buffer)
-(defalias 'md-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
+(define-innermode poly-markdown-msg-headers-innermode
+  :mode 'markdown-mode
+  :head-matcher "^--text follows this line--\n"
+  :tail-matcher "\\'"
+  :head-mode 'host
+  :tail-mode 'host)
 
-(defun md-msg-edit-kill-buffer ()
+(define-polymode md-msg-edit-mode
+  :hostmode 'poly-mu4e-compose-hostmode
+  :innermodes '(poly-markdown-msg-headers-innermode))
+
+(defun md-msg-view-quit-buffer ()
+  "Quit the mu4e-view buffer.
+This is a rather complex function, to ensure we don't disturb
+other windows."
   (interactive)
-  (md-msg-mua-call 'edit-kill-buffer))
+  (if (eq mu4e-split-view 'single-window)
+      (when (buffer-live-p (mu4e-get-view-buffer))
+        (kill-buffer (mu4e-get-view-buffer)))
+    (unless (eq major-mode 'md-msg-view-mode)
+      (mu4e-error "Must be in md-msg-view-mode (%S)" major-mode))
+    (let ((curbuf (current-buffer))
+          (curwin (selected-window))
+          (headers-win))
+      (walk-windows
+       (lambda (win)
+         ;; check whether the headers buffer window is visible
+         (when (eq (mu4e-get-headers-buffer) (window-buffer win))
+           (setq headers-win win))
+         ;; and kill any _other_ (non-selected) window that shows the current
+         ;; buffer
+         (when
+             (and
+              (eq curbuf (window-buffer win)) ;; does win show curbuf?
+              (not (eq curwin win))         ;; but it's not the curwin?
+              (not (one-window-p))) ;; and not the last one on the frame?
+           (delete-window win))))  ;; delete it!
+      ;; now, all *other* windows should be gone.
+      ;; if the headers view is also visible, kill ourselves + window; otherwise
+      ;; switch to the headers view
+      (if (window-live-p headers-win)
+          ;; headers are visible
+          (progn
+            (kill-buffer-and-window) ;; kill the view win
+            (setq mu4e~headers-view-win nil)
+            (select-window headers-win)) ;; and switch to the headers win...
+        ;; headers are not visible...
+        (progn
+          (kill-buffer)
+          (setq mu4e~headers-view-win nil)
+          (when (buffer-live-p (mu4e-get-headers-buffer))
+            (switch-to-buffer (mu4e-get-headers-buffer))))))))
 
-(defvar md-msg-edit-mode-map
+(defvar md-msg-view-mode-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map markdown-mode-map)
+    (set-keymap-parent map mu4e-view-mode-map)
     (define-key map (kbd "<tab>") 'md-msg-tab)
-    (define-key map [remap markdown-preview] 'md-msg-preview)
-    (define-key map (kbd "C-c C-k") 'md-msg-edit-kill-buffer)
     (define-key map (kbd "C-c C-s") 'message-goto-subject)
     (define-key map (kbd "C-c C-b") 'md-msg-goto-body)
-    ;; (define-key map [remap org-attach] 'md-msg-attach)
+    (define-key map (kbd "q") 'md-msg-view-quit-buffer)
+    (evil-define-key 'normal map "q" 'md-msg-view-quit-buffer)
     map)
-  "Keymap for `md-msg-edit-mode'.")
+  "Keymap for `md-msg-view-mode'.")
 
-(define-derived-mode md-msg-edit-mode markdown-mode "MdMsg"
-  "Major mode to compose email using Org mode.
-Like Org Mode but with these additional/changed commands:
-Type \\[org-ctrl-c-ctrl-c] to send the message if the cursor is
-  not a C-c C-c Org mode controlled region (Org babel for
-  example).
-Type \\[md-msg-preview] to preview the final email with
-  `browse-url'.
-Type \\[message-kill-buffer] to kill the current OrgMsg buffer.
-Type \\[message-goto-subject] to move the point to the Subject
-  header.
-Type \\[md-msg-goto-body] to move the point to the beginning of
-  the message body.
-Type \\[md-msg-attach] to call the dispatcher for attachment
-  commands.
+(define-derived-mode md-msg-view-mode markdown-view-mode "mdmsg:view"
+  "Major mode to read email using Org mode.
 
-\\{md-msg-edit-mode-map}"
-  (set (make-local-variable 'message-sent-message-via) nil)
-  (add-hook 'completion-at-point-functions 'message-completion-function nil t)
-  (setq markdown-mode-font-lock-keywords
-	(append markdown-mode-font-lock-keywords message-font-lock-keywords
-		md-msg-font-lock-keywords))
-  (toggle-truncate-lines)
-  (md-msg-mua-call 'edit-mode)
-  (setq-local kill-buffer-hook 'md-msg-kill-buffer)
-  (unless (= (md-msg-end) (point-max))
-    (add-text-properties (1- (md-msg-end)) (point-max) '(read-only t))))
+\\{md-msg-view-mode-map}"
+  (use-local-map md-msg-view-mode-map)
+  ;; Highlight header fields.
+  (setq-local markdown-mode-font-lock-keywords
+              (append markdown-mode-font-lock-keywords message-font-lock-keywords
+                      md-msg-font-lock-keywords))
+  ;; Hide line numbers.
+  (setq-local display-line-numbers-type nil)
+  ;; Display images embedded in the email, but remote ones take too long.
+  (setq-local markdown-display-remote-images nil)
+  (markdown-display-inline-images))
 
 (provide 'md-msg)
 

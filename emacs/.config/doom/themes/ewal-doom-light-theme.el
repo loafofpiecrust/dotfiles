@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2020 Taylor Snead
 
-;; Author: Uros Perisic
+;; Author: Taylor Snead
 ;; URL: https://gitlab.com/jjzmajic/ewal
 ;;
 ;; Version: 0.1
