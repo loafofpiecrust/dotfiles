@@ -6,7 +6,7 @@
     border-radius: 0;
     /* `otf-font-awesome` is required to be installed for icons */
     font-family: "sans", "Material Design Icons", "Font Awesome 5 Free";
-    font-weight: normal;
+    font-weight: bold;
     font-size: 16px;
 }
 
@@ -117,7 +117,7 @@ window#waybar.chromium {
     background-color: #64727D;
     min-width: 120px;
     margin-right: 0;
-    font-weight: normal;
+    font-weight: bold;
 }
 
 #custom-power {

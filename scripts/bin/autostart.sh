@@ -8,10 +8,10 @@
 # authentication: polkit-gnome
 
 # Disable bluetooth at login, we can manually enable if we want to.
-bluetoothctl power off
+# bluetoothctl power off &
 
 # O365 Server for university email
-davmail ~/.config/davmail/.properties & disown
+# davmail /home/snead/.config/davmail/.properties & disown
 
 # General
 # ibus controls input methods
@@ -22,7 +22,9 @@ davmail ~/.config/davmail/.properties & disown
 
 # Restore last wallpaper
 # Starts notification manager as well
-# ~/.config/wpg/wp_init.sh
+xsetroot -cursor_name left_ptr
+# sleep 0.5 && /home/snead/.config/wpg/wp_init.sh &
+# wpg -m &
 
 # Window compositor to make bspwm prettier :cat:
 # picom --experimental-backends &

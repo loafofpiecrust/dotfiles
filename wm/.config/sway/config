@@ -289,3 +289,5 @@ for_window [app_id="firefox"] inhibit_idle fullscreen
 
 # Turn off screen after some idle time
 exec swayidle -w timeout 1000 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"'
+# exec ibus-daemon --daemonize -r
+# exec fcitx -r

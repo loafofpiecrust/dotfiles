@@ -17,28 +17,28 @@
 ;; (package! typer-mode
 ;;   :recipe (:host gitlab :repo "monnier/typer" :files ("emacs/*.el")))
 (package! emojify)
-(package! theme-changer)
+(package! theme-changer :disable t)
 (package! ewal)
 (package! ewal-doom-themes)
 ;; (package! ewal-evil-cursors)
 
 ;; Extra languages
-(package! bazel-mode)
+(package! bazel-mode :disable t)
 (package! graphql-mode)
 (package! polymode)
 (package! poly-markdown)
-(package! poly-org)
-(package! org-sticky-header)
+(package! poly-org :disable t)
+(package! org-sticky-header :disable t)
 ;; Toggle rendered latex preview when point is over it.
-(package! org-fragtog)
+(package! org-fragtog :disable t)
 ;; (package! outshine)
 (package! literate-calc-mode)
 ;; (package! string-inflection)
-(package! deadgrep)
+;; (package! deadgrep)
 ;; Better tool for git merges or any 3-way diff.
-(package! vdiff)
-(package! vdiff-magit)
-(package! magit-delta)
+(package! vdiff :disable t)
+(package! vdiff-magit :disable t)
+(package! magit-delta :disable t)
 ;; Edit markdown comments in an indirect buffer.
 ;; (package! separedit)
 ;; Show registers before using them!
@@ -59,10 +59,11 @@
 
 ;; (package! mu4e-conversation)
 ;; Desktop notifications upon receiving new emails.
-(package! org-msg)
+(package! org-msg :disable t)
 (package! mu4e-alert)
 (package! mu4e-send-delay
-	  :recipe (:host github :repo "bennyandresen/mu4e-send-delay"))
+  :disable t
+  :recipe (:host github :repo "bennyandresen/mu4e-send-delay"))
 
 (package! olivetti)
 
@@ -72,7 +73,21 @@
 (package! citeproc-org)
 ;; (package! org-pretty-table)
 
-(package! transmission)
+(package! transmission :disable t)
+
+;; System stuff!
+;; TODO Make a doom module instead of just one custom file.
+(package! exwm)
+(package! exwm-x)
+(package! exwm-edit)
+(package! desktop-environment)
+(package! mini-modeline :disable t)
+(package! mini-frame :disable t)
+(package! hide-mode-line)
+(package! mount-mode
+  :recipe (:host github :repo "zellerin/mount-mode"))
+
+(package! highlight-numbers :disable t)
 
 ;; Name buffers relative to project root
 ;; (package! relative-buffers

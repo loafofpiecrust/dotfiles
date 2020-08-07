@@ -41,7 +41,7 @@ margin-bottom = 0
 [bar/main]
 monitor = ${env:MONITOR:eDP1}
 width = 100%
-height = 32
+height = 30
 fixed-center = true
 top = true
 enable-ipc = true
@@ -59,10 +59,10 @@ padding-left = 1
 padding-right = 1
 ; module-margin = 1
 
-; border-bottom-size = 3
-; border-bottom-color = ${colors.secondary}
+border-bottom-size = 2
+border-bottom-color = ${colors.secondary}
 
-font-0 = "monospace:size=12:weight=bold;1"
+font-0 = "monospace:size=11:weight=bold;1"
 ; Provides nice icons for audio, clock, power, etc.
 ; Might be able to find unicode replacements.
 font-1 = "Material Design Icons:pixelsize=13;3"
@@ -71,13 +71,13 @@ font-2 = "DejaVu Sans Mono:size=11:weight=bold;1"
 font-3 = "Noto Sans CJK JP:size=11:weight=bold;1"
 font-4 = "Segoe UI Symbol:size=11:weight=bold;2"
 
-modules-left = powermenu cpu memory vpn iwd player
+modules-left = powermenu exwm
 modules-center =
-modules-right = randpaper bspwm volume battery date
+modules-right = iwd randpaper cpu memory volume battery date
 ; Reserve room for about four tray items.
 tray-position = right
 tray-detached = true
-tray-offset-x = -890
+tray-offset-x = -1000
 
 scroll-up = bspwm-desknext
 scroll-down = bspwm-deskprev
@@ -109,6 +109,11 @@ label-indicator-margin = 1
 label-indicator-background = ${colors.secondary}
 label-indicator-underline = ${colors.secondary}
 
+[module/exwm]
+type = custom/ipc
+hook-0 = ~/.config/polybar/exwm-status.sh
+initial = 1
+format-padding = 1
 
 [module/i3]
 type = internal/i3
@@ -312,7 +317,7 @@ interval = 3.0
 format-connected-underline = #55aa55
 format-connected-prefix = " "
 format-connected-prefix-foreground = ${colors.inactive}
-label-connected = %local_ip%
+label-connected = ;;%local_ip%
 
 format-disconnected =
 ;format-disconnected = <label-disconnected>

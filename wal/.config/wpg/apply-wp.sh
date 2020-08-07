@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # wait for formats to output...
-sleep 0.5
+# sleep 0.5
 
 # Set the wallpaper from cache
 # feh --bg-fill ~/.config/wpg/.current &
@@ -18,13 +18,16 @@ sleep 0.5
 
 # Restart dunst to apply theme
 # ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
-mkdir ~/.config/mako
-ln -sf ~/.cache/wal/mako.conf ~/.config/mako/config
-mkdir ~/.config/alacritty
-ln -sf ~/.cache/wal/alacritty.yml ~/.config/alacritty/alacritty.yml
+# mkdir ~/.config/mako
+# ln -sf ~/.cache/wal/mako.conf ~/.config/mako/config
+# mkdir ~/.config/alacritty
+# ln -sf ~/.cache/wal/alacritty.yml ~/.config/alacritty/alacritty.yml
 
-# pkill dunst && dunst & disown
-pkill waybar && ~/bin/waybar.sh & disown
+if pgrep dunst
+then
+    pkill dunst && dunst & disown
+fi
+# pkill waybar && ~/bin/waybar.sh & disown
 
 # Reload theme in emacs!
 emacsclient -n -e "(when (string-match \"ewal-\" (symbol-name doom-theme)) (doom/reload-theme))"

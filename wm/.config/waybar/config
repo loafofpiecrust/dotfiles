@@ -109,7 +109,7 @@
         "tooltip-format": "{essid}\n{ipaddr}",
         "format-wifi": " {bandwidthDownBits}",
         "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
-        "format-linked": " No IP",
+        "format-linked": " No IP",
         "format-disconnected": "",
         "tooltip": true,
         "on-click": "$HOME/bin/rofi-wifi.sh"
