@@ -1,5 +1,5 @@
-{ config, lib, pkgs, stdenv, fetchFromGitHub, xSupport ? false
-, waylandSupport ? true, imageSupport ? true }:
+{ lib, makeWrapper, fetchFromGitHub, bash, imagemagick, slurp, grim
+, wl-clipboard, feh, stdenv, waylandSupport ? true, imageSupport ? true }:
 
 stdenv.mkDerivation rec {
   pname = "farge";
@@ -11,8 +11,8 @@ stdenv.mkDerivation rec {
     sha256 = "08z7dgc3wygl6s922s4gsi2fkrfmghzy82ivnivxr293b9mll7ar";
   };
 
-  propagatedBuildInputs = with pkgs;
-    [ bash imagemagick ]
+  nativeBuildInputs = [ makeWrapper ];
+  buildInputs = [ bash imagemagick ]
     ++ lib.optionals waylandSupport [ slurp grim wl-clipboard ]
     ++ lib.optionals imageSupport [ feh ];
 
@@ -20,11 +20,15 @@ stdenv.mkDerivation rec {
   preInstall = ''
     mkdir -p $out/bin
   '';
+  postInstall = ''
+    wrapProgram "$out/bin/farge" --prefix PATH : "${lib.makeBinPath buildInputs}"
+  '';
 
   meta = with stdenv.lib; {
     description = "Click on a pixel on your screen and show its color value";
     license = licenses.mit;
     platforms = platforms.unix;
     homepage = "https://github.com/sdushantha/farge";
+    # maintainers = [ maintainers.loafofpiecrust ];
   };
 }

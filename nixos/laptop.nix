@@ -1,7 +1,6 @@
 # Config for Lenovo Ideapad 720s 14-IKB
 # Import this file into the main configuration.nix and call it a day.
-{ config, lib, pkgs, ... }:
-{
+{ config, lib, pkgs, ... }: {
   imports = [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ./email.nix ];
 
   boot = {
@@ -40,15 +39,17 @@
   };
 
   # Change this to the primary package channel we want to use.
-  system.autoUpgrade = {
-    enable = true;
-    channel = "https://nixos.org/channels/nixos-20.03";
-  };
+  # system.autoUpgrade = {
+  #   enable = true;
+  #   channel = "https://nixos.org/channels/nixos-20.03";
+  # };
 
   programs.sway.enable = true;
   # Enables screen sharing on wayland.
   services.pipewire.enable = true;
   services.xserver = {
+    # windowManager.exwm.enable = true;
+    # windowManager.exwm.enableDefaultConfig = false;
     windowManager.bspwm.enable = true;
     displayManager.gdm.enable = true;
     displayManager.defaultSession = "sway";
@@ -69,15 +70,33 @@
       };
     };
   };
+  services.xserver.windowManager.session = lib.singleton {
+    name = "exwm";
+    start = ''
+      export XMODIFIERS=@im=exim
+      export GTK_IM_MODULE=xim
+      export QT_IM_MODULE=xim
+      export CLUTTER_IM_MODULE=xim
+      export QT_QPA_PLATFORM=xcb
+      export MOZ_ENABLE_WAYLAND=0
+      export SDL_VIDEODRIVER=x11
+      export EMACS_EXWM=t
+      xrdb ~/.Xdefaults
+      ${pkgs.gnome3.gnome-settings-daemon}/libexec/gnome-settings-daemon &
+      ${pkgs.dbus}/bin/dbus-launch --exit-with-session ${pkgs.emacsCustom}/bin/emacs -mm
+        '';
+  };
+  # displayManager.sessionCommands = "${pkgs.xorg.xhost}/bin/xhost +SI:localuser:$USER";
 
   # Automatic power saving.
   services.tlp.enable = true;
   powerManagement.powertop.enable = true;
-  networking.networkmanager.wifi.powersave = true;
+  # networking.networkmanager.wifi.powersave = true;
 
   # Let's try out bluetooth.
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
+
   # Trim SSD for drive health.
   services.fstrim.enable = true;
 
@@ -87,12 +106,12 @@
     brightnessctl
 
     # apps
+    gnome3.gnome-settings-daemon
     calibre # ebook manager
     mate.atril # pdf viewer
     xfce.parole # video player
     font-manager
     deluge
-    bleachbit
     gimp
     discord
     slack
@@ -108,7 +127,9 @@
   # };
 
   # Use newer Intel Iris driver. This fixes screen tearing for me!
-  environment.variables = { MESA_LOADER_DRIVER_OVERRIDE = "iris"; };
+  environment.variables = {
+    MESA_LOADER_DRIVER_OVERRIDE = "iris";
+  };
   hardware.opengl.package = (pkgs.mesa.override {
     galliumDrivers = [ "nouveau" "virgl" "swrast" "iris" ];
   }).drivers;

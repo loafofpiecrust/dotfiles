@@ -4,10 +4,12 @@
     # tools of the trade
     git
     git-lfs
-    gcc
+    # gcc
     gnumake
     tectonic # build latex projects
     pandoc
+    direnv
+    emacsCustom
 
     # languages
     rustup
@@ -34,17 +36,31 @@
   ];
 
   nixpkgs.overlays = [
-    (import (builtins.fetchTarball {
-      url =
-        "https://github.com/nix-community/emacs-overlay/archive/f426880dd573ed4e7ac39f5d89e4e9a27a78e4d6.tar.gz";
-    }))
+    (self: super: {
+      libgccjit = pkgs.unstable.libgccjit;
+      emacs = pkgs.unstable.emacs;
+      emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
+        config = builtins.readFile /home/snead/.config/emacs/init.el;
+        package = pkgs.emacsGcc;
+        alwaysEnsure = true;
+        extraEmacsPackages = epkgs: [
+          epkgs.exwm
+        ];
+      });
+      # emacsWithPackages = pkgs.emacsUnstable.emacsWithPackages;
+      # emacs = super.emacsUnstable;
+    })
   ];
 
   # Shared Emacs server for :zap: speedy-macs
   services.emacs = {
-    enable = true;
+    enable = false;
     defaultEditor = true;
-    package = pkgs.emacsUnstable;
+    package = pkgs.emacsCustom;
   };
+  # Android debugging.
   programs.adb.enable = true;
+
+  # Persistent environment in shell execution!
+  services.lorri.enable = true;
 }

@@ -4,7 +4,7 @@
   # imports = [ ./wayland.nix ];
   environment.systemPackages = with pkgs; [
     gnome3.file-roller # provides all archive formats
-    alacritty
+    unstable.alacritty
     pavucontrol
 
     # desktop environment
@@ -26,12 +26,17 @@
     bibata-cursors
 
     # apps I want everywhere
-    firefox-wayland
+    chromium
+    firefox # backup browser (SAD)
     cmus # music player
+    libreoffice
+    spotify
+    zoom-us
 
     # system tools
     libnotify
     pkgs.unstable.xdg-desktop-portal
+    imagemagick
   ];
 
   fonts.enableDefaultFonts = true;
@@ -49,6 +54,7 @@
     symbola
     dejavu_fonts
     migu
+    emacs-all-the-icons-fonts
     # corefonts # sometimes I need Times New Roman
     # Add user fonts to ~/.local/share/fonts
   ];
@@ -62,8 +68,7 @@
         "Noto Emoji"
         "Material Design Icons"
       ];
-      sansSerif =
-        [ "Overpass" "Noto Sans" "FreeSans" "Material Design Icons" ];
+      sansSerif = [ "Overpass" "Noto Sans" "FreeSans" "Material Design Icons" ];
       serif = [ "Merriweather" "Liberation Serif" ];
     };
   };
@@ -80,6 +85,7 @@
       });
       polybar = super.polybar.override { pulseSupport = true; };
       waybar = super.waybar.override { pulseSupport = true; };
+      # ibus = super.ibus.override { withWayland = true; };
     })
   ];
 
@@ -93,7 +99,6 @@
       waybar
       mako
       kanshi
-      unstable.wofi
       qt5.qtwayland
       grim
     ];
@@ -117,6 +122,7 @@
   services.xserver = {
     enable = true;
     layout = "us";
+    # FIXME seemingly doesn't work.
     enableCtrlAltBackspace = true;
     autoRepeatDelay = 300;
     autoRepeatInterval = 35; # ms between key repeats
@@ -135,19 +141,25 @@
 
   # I type in other languages often enough.
   i18n.inputMethod = {
-    enabled = "ibus";
-    ibus.engines = with pkgs.ibus-engines; [
-      libpinyin
-      anthy
-      table
-      table-others
-    ];
+    enabled = null;
+    # ibus.engines = with pkgs.ibus-engines; [
+    #   libpinyin
+    #   anthy
+    #   table
+    #   table-others
+    # ];
+    # fcitx.engines = with pkgs.fcitx-engines; [
+    #   libpinyin
+    #   anthy
+    #   table-other
+    #   table-extra
+    # ];
   };
 
   # Give Firefox precise touchpad scrolling and wayland support.
   environment.variables = {
     MOZ_USE_XINPUT2 = "1";
-    XDG_CURRENT_DESKTOP = "sway";
+    # XDG_CURRENT_DESKTOP = "sway";
   };
 
   # Enable better XDG integration.

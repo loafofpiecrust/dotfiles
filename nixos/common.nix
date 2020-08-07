@@ -8,6 +8,7 @@ in {
   nixpkgs.overlays = [
     # Import my local package definitions.
     (import ./pkgs)
+    (import sources.emacs-overlay)
     (self: super: {
       # Somtimes I need newer releases.
       unstable = import sources.nixpkgs-unstable {
@@ -16,7 +17,7 @@ in {
         config = config.nixpkgs.config;
       };
       # Community packages not yet in nixpkgs.
-      nur = import sources.nur {};
+      # nur = import sources.nur {};
     })
   ];
 
@@ -60,12 +61,12 @@ in {
   programs = {
     # Our two lovely shell choices, fish and zsh.
     fish.enable = true;
-    zsh = {
-      enable = true;
-      # Using alternative highlighting package.
-      syntaxHighlighting.enable = false;
-      enableCompletion = false;
-    };
+    # zsh = {
+    #   enable = false;
+    #   # Using alternative highlighting package.
+    #   syntaxHighlighting.enable = false;
+    #   enableCompletion = false;
+    # };
     dconf.enable = true;
     java.enable = true;
     gnupg.agent.enable = true;
@@ -94,7 +95,6 @@ in {
 
     # system tools
     binutils
-    killall
     ripgrep
     htop
     gksu
@@ -103,6 +103,8 @@ in {
     ranger
     xfce.gvfs
     gnupg
+    ncdu
+    parted
 
     # user tools
     stow
@@ -110,5 +112,6 @@ in {
     starship # shell prompt
     playerctl
     calc
+    bitwarden-cli
   ];
 }
