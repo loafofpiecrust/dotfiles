@@ -1,24 +1,31 @@
 ;;; ~/dotfiles/emacs/.config/doom/custom/my-exwm-config.el -*- lexical-binding: t; -*-
 
+(defun exec (command)
+  "Executes the given command as a separate process without waiting.
+Intended to replicate the functionality of `exec' from i3 config."
+  (let ((args (split-string command)))
+    (apply #'call-process (first args) nil 0 nil (rest args))))
+
 ;; Make sure autostart only happens once.
 (defvar my-autostart-done nil)
 (defun my-autostart ()
   (unless my-autostart-done
-    (call-process "autostart.sh" nil 0 nil)
-    (call-process "wpg" nil 0 nil "-m")
-    (call-process "picom" nil 0 nil "--experimental-backends")
-    (call-process "polybar" nil 0 nil "main")
-    (call-process "davmail" nil 0 nil "/home/snead/.config/davmail/.properties")
+    (exec "autostart.sh")
+    (exec "wpg -m")
+    (exec "picom --experimental-backends")
+    (exec "polybar main")
+    (exec "davmail /home/snead/.config/davmail/.properties")
     (setq my-autostart-done t)))
 
 ;; Autostart stuff.
-(add-hook 'after-init-hook #'my-autostart)
+(after! exwm
+  (my-autostart))
 
 (use-package! desktop-environment
   :after exwm
   :config
-  (setq! desktop-environment-brightness-normal-decrement "5%-"
-         desktop-environment-brightness-normal-increment "5%+")
+  (setq desktop-environment-brightness-normal-decrement "5%-"
+        desktop-environment-brightness-normal-increment "5%+")
   ;; (desktop-environment-mode)
   ;; (map! :map (desktop-environment-mode-map)
   ;;  "s-l" nil)
@@ -40,6 +47,8 @@
                                  (,(kbd "s-J") . +evil/window-move-down)
                                  (,(kbd "s-K") . +evil/window-move-up)
                                  (,(kbd "s-L") . +evil/window-move-right)
+                                 (,(kbd "s-u") . winner-undo)
+                                 (,(kbd "s-U") . winner-redo)
                                  ;; TODO hydra for moving windows.
                                  ;; Split the frame, and follow.
                                  (,(kbd "s-s") . ,(cmd! (evil-window-vsplit) (other-window 1)))
@@ -62,7 +71,8 @@
                                  (,(kbd "s-r") . exwm-reset)
                                  (,(kbd "s-\\") . set-input-method)
                                  (,(kbd "s-;") . toggle-input-method)
-                                 (,(kbd "s-,") . ivy-switch-buffer)
+                                 (,(kbd "s-<") . ivy-switch-buffer)
+                                 (,(kbd "s-,") . ivy-switch-buffer-same-type)
                                  (,(kbd "<XF86MonBrightnessDown>") . desktop-environment-brightness-decrement)
                                  (,(kbd "<XF86MonBrightnessUp>") . desktop-environment-brightness-increment)
                                  (,(kbd "<XF86AudioMute>") . desktop-environment-toggle-mute)
@@ -75,8 +85,8 @@
                                  (,(kbd "s-o") . ,doom-leader-open-map)
                                  (,(kbd "s-x") . counsel-M-x)
                                  (,(kbd "s-m") . =mu4e)
-                                 (,(kbd "s-b") . ,(cmd! (call-process "firefox" nil "firefox")))
-                                 (,(kbd "s-c") . ,(cmd! (start-process "playerctl" nil "playerctl" "play-pause")))
+                                 (,(kbd "s-b") . ,(cmd! (exec "firefox")))
+                                 (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
                                  (,(kbd "s-`") . +eshell/toggle)
                                  ))
   (setq exwm-input-prefix-keys (list ?\M-\  ?\C-s ?\M-x))
@@ -84,8 +94,8 @@
   ;; Show all buffers on all displays since we have DOOM workspaces.
   (setq exwm-workspace-show-all-buffers t
         exwm-layout-show-all-buffers t)
-  ;; Pass all keys directly to windows. May break input methods?
-  ;; (setq exwm-manage-configurations '((t char-mode t)))
+  ;; Pass all keys directly to windows.
+  (setq exwm-manage-configurations '((t char-mode t)))
 
   :config
   ;; I must be able to copy stuff!
@@ -103,11 +113,11 @@
     (exwm-workspace-rename-buffer
      (concat exwm-class-name ":"
              (if (<= (length exwm-title) 50) exwm-title
-               (concat (substring exwm-title 0 49) "...")))))
+               (substring exwm-title 0 49)))))
 
   ;; Add these hooks in a suitable place (e.g., as done in exwm-config-default)
-  (add-hook 'exwm-update-class-hook 'exwm-rename-buffer)
-  (add-hook 'exwm-update-title-hook 'exwm-rename-buffer)
+  (add-hook! '(exwm-update-class-hook exwm-update-title-hook exwm-manage-finish-hook)
+             #'exwm-rename-buffer)
   ;; Fix issues with persp not saving X windows.
   (defun exwm--update-utf8-title-advice (oldfun id &optional force)
     "Only update the exwm-title when the buffer is visible."
@@ -116,34 +126,38 @@
   (advice-add #'exwm--update-utf8-title :around #'exwm--update-utf8-title-advice))
 
 (use-package! exwm-x
+  :disabled
   :after exwm
-  :config
-  (add-hook 'exwm-manage-finish-hook #'exwmx-grocery--manage-finish-function))
+  :hook (exwm-manage-finish . exwmx-grocery--manage-finish-function))
 
 (use-package! exwm-xim
-  :hook (exwm-init . exwm-xim-enable)
+  :after exwm
   :config
+  ;; These variables are required for X programs to pick up Emacs IM.
   (setenv "XMODIFIERS" "@im=exwm-xim")
   (setenv "GTK_IM_MODULE" "xim")
   (setenv "QT_IM_MODULE" "xim")
   (setenv "CLUTTER_IM_MODULE" "xim")
   (setenv "QT_QPA_PLATFORM" "xcb")
-  (setenv "SDL_VIDEODRIVER" "x11"))
+  (setenv "SDL_VIDEODRIVER" "x11")
+  (exwm-xim-enable))
 
 ;; Replace the modeline with a bar up top.
 (use-package! mini-modeline
   :after exwm
+  :defer 1
   :config
+  (setq! mini-modeline-r-format `("%e"
+                                  mode-line-buffer-identification " "
+                                  current-input-method-title
+                                  ;; ,anzu--mode-line-format
+                                  evil-mode-line-tag
+                                  mode-line-modified
+                                  mode-line-remote " "
+                                  mode-line-position)
+         mini-modeline-update-interval 0.2
+         mini-modeline-face-attr nil)
   (mini-modeline-mode))
-
-;; (use-package! hide-mode-line
-;;   :after exwm
-;;   :config
-;;   (global-hide-mode-line-mode))
-
-;; Show no mode line in any window.
-(after! exwm
-  (setq-default mode-line-format nil))
 
 (after! (exwm persp-mode)
   (defun +workspace/display ()
@@ -151,39 +165,18 @@
     (interactive)))
 
 (after! exwm
-  (defun my-bar-workspaces ()
-    (let ((names (+workspace-list-names))
-          (current (+workspace-current-name)))
-      (mapconcat 'identity
-                 (cl-loop for name in names
-                          for i to (length names)
-                          collect
-                          (if (equal current name)
-                              (format "%%{R} %s %%{R}" name)
-                            (format " %s " name)))
-                 "")))
-
-  (defun my-bar-evil-state ()
-    (string-trim (substring-no-properties (or (buffer-local-value
-                                               'evil-mode-line-tag
-                                               (window-buffer))
-                                              "<*>"))))
-
   ;; TODO saved state, buffer title, input method.
+  ;; TODO anzu in mini-modeline
   (defun my-bar-contents ()
     (mapconcat 'identity
-               (list (my-bar-evil-state)
-                     default-input-method
-                     (+workspace-current-name)
-                     (buffer-name (window-buffer)))
+               (list (+workspace-current-name))
                " / "))
 
   (defun my-bar-update ()
-    (let ((inhibit-message t))
+    (let ((inhibit-message t) (default-directory "~"))
       (call-process "polybar-msg" nil 0 nil "hook" "exwm" "1")))
 
   (add-hook! '(window-configuration-change-hook
-               input-method-activate-hook
                evil-normal-state-entry-hook
                evil-insert-state-entry-hook
                evil-visual-state-entry-hook
@@ -194,13 +187,53 @@
 
 ;; Move all minibuffer interaction to a child frame.
 (use-package! mini-frame
+  :disabled
   :after exwm
   :config
   (setq! mini-frame-resize t
          mini-frame-show-parameters '((top . 0.4)
-                                      (width . 200)
+                                      (width . 140)
                                       (left . 0.5)
                                       (parent-frame . nil)))
   (mini-frame-mode))
+
+;; Custom ivy prompt to connect to network.
+(defun counsel-iwd-connect (&optional arg)
+  (interactive "P")
+  (ivy-read "Connect to a network: " (my-iwd-network-list)
+            :predicate (lambda (x) (not (string-prefix-p "> " (cdr x))))
+            :action #'my-iwd-connect
+            :caller 'counsel-iwd-connect))
+
+(defun ivy-switch-buffer-prefiltered (prompt predicate)
+  (ivy-read (or prompt "Switch to buffer: ") #'internal-complete-buffer
+            :keymap ivy-switch-buffer-map
+            :predicate predicate
+            :preselect (buffer-name (other-buffer (current-buffer)))
+            :action #'ivy--switch-buffer-action
+            :matcher #'ivy--switch-buffer-matcher
+            :caller 'ivy-switch-buffer-prefiltered))
+
+(defun ivy-switch-buffer-same-type ()
+  (interactive)
+  (ivy-switch-buffer-prefiltered
+   (format "Switch to %s buffer: " exwm-class-name)
+   (lambda (b) (equal (buffer-local-value 'exwm-class-name (cdr b)) exwm-class-name))))
+
+;; TODO Prompt for password if necessary.
+(defun my-iwd-connect (network)
+  (async-shell-command (format "iwctl station wlan0 connect \"%s\"" (cdr network))
+                       "*help:iwctl*"))
+
+(defun my-iwd-network-list ()
+  (let ((networks (nthcdr 4 (split-string
+                             (ansi-color-apply
+                              (shell-command-to-string "iwctl station wlan0 get-networks"))
+                             "[\r\n]+"
+                             t
+                             "[ \t]+"))))
+    (mapcar (lambda (network) `(,network . ,(car (split-string (substring-no-properties network)
+                                                               "[ \t]\\{3,\\}"))))
+            networks)))
 
 (provide 'my-exwm-config)

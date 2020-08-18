@@ -10,6 +10,7 @@
 
 ;; remove all scrollbars!
 (horizontal-scroll-bar-mode -1)
+(column-number-mode)
 
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
@@ -29,7 +30,7 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq doom-font (font-spec :family "SF Mono" :size 15)
+(setq doom-font (font-spec :family "Fira Code" :size 15 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "sans" :size 17))
 
 ;; Test for unicode icons (should be marked "seen" and "important")
@@ -72,14 +73,14 @@
   (push '("Modifier Letter Small H" "Modifier Letter Small H"
           ("Source Code Pro"))
         unicode-fonts-overrides-mapping)
-  (push '("Greek Tonos" "Greek Small Letter Omega with Tonos"
-          ("SF Mono"))
-        unicode-fonts-overrides-mapping)
+  ;; (push '("Greek Tonos" "Greek Small Letter Omega with Tonos"
+  ;;         ("SF Mono"))
+  ;;       unicode-fonts-overrides-mapping)
   ;; I need SF Mono to be used for math symbols: λ
   ;; (set-fontset-font t 'han (font-spec :family "SF Mono Square" :size 18))
   ;; (set-fontset-font t 'greek (font-spec :family "SF Mono" :size 15))
   ;; (set-fontset-font t 'mathematical (font-spec :family "Fira Math" :size 15))
-  (setq unicode-fonts-fallback-font-list '("SF Mono" "Symbola monospacified for Source Code Pro" "Hasklig"))
+  (setq unicode-fonts-fallback-font-list '("Symbola monospacified for Source Code Pro" "Hasklig"))
   (setq unicode-fonts-restrict-to-fonts (append '("DejaVu Sans Mono"
                                                   "Noto Sans"
                                                   "Noto Sans Symbols"
@@ -90,6 +91,9 @@
                                                   "Symbola monospacified for Source Code Pro"
                                                   ;; "Quivira"
                                                   "Noto Sans CJK JP"
+                                                  "Noto Sans CJK SC"
+                                                  "Noto Sans CJK TC"
+                                                  "Fira Code"
                                                   "SF Mono")
                                                 my/private-use-fonts)))
 
@@ -108,11 +112,14 @@
 ;; ;; Use text checkboxes instead of widgets.
 ;; (setq widget-image-enable nil)
 
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
-(after! org
+(use-package! org
+  :no-require t
+  ;; If you use `org' and don't want your org files in the default location below,
+  ;; change `org-directory'. It must be set before org loads!
+  :init (setq org-directory "~/org/")
+  :config
   (setq-default org-link-descriptive t
+                org-indent-indentation-per-level 1
                 org-latex-compiler "xelatex"
                 org-latex-pdf-process (list "tectonic %f")
                 org-latex-prefer-user-labels t
@@ -140,7 +147,8 @@
 
 (setq delete-by-moving-to-trash t
       x-stretch-cursor t
-      auto-save-default t)
+      ;; auto-save-default t
+      )
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -186,9 +194,8 @@
   (map! :m doom-localleader-key nil)
   (evil-normalize-ctrl-i)
   ;; Indent current line after more evil commands.
-  (map! :map prog-mode-map
-        :n "J" (cmd! (call-interactively #'evil-join)
-                     (indent-according-to-mode)))
+  ;; (advice-add 'evil-join :after #'indent-according-to-mode)
+  (map! "C-j" 'newline-and-indent)
 
   ;; Extra bindings for compilation and editing commit messages.
   (map! :map (compilation-mode-map with-editor-mode-map)
@@ -354,27 +361,12 @@ Use `treemacs-select-window' command for old functionality."
         [return] nil))
 
 (use-package! evil-owl
-  :hook (evil-mode . evil-owl-mode))
+  :after evil
+  :config (evil-owl-mode))
 
 (use-package! flycheck-inline
-  :hook (flycheck-mode . flycheck-inline-mode))
-
-;; Here are some additional functions/macros that could help you configure Doom:
-;;
-;; - `load!' for loading external *.el files relative to this one
-;; - `use-package' for configuring packages
-;; - `after!' for running code after a package has loaded
-;; - `add-load-path!' for adding directories to the `load-path', relative to
-;;   this file. Emacs searches the `load-path' when you load packages with
-;;   `require' or `use-package'.
-;; - `map!' for binding new keys
-;;
-;; To get information about any of these functions/macros, move the cursor over
-;; the highlighted symbol at press 'K' (non-evil users must press 'C-c g k').
-;; This will open documentation for it, including demos of how they are used.
-;;
-;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
-;; they are implemented.
+  :after flycheck
+  :config (flycheck-inline-mode))
 
 (use-package! cherokee-input)
 
@@ -387,9 +379,7 @@ Use `treemacs-select-window' command for old functionality."
   '(outline-4 :weight semi-bold :height 1.08)
   '(outline-5 :weight semi-bold :height 1.06)
   '(outline-6 :weight semi-bold :height 1.03)
-  '(outline-7 :weight semi-bold)
-  '(outline-8 :weight semi-bold)
-  '(outline-9 :weight semi-bold)
+  '((outline-7 outline-8 outline-9) :weight semi-bold)
   ;; Style markdown headers the same way.
   '(markdown-header-face-1 :inherit outline-1)
   '(markdown-header-face-2 :inherit outline-2)
@@ -402,14 +392,16 @@ Use `treemacs-select-window' command for old functionality."
   '(org-level-3 :inherit outline-3)
   '(org-level-4 :inherit outline-4)
   '(org-level-5 :inherit outline-5)
-  '(org-level-6 :inherit outline-6))
+  '(org-level-6 :inherit outline-6)
+  ;; Make line numbers more visible on many themes.
+  '(line-number :foreground nil :inherit org-tag))
 
 ;; (custom-set-faces!
 ;;   `(vertical-border :foreground ,(ewal-get-color 'green)))
 
-;; Make line numbers more visible on many themes.
 (custom-set-faces!
-  '(line-number :foreground nil :inherit org-tag))
+  '(minibuffer-prompt :family "Fira Code-17")
+  '(pyim-page :height 1.1))
 
 ;; Turn all wavy underlines into straight ones for readability.
 (custom-set-faces!
@@ -430,25 +422,28 @@ Use `treemacs-select-window' command for old functionality."
 (setq browse-url-generic-program "xdg-open"
       browse-url-browser-function #'browse-url-generic)
 
+(after! message
+  (setq message-cite-style message-cite-style-thunderbird
+        message-cite-function 'message-cite-original))
+
 (after! mu4e
+  ;; Gmail handles labels/folders differently than others do?!
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
         :ng "C--" nil)
-  (setq +mu4e-backend 'offlineimap
+  (setq +mu4e-backend 'mbsync
         +mu4e-workspace-name "*email*"
-        mu4e-split-view 'horizontal
-        mu4e-headers-visible-columns 100
-        mu4e-get-mail-command "sync-email.sh"
-        ;; mu4e-maildir "~/.mail"
+        ;; mu4e-split-view 'horizontal
+        mu4e-compose-cite-function 'message-cite-original
+        ;; mu4e-headers-visible-columns 100
+        ;; mu4e-get-mail-command "mbsync -a"
         mu4e-attachment-dir "~/Downloads"
         mu4e-headers-skip-duplicates nil
-        ;; mu4e-sent-messages-behavior 'sent
         mu4e-headers-leave-behavior 'apply
-        ;; FIXME Sadly causes more issues than it fixes.
-        ;; mu4e-headers-advance-after-mark nil
         mu4e-view-prefer-html t
         mu4e-update-interval 300
         mu4e-compose-context-policy 'ask
         mu4e-context-policy 'pick-first
+        mu4e-sent-messages-behavior 'delete
         ;; I don't use mu4e built-in conversion to html.
         org-mu4e-convert-to-html nil
         ;; Add full citation when replying to emails.
@@ -461,10 +456,11 @@ Use `treemacs-select-window' command for old functionality."
         mu4e-headers-unread-mark '("u" . "◉")
         mu4e-headers-replied-mark '("R" . "⤷")
         mu4e-headers-attach-mark '("a" . "🖿")
-        ;; mu4e-html2text-command "w3m -dump -T text/html"
         ;; Convert received messages from html to org.
         mu4e-html2text-command "pandoc -f html -t markdown-raw_html-smart-link_attributes+emoji-header_attributes-blank_before_blockquote-simple_tables-multiline_tables-inline_code_attributes-escaped_line_breaks+hard_line_breaks --atx-headers --wrap=none --columns=80 --lua-filter ~/Downloads/remove-ids.lua"
-        mu4e-view-show-images t)
+        mu4e-view-show-images t
+        mu4e-index-lazy-check nil
+        mu4e-index-cleanup t)
   ;; I really do want evil bindings for viewing emails.
   (remove-hook 'mu4e-view-mode-hook #'evil-emacs-state)
   ;; Make sure we can view inline images
@@ -478,6 +474,21 @@ Use `treemacs-select-window' command for old functionality."
   ;; Allow me to reload search results.
   (map! :map mu4e-headers-mode-map
         :n "gr" #'mu4e-headers-rerun-search)
+
+  ;; Only email needs special treatment of refiled messages.
+  (defun my-mu4e-mark-seen (orig docid msg target)
+    (if (string-match "gmail" target)
+        (funcall orig docid msg target)
+      (mu4e~proc-move docid
+                      (mu4e~mark-check-target target)
+                      "-N")))
+  (advice-add '+mu4e--mark-seen :around #'my-mu4e-mark-seen)
+
+  (defun my-mu4e-gmail-fix (orig mark msg)
+    (when (string-match "gmail" (mu4e-context-name (mu4e-context-determine msg 'pick-first)))
+      (funcall orig mark msg)))
+  (advice-add '+mu4e-gmail-fix-flags-h :around #'my-mu4e-gmail-fix)
+
   ;; Add my email accounts.
   (set-email-account! "neu"
                       '((mu4e-sent-folder . "/neu/Sent")
@@ -485,19 +496,26 @@ Use `treemacs-select-window' command for old functionality."
                         (mu4e-trash-folder . "/neu/Trash")
                         (mu4e-refile-folder . "/neu/Archive")
                         (mu4e-spam-folder . "/neu/Junk")
+                        ;; Outlook expects me to move items normally.
                         (user-mail-address . "snead.t@northeastern.edu")
                         (smtpmail-smtp-user . "snead.t@northeastern.edu")
                         ;; Send through the local Davmail SMTP server.
                         (smtpmail-smtp-service . 1025)
                         (smtpmail-smtp-server . "localhost")
                         (smtpmail-stream-type . plain)
-                        (message-citation-line-format . "On %a, %b %d, %Y at %R %f wrote:\n")))
+                        ;; Mimic outlook's citation style.
+                        (message-yank-prefix . "")
+                        (message-yank-cited-prefix . "")
+                        (message-yank-empty-prefix . "")
+                        (message-citation-line-format . "\n\n-----------------------\nOn %a, %b %d %Y, %N wrote:\n")))
+
   (set-email-account! "gmail"
-                      '((mu4e-sent-folder . "/gmail/[Gmail].Sent Mail")
-                        (mu4e-drafts-folder . "/gmail/[Gmail].Drafts")
-                        (mu4e-trash-folder . "/gmail/[Gmail].Trash")
+                      '((mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
+                        (mu4e-drafts-folder . "/gmail/[Gmail]/Drafts")
+                        (mu4e-trash-folder . "/gmail/[Gmail]/Trash")
                         (mu4e-refile-folder . "/gmail/Graveyard")
-                        (mu4e-spam-folder . "/gmail/[Gmail].Spam")
+                        (mu4e-spam-folder . "/gmail/[Gmail]/Spam")
+                        ;; Gmail expects me to change labels rather than move stuff?
                         (user-mail-address . "taylorsnead@gmail.com")
                         (smtpmail-smtp-user . "taylorsnead@gmail.com")
                         (smtpmail-smtp-server . "smtp.gmail.com")
@@ -516,12 +534,15 @@ Use `treemacs-select-window' command for old functionality."
          (all-archive (mu4e-all-contexts-var 'mu4e-refile-folder)))
     (setq my/show-all-trash (mapconcat (lambda (d) (format "maildir:%s" d))
                                        all-trash " or ")
-          my/hide-all-trash (mapconcat (lambda (d) (format "not maildir:%s" d))
-                                       (append all-trash all-spam) " and ")
-          my/show-all-inboxes (mapconcat (lambda (d) (format "maildir:/%s/INBOX" d))
-                                         '("gmail" "neu") " or ")
-          my/show-all-archive (mapconcat (lambda (d) (format "maildir:%s" d))
-                                         all-archive " or ")))
+          my/hide-all-trash (concat (mapconcat (lambda (d) (format "not maildir:%s" d))
+                                               (append all-trash all-spam) " and ")
+                                    " and not flag:trashed")
+          my/show-all-inboxes (concat (mapconcat (lambda (d) (format "maildir:/%s/INBOX" d))
+                                                 '("gmail" "neu") " or ")
+                                      " and not flag:trashed")
+          my/show-all-archive (concat (mapconcat (lambda (d) (format "maildir:%s" d))
+                                                 all-archive " or ")
+                                      " and not flag:trashed")))
   ;; Add bookmarks for all important mail categories.
   (setq mu4e-bookmarks
         '((:name "Inbox" :query my/show-all-inboxes :key ?i)
@@ -585,6 +606,9 @@ Use `treemacs-select-window' command for old functionality."
   :init
   (map! :leader "to" #'olivetti-mode)
   (add-hook! '(org-mode-hook markdown-mode-hook) #'olivetti-mode)
+  (defun disable-line-numbers ()
+    (display-line-numbers-mode -1))
+  (add-hook 'olivetti-mode-hook #'disable-line-numbers)
   :config
   (setq-default olivetti-body-width 80))
 
@@ -703,8 +727,31 @@ Use `treemacs-select-window' command for old functionality."
       window-divider-default-bottom-width 2)
 
 (after! ivy-posframe
-  ;; (setcdr (assoc t ivy-posframe-display-functions-alist)
-  ;;         'ivy-posframe-display-at-frame-center)
+  (setcdr (assoc t ivy-posframe-display-functions-alist)
+          'ivy-posframe-display-at-frame-center)
   (setq ivy-posframe-parameters '((parent-frame nil))
         ivy-posframe-width 130
         ivy-posframe-height 20))
+
+;; Using C-/ for comments aligns with other editors.
+(after! evil
+  (map! :nv "C-/" 'comment-dwim))
+
+(use-package! ox-moderncv
+  :after org
+  :config
+  (defun org-cv-export-to-pdf ()
+    (interactive)
+    (let* ((org-latex-default-packages-alist nil)
+           (org-latex-packages-alist nil)
+           (outfile (org-export-output-file-name ".tex" nil)))
+      (org-export-to-file 'moderncv outfile
+        nil nil nil nil nil
+        (lambda (f) (org-latex-compile f))))))
+
+;; TODO Disable lsp-ui to fix loss of window config in exwm!
+
+;; The default popup is SLOW, use posframe or minibuffer.
+;; TODO We need chinese font with same height as my font.
+(after! pyim
+  (setq! pyim-page-tooltip 'posframe))

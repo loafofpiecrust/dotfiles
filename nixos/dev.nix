@@ -4,7 +4,7 @@
     # tools of the trade
     git
     git-lfs
-    # gcc
+    gcc
     gnumake
     tectonic # build latex projects
     pandoc
@@ -39,16 +39,15 @@
     (self: super: {
       libgccjit = pkgs.unstable.libgccjit;
       emacs = pkgs.unstable.emacs;
-      emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
-        config = builtins.readFile /home/snead/.config/emacs/init.el;
-        package = pkgs.emacsGcc;
-        alwaysEnsure = true;
-        extraEmacsPackages = epkgs: [
-          epkgs.exwm
-        ];
-      });
-      # emacsWithPackages = pkgs.emacsUnstable.emacsWithPackages;
-      # emacs = super.emacsUnstable;
+      emacsCustom = pkgs.emacsGit;
+      # emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
+      #   config = builtins.readFile /home/snead/.config/emacs/init.el;
+      #   package = pkgs.emacsUnstable;
+      #   alwaysEnsure = true;
+      #   extraEmacsPackages = epkgs: [
+      #     epkgs.exwm
+      #   ];
+      # });
     })
   ];
 

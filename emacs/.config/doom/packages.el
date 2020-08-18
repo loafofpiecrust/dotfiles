@@ -17,7 +17,7 @@
 ;; (package! typer-mode
 ;;   :recipe (:host gitlab :repo "monnier/typer" :files ("emacs/*.el")))
 (package! emojify)
-(package! theme-changer :disable t)
+(package! theme-changer :pin "61945695a30d678e6a5d47cbe7c8aff59a8c30ea")
 (package! ewal)
 (package! ewal-doom-themes)
 ;; (package! ewal-evil-cursors)
@@ -27,8 +27,7 @@
 (package! graphql-mode)
 (package! polymode)
 (package! poly-markdown)
-(package! poly-org :disable t)
-(package! org-sticky-header :disable t)
+(package! poly-org)
 ;; Toggle rendered latex preview when point is over it.
 (package! org-fragtog :disable t)
 ;; (package! outshine)
@@ -36,8 +35,8 @@
 ;; (package! string-inflection)
 ;; (package! deadgrep)
 ;; Better tool for git merges or any 3-way diff.
-(package! vdiff :disable t)
-(package! vdiff-magit :disable t)
+;; (package! vdiff :disable t)
+;; (package! vdiff-magit :disable t)
 (package! magit-delta :disable t)
 ;; Edit markdown comments in an indirect buffer.
 ;; (package! separedit)
@@ -52,14 +51,15 @@
   :recipe (:host github :repo "casouri/valign"))
 
 (package! explain-pause-mode
+  :disable t
   :recipe (:host github :repo "lastquestion/explain-pause-mode"))
 
 (package! flycheck-posframe :disable t)
 (package! flycheck-popup-tip :disable t)
 
 ;; (package! mu4e-conversation)
-;; Desktop notifications upon receiving new emails.
 (package! org-msg :disable t)
+;; Desktop notifications upon receiving new emails.
 (package! mu4e-alert)
 (package! mu4e-send-delay
   :disable t
@@ -81,13 +81,19 @@
 (package! exwm-x)
 (package! exwm-edit)
 (package! desktop-environment)
-(package! mini-modeline :disable t)
+(package! mini-modeline)
+(package! anzu)
+(package! evil-anzu)
 (package! mini-frame :disable t)
-(package! hide-mode-line)
 (package! mount-mode
   :recipe (:host github :repo "zellerin/mount-mode"))
+(package! fuz)
+(package! ivy-fuz)
+(package! org-cv
+  :recipe (:host gitlab :repo "Titan-C/org-cv"))
 
 (package! highlight-numbers :disable t)
+(package! fcitx :disable t)
 
 ;; Name buffers relative to project root
 ;; (package! relative-buffers

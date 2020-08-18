@@ -62,7 +62,7 @@ padding-right = 1
 border-bottom-size = 2
 border-bottom-color = ${colors.secondary}
 
-font-0 = "monospace:size=11:weight=bold;1"
+font-0 = "Fira Code:size=11:weight=bold;1"
 ; Provides nice icons for audio, clock, power, etc.
 ; Might be able to find unicode replacements.
 font-1 = "Material Design Icons:pixelsize=13;3"
@@ -77,7 +77,7 @@ modules-right = iwd randpaper cpu memory volume battery date
 ; Reserve room for about four tray items.
 tray-position = right
 tray-detached = true
-tray-offset-x = -1000
+tray-offset-x = -700
 
 scroll-up = bspwm-desknext
 scroll-down = bspwm-deskprev
@@ -255,45 +255,11 @@ ramp-used-5 = ▆
 ramp-used-6 = ▇
 ramp-used-7 = █
 
-[module/wlan]
-type = internal/network
-interface = wlp58s0
-interval = 3
-
-format-connected-padding = 1
-format-disconnected-padding = 1
-
-format-connected-prefix = "%{A1:networkmanager_dmenu&:}"
-format-connected-suffix = "%{A}"
-format-disconnected-prefix = ${self.format-connected-prefix}
-format-disconnected-suffix = ${self.format-connected-suffix}
-
-format-connected = <ramp-signal> <label-connected>
-; format-connected-underline = #9f78e1
-label-connected = %essid% [%downspeed:8%]
-
-format-packetloss = <label-packetloss>
-label-packetloss = Connecting
-
-format-disconnected = <label-disconnected>
-;format-disconnected-underline = ${self.format-connected-underline}
-label-disconnected =  Offline
-label-disconnected-foreground = ${colors.inactive}
-
-; wifi: , , , , , , , , , , 爛, 嵐, 襤, 蠟, 冷,
-;       浪, 鸞, 藍, 臘, 朗, 狼, 來
-ramp-signal-0 = 冷
-ramp-signal-1 = 爛
-ramp-signal-2 = 嵐
-ramp-signal-3 = 襤
-ramp-signal-4 = 蠟
-ramp-signal-foreground = ${colors.misc1}
-
 [module/iwd]
 type = custom/script
 exec = ~/.config/polybar/wlan-status.sh
 interval = 5
-format-padding = 1
+format-margin = 10
 
 [module/vpn]
 type = custom/script

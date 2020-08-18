@@ -50,7 +50,7 @@
   services.xserver = {
     # windowManager.exwm.enable = true;
     # windowManager.exwm.enableDefaultConfig = false;
-    windowManager.bspwm.enable = true;
+    # windowManager.bspwm.enable = true;
     displayManager.gdm.enable = true;
     displayManager.defaultSession = "sway";
     videoDrivers = [ "intel" ]; # TODO: Pick gpu drivers
@@ -72,6 +72,7 @@
   };
   services.xserver.windowManager.session = lib.singleton {
     name = "exwm";
+    # TODO Try having these IM exports just in Emacs.
     start = ''
       export XMODIFIERS=@im=exim
       export GTK_IM_MODULE=xim

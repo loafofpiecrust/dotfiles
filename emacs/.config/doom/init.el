@@ -28,7 +28,7 @@
                                  "^SDL_"
                                  "^MOZ_"
                                  "_IM_"
-				 "^EMACS_")))
+                                 "^EMACS_")))
 
 (doom! :input
        chinese
@@ -38,7 +38,7 @@
        (company +childframe)           ; the ultimate code completion backend
        ;;helm              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
-       (ivy +prescient +icons)               ; a search engine for love and life
+       (ivy +childframe +prescient +icons)               ; a search engine for love and life
 
        :ui
        ;;deft              ; notational velocity for Emacs
@@ -61,7 +61,7 @@
        unicode           ; extended unicode support for various languages
        vc-gutter         ; vcs diff in the fringe
        ;;vi-tilde-fringe   ; fringe tildes to mark beyond EOB
-       ;;window-select     ; visually switch windows
+       window-select     ; visually switch windows
        workspaces        ; tab emulation, persistence & separate workspaces
        ;;zen               ; distraction-free coding or writing
 
@@ -90,7 +90,7 @@
        eshell            ; the elisp shell that works everywhere
        ;;shell             ; simple shell REPL for Emacs
        ;;term              ; basic terminal emulator for Emacs
-       ;;vterm             ; the best terminal emulation in Emacs
+       vterm             ; the best terminal emulation in Emacs
 
        :checkers
        (syntax +childframe)              ; tasing you for every semicolon you forget
@@ -100,7 +100,7 @@
 
        :tools
        ;;ansible
-       (debugger +lsp)          ; FIXME stepping through code, to help you add bugs
+       ;; (debugger +lsp)          ; FIXME stepping through code, to help you add bugs
        direnv
        ;;docker
        editorconfig      ; let someone else argue about tabs vs spaces
@@ -185,7 +185,7 @@
        ;;(wanderlust +gmail)
 
        :app
-       ;;calendar
+       calendar
        ;;irc               ; how neckbeards socialize
        ;;(rss +org)        ; emacs as an RSS reader
        ;;twitter           ; twitter client https://twitter.com/vnought
