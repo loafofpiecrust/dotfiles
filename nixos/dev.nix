@@ -29,6 +29,7 @@
     any-nix-shell
 
     # formatters + language servers
+    emacsCustom
     nixfmt
     html-tidy
     pipenv
@@ -39,7 +40,7 @@
     (self: super: {
       libgccjit = pkgs.unstable.libgccjit;
       emacs = pkgs.unstable.emacs;
-      emacsCustom = pkgs.emacsGit;
+      emacsCustom = pkgs.unstable.emacs;
       # emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
       #   config = builtins.readFile /home/snead/.config/emacs/init.el;
       #   package = pkgs.emacsUnstable;

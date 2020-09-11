@@ -6,6 +6,10 @@
 ;; use 'M-x doom/reload'.
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
+;; Use latest version of straight to facilitate native compilation.
+(package! straight
+  :pin "5d046ad09413f3aba6198229e392cdd3f07e77ee")
+
 (package! tree-sitter
   :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
            :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock")))
@@ -77,9 +81,8 @@
 
 ;; System stuff!
 ;; TODO Make a doom module instead of just one custom file.
-(package! exwm)
-(package! exwm-x)
-(package! exwm-edit)
+;; (package! exwm-x :recipe (:no-native-compile t))
+(package! exwm-edit :recipe (:no-native-compile t))
 (package! desktop-environment)
 (package! mini-modeline)
 (package! anzu)
@@ -89,11 +92,16 @@
   :recipe (:host github :repo "zellerin/mount-mode"))
 (package! fuz)
 (package! ivy-fuz)
+(package! ivy-posframe :recipe (:no-native-compile t))
+
 (package! org-cv
   :recipe (:host gitlab :repo "Titan-C/org-cv"))
 
 (package! highlight-numbers :disable t)
 (package! fcitx :disable t)
+
+(package! bitwarden
+  :recipe (:host github :repo "seanfarley/emacs-bitwarden"))
 
 ;; Name buffers relative to project root
 ;; (package! relative-buffers

@@ -14,6 +14,8 @@
 ;;      Alternatively, press 'gd' (or 'C-c g d') on a module to browse its
 ;;      directory (for easy access to its source code).
 
+(setq comp-deferred-compilation-black-list '("/exwm.*\\.el" "/xcb.*\\.el" "/ivy-posframe\\.el"))
+
 ;; Use SPC for global leader, and another single key for local leader.
 ;; Backslash default behavior is just Emacs mode, but , and ' may actually be useful.
 (setq doom-leader-key "SPC"
@@ -34,16 +36,19 @@
        chinese
        ;;japanese
 
+       :desktop
+       window-manager
+
        :completion
        (company +childframe)           ; the ultimate code completion backend
-       ;;helm              ; the *other* search engine for love and life
+       ;; (helm +childframe)              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
        (ivy +childframe +prescient +icons)               ; a search engine for love and life
 
        :ui
        ;;deft              ; notational velocity for Emacs
        doom              ; what makes DOOM look the way it does
-       ;; doom-dashboard    ; a nifty splash screen for Emacs
+       doom-dashboard    ; a nifty splash screen for Emacs
        ;; doom-quit         ; DOOM quit-message prompts when you quit Emacs
        ;;fill-column       ; a `fill-column' indicator
        hl-todo           ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
@@ -55,7 +60,8 @@
        ;;neotree           ; a project drawer, like NERDTree for vim
        ophints           ; highlight the region an operation acts on
        (popup +defaults)   ; tame sudden yet inevitable temporary windows
-       pretty-code       ; ligatures or substitute text with pretty symbols
+       ;; pretty-code       ; ligatures or substitute text with pretty symbols
+       (ligatures)
        ;;tabs              ; an tab bar for Emacs
        treemacs          ; a project drawer, like neotree but cooler
        unicode           ; extended unicode support for various languages
@@ -69,7 +75,7 @@
        (evil +everywhere); come to the dark side, we have cookies
        file-templates    ; auto-snippets for empty files
        fold              ; (nigh) universal code folding
-       format  ; automated prettiness
+       (format +onsave)  ; automated prettiness
        ;;god               ; run Emacs commands without modifier keys
        ;;lispy             ; vim for lisp, for people who don't like vim
        multiple-cursors  ; editing in many places at once
@@ -80,7 +86,7 @@
        ;; word-wrap         ; soft wrapping with language-aware indent
 
        :emacs
-       (dired +ranger +icons)             ; making dired pretty [functional]
+       (dired +icons)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
        (undo +tree)      ; persistent, smarter undo for your inevitable mistakes
@@ -94,8 +100,7 @@
 
        :checkers
        (syntax +childframe)              ; tasing you for every semicolon you forget
-       ;; TODO Replace with spell-fu, much faster!
-       ;; (spell +aspell +everywhere)     ; tasing you for misspelling mispelling
+       (spell +aspell +everywhere)     ; tasing you for misspelling mispelling
        ;;grammar           ; tasing grammar mistake every you make
 
        :tools
@@ -117,9 +122,12 @@
        ;;prodigy           ; FIXME managing external services & code builders
        ;;rgb               ; creating color strings
        ;;taskrunner        ; taskrunner for all your projects
-       ;;terraform         ; infrastructure as code
+       terraform         ; infrastructure as code
        ;;tmux              ; an API for interacting with tmux
        ;;upload            ; map local to remote projects via ssh/ftp
+
+       :os
+       (:if IS-MAC macos)
 
        :lang
        ;;agda              ; types of types of types of types...
@@ -185,7 +193,7 @@
        ;;(wanderlust +gmail)
 
        :app
-       calendar
+       ;; calendar
        ;;irc               ; how neckbeards socialize
        ;;(rss +org)        ; emacs as an RSS reader
        ;;twitter           ; twitter client https://twitter.com/vnought

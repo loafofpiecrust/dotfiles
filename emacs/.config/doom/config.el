@@ -3,9 +3,9 @@
 ;; References:
 ;; https://github.com/rougier/elegant-emacs
 
-(setq-default gc-cons-percentage 0.3
-              gc-cons-threshold 134217728)
+(setq-default gc-cons-percentage 0.3)
 
+;; Let me load my custom packages.
 (add-load-path! "custom")
 
 ;; remove all scrollbars!
@@ -31,7 +31,10 @@
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
 (setq doom-font (font-spec :family "Fira Code" :size 15 :weight 'medium)
-      doom-variable-pitch-font (font-spec :family "sans" :size 17))
+      doom-variable-pitch-font (font-spec :family "sans" :size 17)
+      ;; These fonts were fucking up display of math symbols! Remove them!
+      ;;doom-unicode-extra-fonts nil)
+      )
 
 ;; Test for unicode icons (should be marked "seen" and "important")
 ;; neu          11:43:48        Information Technology... Received: INC0628880 – Fwd: Office 365 Transition Ridiculous
@@ -43,7 +46,7 @@
       doom-gruvbox-brighter-comments t
       doom-peacock-brighter-comments t)
 
-(setq shell-file-name "/bin/bash")
+;; (setq shell-file-name "/bin/bash")
 
 ;; Pull exwm config from separate file.
 (use-package! my-exwm-config
@@ -73,9 +76,6 @@
   (push '("Modifier Letter Small H" "Modifier Letter Small H"
           ("Source Code Pro"))
         unicode-fonts-overrides-mapping)
-  ;; (push '("Greek Tonos" "Greek Small Letter Omega with Tonos"
-  ;;         ("SF Mono"))
-  ;;       unicode-fonts-overrides-mapping)
   ;; I need SF Mono to be used for math symbols: λ
   ;; (set-fontset-font t 'han (font-spec :family "SF Mono Square" :size 18))
   ;; (set-fontset-font t 'greek (font-spec :family "SF Mono" :size 15))
@@ -92,9 +92,7 @@
                                                   ;; "Quivira"
                                                   "Noto Sans CJK JP"
                                                   "Noto Sans CJK SC"
-                                                  "Noto Sans CJK TC"
-                                                  "Fira Code"
-                                                  "SF Mono")
+                                                  "Noto Sans CJK TC")
                                                 my/private-use-fonts)))
 
 (use-package! ewal
@@ -108,9 +106,15 @@
   :config
   (setq ewal-doom-vibrant-brighter-comments t))
 
+(use-package! theme-changer
+  :after doom-themes
+  :defer 1
+  :config
+  (setq calendar-location-name "Boston, MA"
+        calendar-latitude 42.3601
+        calendar-longitude -71.0589)
+  (change-theme 'doom-one-light 'doom-one))
 
-;; ;; Use text checkboxes instead of widgets.
-;; (setq widget-image-enable nil)
 
 (use-package! org
   :no-require t
@@ -121,7 +125,7 @@
   (setq-default org-link-descriptive t
                 org-indent-indentation-per-level 1
                 org-latex-compiler "xelatex"
-                org-latex-pdf-process (list "tectonic %f")
+                org-latex-pdf-process '("tectonic %f")
                 org-latex-prefer-user-labels t
                 org-log-done t
                 org-use-property-inheritance t
@@ -198,15 +202,19 @@
   (map! "C-j" 'newline-and-indent)
 
   ;; Extra bindings for compilation and editing commit messages.
-  (map! :map (compilation-mode-map with-editor-mode-map)
+  (map! :map (compilation-mode-map with-editor-mode-map message-mode-map)
         ;; Stands for "go run", finishes the current operation.
-        :n "gr" (general-simulate-key "C-c C-c")
+        :nv "gr" (general-simulate-key "C-c C-c")
         ;; Stands for "go quit"
         :nm "gq" (general-simulate-key "C-c C-k"))
 
   ;; We want the same save binding everywhere!
   (map! "C-s" (general-key "C-x C-s")
         :gi "C-v" 'evil-paste-after))
+
+(after! (org evil evil-collection)
+  (map! :map (org-mode-map)
+        :nv "gr" (general-simulate-key "C-c C-c")))
 
 
 ;; (use-package! tree-sitter-langs :after tree-sitter)
@@ -218,26 +226,20 @@
 ;;             '((typescript-tsx-mode . typescript)
 ;;               (rjsx-mode . javascript))))
 
-(after! doom-modeline
-  (setq ;;doom-modeline-height 30
-   doom-modeline-irc nil
-   doom-modeline-gnus nil))
-
 (after! prog-mode
   ;; (set-company-backend! 'prog-mode '(company-capf company-dabbrev-code))
   ;; Consider each segment of a camelCase one word,
-  ;; and wrap lines at the window edge.
-  (general-add-hook 'prog-mode-hook '(auto-fill-mode subword-mode))
+  (add-hook! 'prog-mode-hook '(auto-fill-mode subword-mode toggle-truncate-lines))
   ;; Automatically wrap comments in code
   (setq-default comment-auto-fill-only-comments t))
 
 (after! lsp-mode
   (setq lsp-eldoc-render-all nil
-         lsp-signature-render-documentation nil
-         lsp-symbol-highlighting-skip-current t
-         ;; Don't show flycheck stuff in the sideline.
-         lsp-ui-sideline-show-diagnostics nil
-         lsp-ui-sideline-update-mode 'line))
+        lsp-signature-render-documentation nil
+        lsp-symbol-highlighting-skip-current t
+        ;; Don't show flycheck stuff in the sideline.
+        lsp-ui-sideline-show-diagnostics nil
+        lsp-ui-sideline-update-mode 'line))
 
 (after! (git-timemachine evil-collection)
   (map! :map git-timemachine-mode-map
@@ -331,14 +333,14 @@ Use `treemacs-select-window' command for old functionality."
 (use-package! magit-delta
   :hook (magit-mode . magit-delta-mode)
   :config
-  ;; FIXME Propogate the emacs theme to delta.
+  ;; FIXME Propagate the emacs theme to delta.
   (setq magit-delta-default-dark-theme "ansi-dark"))
 
 ;; Spell check options
-(after! ispell
-  (setq ispell-dictionary "en_US"
-        ;; Add camelCase spellcheck
-        ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together" "--dont-tex-check-comments")))
+;; (after! ispell
+;;   (setq ispell-dictionary "en_US"
+;;         ;; Add camelCase spellcheck
+;;         ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together")))
 
 (use-package! polymode
   :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave))
@@ -366,7 +368,7 @@ Use `treemacs-select-window' command for old functionality."
 
 (use-package! flycheck-inline
   :after flycheck
-  :config (flycheck-inline-mode))
+  :hook (flycheck-mode . flycheck-inline-mode))
 
 (use-package! cherokee-input)
 
@@ -405,8 +407,7 @@ Use `treemacs-select-window' command for old functionality."
 
 ;; Turn all wavy underlines into straight ones for readability.
 (custom-set-faces!
-  '(flyspell-duplicate :underline nil :inherit flycheck-warning)
-  '(flyspell-incorrect :underline nil :inherit flycheck-error)
+  '(spell-fu-incorrect-face :underline (:style line :color "red"))
   '(flycheck-info :underline (:style line :color "#22ad6a"))
   '(flycheck-warning :underline (:style line :color "#f2b64b"))
   '(flycheck-error :underline (:style line :color "#ab1f38")))
@@ -612,7 +613,7 @@ Use `treemacs-select-window' command for old functionality."
   :config
   (setq-default olivetti-body-width 80))
 
-(setq +pretty-code-symbols
+(setq +ligatures-extra-symbols
       '(:name "»"
         :src_block "»"
         :src_block_end "«"
@@ -660,7 +661,7 @@ Use `treemacs-select-window' command for old functionality."
         :arrow "->"))
 
 (after! org
-  (set-pretty-symbols! 'org-mode
+  (set-ligatures! 'org-mode
     :merge t
     :title "#+TITLE:"
     :begin_quote "#+BEGIN_QUOTE"
@@ -671,7 +672,7 @@ Use `treemacs-select-window' command for old functionality."
     :end ":END:"))
 
 (after! markdown-mode
-  (set-pretty-symbols! 'markdown-mode
+  (set-ligatures! 'markdown-mode
     :src_block "```"))
 
 
@@ -679,7 +680,7 @@ Use `treemacs-select-window' command for old functionality."
 ;; This doesn't affect when writing/responding to emails.
 ;; TODO maybe there's a better machanism for replacing these that works more consistently?
 (after! md-msg
-  (set-pretty-symbols! 'md-msg-view-mode
+  (set-ligatures! 'md-msg-view-mode
     :exclamation "\\!"
     :dash "\\-"
     :endash "\\--"
@@ -729,9 +730,26 @@ Use `treemacs-select-window' command for old functionality."
 (after! ivy-posframe
   (setcdr (assoc t ivy-posframe-display-functions-alist)
           'ivy-posframe-display-at-frame-center)
-  (setq ivy-posframe-parameters '((parent-frame nil))
-        ivy-posframe-width 130
+  (setq! ivy-posframe-parameters '((min-width . 90)
+                                   (min-height . 17)
+                                   (parent-frame . nil)
+                                   (z-group . above)))
+  (setq ivy-posframe-width 130
         ivy-posframe-height 20))
+
+(use-package! fuz
+  :disabled
+  :after ivy
+  :config
+  (unless (require 'fuz-core nil t)
+    (fuz-build-and-load-dymod)))
+(use-package ivy-fuz
+  :after (ivy fuz)
+  :custom
+  (ivy-sort-matches-functions-alist '((t . ivy-fuz-sort-fn)))
+  (ivy-re-builders-alist '((t . ivy-fuz-regex-fuzzy)))
+  :config
+  (add-to-list 'ivy-highlight-functions-alist '(ivy-fuz-regex-fuzzy . ivy-fuz-highlight-fn)))
 
 ;; Using C-/ for comments aligns with other editors.
 (after! evil
@@ -755,3 +773,6 @@ Use `treemacs-select-window' command for old functionality."
 ;; TODO We need chinese font with same height as my font.
 (after! pyim
   (setq! pyim-page-tooltip 'posframe))
+
+(use-package! bitwarden
+  :defer 1)
