@@ -5,6 +5,7 @@ let
   pkgs = import sources.nixpkgs { config.allowUnfree = true; };
 in {
   nixpkgs.pkgs = pkgs;
+  nixpkgs.config.allowUnfree = true;
   nixpkgs.overlays = [
     # Import my local package definitions.
     (import ./pkgs)
@@ -105,6 +106,7 @@ in {
     gnupg
     ncdu
     parted
+    tree
 
     # user tools
     stow

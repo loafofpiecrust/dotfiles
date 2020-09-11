@@ -62,7 +62,7 @@
   fonts.fontconfig = {
     defaultFonts = {
       monospace = [
-        "SF Mono" # Main preference, changes often.
+        "Fira Code" # Main preference, changes often.
         "Hasklig" # Provides almost all of the IPA symbols.
         "Noto Sans Mono CJK SC"
         "Noto Emoji"
@@ -101,6 +101,8 @@
       kanshi
       qt5.qtwayland
       grim
+      wl-clipboard
+      wf-recorder
     ];
     extraSessionCommands = let
       schema = pkgs.gsettings-desktop-schemas;

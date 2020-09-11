@@ -94,6 +94,8 @@
   powerManagement.powertop.enable = true;
   # networking.networkmanager.wifi.powersave = true;
 
+  virtualisation.docker.enable = true;
+
   # Let's try out bluetooth.
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
@@ -114,8 +116,13 @@
     font-manager
     deluge
     gimp
-    discord
+    krita
+    vlc
+
+    # communication
+    unstable.discord
     slack
+    teams
   ];
 
   # Enable NVIDIA GPU
@@ -128,9 +135,7 @@
   # };
 
   # Use newer Intel Iris driver. This fixes screen tearing for me!
-  environment.variables = {
-    MESA_LOADER_DRIVER_OVERRIDE = "iris";
-  };
+  environment.variables = { MESA_LOADER_DRIVER_OVERRIDE = "iris"; };
   hardware.opengl.package = (pkgs.mesa.override {
     galliumDrivers = [ "nouveau" "virgl" "swrast" "iris" ];
   }).drivers;

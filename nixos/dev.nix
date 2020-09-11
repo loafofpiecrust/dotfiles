@@ -1,15 +1,16 @@
-{ config, lib, pkgs, ... }:
-{
+{ config, lib, pkgs, ... }: {
   environment.systemPackages = with pkgs; [
     # tools of the trade
     git
     git-lfs
     gcc
     gnumake
-    tectonic # build latex projects
-    pandoc
+    cmake
     direnv
-    emacsCustom
+
+    # publishing
+    tectonic
+    pandoc
 
     # languages
     rustup
@@ -18,6 +19,7 @@
     yarn
     kotlin
     python3
+    terraform
 
     # Spellcheck
     aspell
