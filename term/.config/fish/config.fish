@@ -32,7 +32,7 @@ set -x _JAVA_AWT_WM_NONREPARENTING 1
 
 # Make some aliases for better cli tools!
 alias grep="rg"
-alias find="fd"
+# alias find="fd"
 alias ls="exa"
 alias x="exa"
 alias du="dust"

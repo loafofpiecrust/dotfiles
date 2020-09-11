@@ -62,10 +62,10 @@ padding-right = 1
 border-bottom-size = 2
 border-bottom-color = ${colors.secondary}
 
-font-0 = "Fira Code:size=11:weight=bold;1"
+font-0 = "monospace:pixelsize=11:weight=bold;2"
 ; Provides nice icons for audio, clock, power, etc.
 ; Might be able to find unicode replacements.
-font-1 = "Material Design Icons:pixelsize=13;3"
+font-1 = "Material Design Icons:pixelsize=13;2"
 ; Fallback for some unicode characters, like vertical meters.
 font-2 = "DejaVu Sans Mono:size=11:weight=bold;1"
 font-3 = "Noto Sans CJK JP:size=11:weight=bold;1"
@@ -355,15 +355,15 @@ format-charging-suffix = %{A}
 format-discharging-prefix = ${self.format-charging-prefix}
 format-discharging-suffix = ${self.format-charging-suffix}
 
-format-discharging = <label-discharging> <bar-capacity>
+format-discharging = <bar-capacity>
 label-discharging = +%time%
 
-format-charging = <label-charging> <bar-capacity>
+format-charging = <bar-capacity>
 label-charging = -%time%
 
 ; Make sure all label variants match in width.
 label-full = ++Full
-format-full = <label-full> <bar-capacity>
+format-full = <bar-capacity>
 
 bar-capacity-width = 10
 
