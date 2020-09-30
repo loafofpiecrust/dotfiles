@@ -81,10 +81,9 @@
       export QT_QPA_PLATFORM=xcb
       export MOZ_ENABLE_WAYLAND=0
       export SDL_VIDEODRIVER=x11
-      export EMACS_EXWM=t
       xrdb ~/.Xdefaults
       ${pkgs.gnome3.gnome-settings-daemon}/libexec/gnome-settings-daemon &
-      ${pkgs.dbus}/bin/dbus-launch --exit-with-session ${pkgs.emacsCustom}/bin/emacs -mm
+      EMACS_EXWM=t ${pkgs.dbus}/bin/dbus-launch --exit-with-session ${pkgs.emacsCustom}/bin/emacs -mm
         '';
   };
   # displayManager.sessionCommands = "${pkgs.xorg.xhost}/bin/xhost +SI:localuser:$USER";

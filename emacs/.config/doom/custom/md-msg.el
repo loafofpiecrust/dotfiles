@@ -1,12 +1,12 @@
 ;;; ~/dotfiles/emacs/.config/doom/custom/md-msg.el -*- lexical-binding: t; -*-
 ;;; md-msg.el --- Org mode to send and reply to email in HTML. -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2018-2020 Jérémy Compostella
+;; Copyright (C) 2020 Taylor Snead
 
-;; Author: Jérémy Compostella <jeremy.compostella@gmail.com>
-;; Created: January 2018
+;; Author: Taylor Snead <taylorsnead@gmail.com>
+;; Created: August 2020
 ;; Keywords: extensions mail
-;; Homepage: https://github.com/jeremy-compostella/md-msg
+;; Homepage: https://github.com/loafofpiecrust/md-msg
 ;; Package-Version: 2.8
 ;; Package-Requires: ((emacs "24.4") (htmlize "1.54"))
 
@@ -136,9 +136,6 @@
   "Org Message group."
   :group 'applications)
 
-(defvar md-msg-attachment '()
-  "Temporary variable to pass the list of attachment.")
-
 (defvar md-msg-text-plain nil
   "Temporary variable to pass the text/plain version of the email.")
 
@@ -149,14 +146,6 @@ It is used by function advice.")
 (defcustom md-msg-separator "--citation follows this line (read-only)--"
   "String separating the reply area and the original mail."
   :type '(string))
-
-;; (defcustom md-msg-options "html-postamble:nil toc:nil author:nil email:nil"
-;;   "Org Mode #+OPTIONS."
-;;   :type '(string))
-
-;; (defcustom md-msg-startup nil
-;;   "Org Mode #+STARTUP."
-;;   :type '(string))
 
 (defcustom md-msg-text-plain-alternative t
   "Include an ASCII export as a text/plain alternative.")
@@ -710,27 +699,6 @@ If FILE does not have an extension, \"text/plain\" is returned."
     (if extension
 	(mailcap-extension-to-mime extension)
       "text/plain")))
-
-;; (defun md-msg-mml-into-multipart-related (orig-fun cont)
-;;   "Extend the capability to handle file attachments.
-;; This function is used as an advice function of
-;; `mml-expand-html-into-multipart-related'.
-;; - ORIG-FUN is the original function.
-;; - CONT is the MIME representation of the mail content.
-;; The implementation depends on the `md-msg-attachment' temporary
-;; variable set by `md-msg-prepare-to-send'."
-;;   (setq cont (funcall orig-fun cont))
-;;   (let ((newparts '()))
-;;     (let ((alternative (if (eq (car cont) 'multipart) (list cont) cont)))
-;;       (when md-msg-text-plain-alternative
-;; 	(setf alternative (push `(part (type . "text/plain")
-;; 				       (disposition . "inline")
-;; 				       (contents . ,md-msg-text-plain))
-;; 				alternative)))
-;;       (append `(multipart (type . "mixed")
-;; 			  (multipart (type . "alternative")
-;; 				     ,@alternative))
-;; 	      newparts))))
 
 (defun md-msg-message-fetch-field (field-name)
   "Return the value of the header field whose type is FIELD-NAME."

@@ -30,11 +30,14 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq doom-font (font-spec :family "Fira Code" :size 15 :weight 'medium)
+(setq doom-font (font-spec :family "monospace" :size 15 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "sans" :size 17)
       ;; These fonts were fucking up display of math symbols! Remove them!
-      ;;doom-unicode-extra-fonts nil)
-      )
+      doom-unicode-extra-fonts nil)
+
+;; Emacs 28 adds this new face with a different font for comments.
+;; I want to retain the same font as normal code for now.
+(custom-set-faces! '(fixed-pitch-serif :family nil))
 
 ;; Test for unicode icons (should be marked "seen" and "important")
 ;; neu          11:43:48        Information Technology... Received: INC0628880 – Fwd: Office 365 Transition Ridiculous
@@ -42,11 +45,11 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-gruvbox
+(setq doom-theme 'doom-solarized-light
       doom-gruvbox-brighter-comments t
-      doom-peacock-brighter-comments t)
-
-;; (setq shell-file-name "/bin/bash")
+      doom-peacock-brighter-comments t
+      doom-acario-light-brighter-comments t
+      doom-one-light-brighter-comments t)
 
 ;; Pull exwm config from separate file.
 (use-package! my-exwm-config
@@ -74,22 +77,16 @@
   (push '("IPA Extensions" ("Source Code Pro"))
         unicode-fonts-block-font-mapping)
   (push '("Modifier Letter Small H" "Modifier Letter Small H"
-          ("Source Code Pro"))
+          ("DejaVu Sans Mono"))
         unicode-fonts-overrides-mapping)
-  ;; I need SF Mono to be used for math symbols: λ
-  ;; (set-fontset-font t 'han (font-spec :family "SF Mono Square" :size 18))
-  ;; (set-fontset-font t 'greek (font-spec :family "SF Mono" :size 15))
-  ;; (set-fontset-font t 'mathematical (font-spec :family "Fira Math" :size 15))
   (setq unicode-fonts-fallback-font-list '("Symbola monospacified for Source Code Pro" "Hasklig"))
   (setq unicode-fonts-restrict-to-fonts (append '("DejaVu Sans Mono"
                                                   "Noto Sans"
                                                   "Noto Sans Symbols"
                                                   "Noto Sans Symbols2"
                                                   "Noto Sans Cherokee"
-                                                  ;; "Everson Mono"
                                                   "Source Code Pro"
                                                   "Symbola monospacified for Source Code Pro"
-                                                  ;; "Quivira"
                                                   "Noto Sans CJK JP"
                                                   "Noto Sans CJK SC"
                                                   "Noto Sans CJK TC")
@@ -113,7 +110,7 @@
   (setq calendar-location-name "Boston, MA"
         calendar-latitude 42.3601
         calendar-longitude -71.0589)
-  (change-theme 'doom-one-light 'doom-one))
+  (change-theme 'doom-one-light 'doom-gruvbox))
 
 
 (use-package! org
@@ -239,6 +236,7 @@
         lsp-symbol-highlighting-skip-current t
         ;; Don't show flycheck stuff in the sideline.
         lsp-ui-sideline-show-diagnostics nil
+        lsp-ui-sideline-enable nil
         lsp-ui-sideline-update-mode 'line))
 
 (after! (git-timemachine evil-collection)
@@ -250,7 +248,7 @@
 (custom-set-faces! '(show-paren-match :background nil))
 
 (after! (evil evil-collection)
-  (add-hook 'evil-insert-state-exit-hook 'company-abort)
+  ;; (add-hook 'evil-insert-state-exit-hook 'company-abort)
   ;; Associate TAB with all workspace bindings, instead of brackets + w.
   (map! :n "[ TAB" '+workspace/switch-left
         :n "] TAB" '+workspace/switch-right)
@@ -321,20 +319,20 @@ Use `treemacs-select-window' command for old functionality."
 ;; Make yasnippet easier to access in insert mode.
 ;; insert: C-p, normal: SPC i s
 ;; TODO Get rid of all yasnippet-company business.
-(after! yasnippet
-  (setq yas-triggers-in-field t)
-  (map! :map yas-minor-mode-map
-        :i "C-p" 'yas-insert-snippet))
+;; (after! yasnippet
+;;   (setq yas-triggers-in-field t)
+;;   (map! :map yas-minor-mode-map
+;;         :i "C-p" 'yas-insert-snippet))
 
 (after! projectile
   (setq projectile-sort-order 'recently-active))
 
 ;; Provide syntax highlighting to magit diffs.
-(use-package! magit-delta
-  :hook (magit-mode . magit-delta-mode)
-  :config
-  ;; FIXME Propagate the emacs theme to delta.
-  (setq magit-delta-default-dark-theme "ansi-dark"))
+;; (use-package! magit-delta
+;;   :hook (magit-mode . magit-delta-mode)
+;;   :config
+;;   ;; FIXME Propagate the emacs theme to delta.
+;;   (setq magit-delta-default-dark-theme "ansi-dark"))
 
 ;; Spell check options
 ;; (after! ispell
@@ -353,8 +351,9 @@ Use `treemacs-select-window' command for old functionality."
 
 (after! (company company-box)
   (setq company-auto-complete 'company-explicit-action-p
-        company-idle-delay 0.35
-        company-box-doc-delay 2)
+        ;; company-idle-delay 0.35
+        company-box-doc-delay 2
+        )
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -402,7 +401,7 @@ Use `treemacs-select-window' command for old functionality."
 ;;   `(vertical-border :foreground ,(ewal-get-color 'green)))
 
 (custom-set-faces!
-  '(minibuffer-prompt :family "Fira Code-17")
+  '(minibuffer-prompt :family nil)
   '(pyim-page :height 1.1))
 
 ;; Turn all wavy underlines into straight ones for readability.
@@ -427,6 +426,61 @@ Use `treemacs-select-window' command for old functionality."
   (setq message-cite-style message-cite-style-thunderbird
         message-cite-function 'message-cite-original))
 
+;; Gmail Compatibility, modified from core DOOM emacs.
+(after! mu4e
+  ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
+  (setq mu4e-sent-messages-behavior 'delete)
+
+  (defvar +mu4e-context-gmail nil
+    "Whether the current mu4e context is associated with a GMail-like server.")
+
+  ;; In my workflow, emails won't be moved at all. Only their flags/labels are
+  ;; changed. Se we redefine the trash and refile marks not to do any moving.
+  ;; However, the real magic happens in `+mu4e|gmail-fix-flags'.
+  ;;
+  ;; Gmail will handle the rest.
+  (defun +mu4e--mark-seen (docid _msg target)
+    (mu4e~proc-move docid (mu4e~mark-check-target target) "+S-u-N"))
+
+  ;; (delq! 'delete mu4e-marks #'assq)
+  (setf (alist-get 'trash mu4e-marks)
+        (list :char '("d" . "▼")
+              :prompt "dtrash"
+              :dyn-target (lambda (_target msg) (mu4e-get-trash-folder msg))
+              :action
+              (lambda (docid msg target)
+                (with~mu4e-context-vars (mu4e-context-determine msg nil)
+                    (if +mu4e-context-gmail
+                        (+mu4e--mark-seen docid msg target)
+                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N")))))
+
+        ;; Refile will be my "archive" function.
+        (alist-get 'refile mu4e-marks)
+        (list :char '("r" . "▼")
+              :prompt "rrefile"
+              :dyn-target (lambda (_target msg) (mu4e-get-refile-folder msg))
+              :action
+              (lambda (docid msg target)
+                (with~mu4e-context-vars (mu4e-context-determine msg nil)
+                    (if +mu4e-context-gmail
+                        (+mu4e--mark-seen docid msg target)
+                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N"))))))
+
+  (defun +mu4e-gmail-fix-flags-h (mark msg)
+    "This hook correctly modifies gmail flags on emails when they are marked.
+Without it, refiling (archiving), trashing, and flagging (starring) email
+won't properly result in the corresponding gmail action, since the marks
+are ineffectual otherwise."
+    (with~mu4e-context-vars (mu4e-context-determine msg nil)
+        (when +mu4e-context-gmail
+          (pcase mark
+            (`trash  (mu4e-action-retag-message msg "-\\Inbox,+\\Trash,-\\Draft"))
+            (`refile (mu4e-action-retag-message msg "-\\Inbox"))
+            (`flag   (mu4e-action-retag-message msg "+\\Starred"))
+            (`unflag (mu4e-action-retag-message msg "-\\Starred"))))))
+
+  (add-hook! 'mu4e-mark-execute-pre-hook #'+mu4e-gmail-fix-flags-h))
+
 (after! mu4e
   ;; Gmail handles labels/folders differently than others do?!
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
@@ -444,7 +498,6 @@ Use `treemacs-select-window' command for old functionality."
         mu4e-update-interval 300
         mu4e-compose-context-policy 'ask
         mu4e-context-policy 'pick-first
-        mu4e-sent-messages-behavior 'delete
         ;; I don't use mu4e built-in conversion to html.
         org-mu4e-convert-to-html nil
         ;; Add full citation when replying to emails.
@@ -459,9 +512,7 @@ Use `treemacs-select-window' command for old functionality."
         mu4e-headers-attach-mark '("a" . "🖿")
         ;; Convert received messages from html to org.
         mu4e-html2text-command "pandoc -f html -t markdown-raw_html-smart-link_attributes+emoji-header_attributes-blank_before_blockquote-simple_tables-multiline_tables-inline_code_attributes-escaped_line_breaks+hard_line_breaks --atx-headers --wrap=none --columns=80 --lua-filter ~/Downloads/remove-ids.lua"
-        mu4e-view-show-images t
-        mu4e-index-lazy-check nil
-        mu4e-index-cleanup t)
+        mu4e-view-show-images t)
   ;; I really do want evil bindings for viewing emails.
   (remove-hook 'mu4e-view-mode-hook #'evil-emacs-state)
   ;; Make sure we can view inline images
@@ -476,23 +527,9 @@ Use `treemacs-select-window' command for old functionality."
   (map! :map mu4e-headers-mode-map
         :n "gr" #'mu4e-headers-rerun-search)
 
-  ;; Only email needs special treatment of refiled messages.
-  (defun my-mu4e-mark-seen (orig docid msg target)
-    (if (string-match "gmail" target)
-        (funcall orig docid msg target)
-      (mu4e~proc-move docid
-                      (mu4e~mark-check-target target)
-                      "-N")))
-  (advice-add '+mu4e--mark-seen :around #'my-mu4e-mark-seen)
-
-  (defun my-mu4e-gmail-fix (orig mark msg)
-    (when (string-match "gmail" (mu4e-context-name (mu4e-context-determine msg 'pick-first)))
-      (funcall orig mark msg)))
-  (advice-add '+mu4e-gmail-fix-flags-h :around #'my-mu4e-gmail-fix)
-
   ;; Add my email accounts.
   (set-email-account! "neu"
-                      '((mu4e-sent-folder . "/neu/Sent")
+                      `((mu4e-sent-folder . "/neu/Sent")
                         (mu4e-drafts-folder . "/neu/Drafts")
                         (mu4e-trash-folder . "/neu/Trash")
                         (mu4e-refile-folder . "/neu/Archive")
@@ -504,6 +541,7 @@ Use `treemacs-select-window' command for old functionality."
                         (smtpmail-smtp-service . 1025)
                         (smtpmail-smtp-server . "localhost")
                         (smtpmail-stream-type . plain)
+                        (+mu4e-context-gmail . ,nil)
                         ;; Mimic outlook's citation style.
                         (message-yank-prefix . "")
                         (message-yank-cited-prefix . "")
@@ -511,13 +549,14 @@ Use `treemacs-select-window' command for old functionality."
                         (message-citation-line-format . "\n\n-----------------------\nOn %a, %b %d %Y, %N wrote:\n")))
 
   (set-email-account! "gmail"
-                      '((mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
+                      `((mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
                         (mu4e-drafts-folder . "/gmail/[Gmail]/Drafts")
                         (mu4e-trash-folder . "/gmail/[Gmail]/Trash")
                         (mu4e-refile-folder . "/gmail/Graveyard")
                         (mu4e-spam-folder . "/gmail/[Gmail]/Spam")
                         ;; Gmail expects me to change labels rather than move stuff?
                         (user-mail-address . "taylorsnead@gmail.com")
+                        (+mu4e-context-gmail . ,t)
                         (smtpmail-smtp-user . "taylorsnead@gmail.com")
                         (smtpmail-smtp-server . "smtp.gmail.com")
                         (smtpmail-smtp-service . 587)
@@ -568,9 +607,25 @@ Use `treemacs-select-window' command for old functionality."
       (mu4e~compose-mail to subject headers)))
   )
 
+(after! (mu4e persp-mode)
+  (persp-def-auto-persp "*email*"
+                        :buffer-name "^\\*mu4e"
+                        :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
+                                   (persp-add-buffer-on-find-file nil)
+                                   persp-add-buffer-on-after-change-major-mode)
+                        :hooks '(after-switch-to-buffer-functions)
+                        :switch 'frame)
+  (persp-def-auto-persp "browse"
+                        :buffer-name "^\\[Firefox\\]"
+                        :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
+                                   (persp-add-buffer-on-find-file nil)
+                                   persp-add-buffer-on-after-change-major-mode)
+                        :hooks '(after-switch-to-buffer-functions)
+                        :switch 'frame))
+
 ;; Write emails in markdown, sent as legit HTML!
 (use-package! md-msg
-  :after mu4e
+  :defer-incrementally (mu4e polymode)
   :config
   (setq mml-content-disposition-alist '((text (rtf . "attachment")
                                               (t . nil))
@@ -610,6 +665,7 @@ Use `treemacs-select-window' command for old functionality."
   (defun disable-line-numbers ()
     (display-line-numbers-mode -1))
   (add-hook 'olivetti-mode-hook #'disable-line-numbers)
+
   :config
   (setq-default olivetti-body-width 80))
 
@@ -724,32 +780,15 @@ Use `treemacs-select-window' command for old functionality."
         midnight-period (* 60 60))
   (midnight-mode))
 
-(setq window-divider-default-right-width 2
-      window-divider-default-bottom-width 2)
+(setq window-divider-default-right-width 3
+      window-divider-default-bottom-width 3)
 
 (after! ivy-posframe
   (setcdr (assoc t ivy-posframe-display-functions-alist)
           'ivy-posframe-display-at-frame-center)
-  (setq! ivy-posframe-parameters '((min-width . 90)
-                                   (min-height . 17)
-                                   (parent-frame . nil)
-                                   (z-group . above)))
+
   (setq ivy-posframe-width 130
         ivy-posframe-height 20))
-
-(use-package! fuz
-  :disabled
-  :after ivy
-  :config
-  (unless (require 'fuz-core nil t)
-    (fuz-build-and-load-dymod)))
-(use-package ivy-fuz
-  :after (ivy fuz)
-  :custom
-  (ivy-sort-matches-functions-alist '((t . ivy-fuz-sort-fn)))
-  (ivy-re-builders-alist '((t . ivy-fuz-regex-fuzzy)))
-  :config
-  (add-to-list 'ivy-highlight-functions-alist '(ivy-fuz-regex-fuzzy . ivy-fuz-highlight-fn)))
 
 ;; Using C-/ for comments aligns with other editors.
 (after! evil
@@ -775,4 +814,55 @@ Use `treemacs-select-window' command for old functionality."
   (setq! pyim-page-tooltip 'posframe))
 
 (use-package! bitwarden
+  :defer 1
+  :config
+  (defun counsel-bitwarden-getpass (&optional arg)
+    "Pick an account and copy the password for it to the kill-ring."
+    (interactive "P")
+    (ivy-read "Copy password for account: "
+              (mapcar (lambda (item) (gethash "name" item))
+                      (bitwarden-search))
+              :action (lambda (acc)
+                        (kill-new (bitwarden-getpass acc))
+                        (message "Copied password for %s" acc))
+              :caller 'counsel-bitwarden-getpass)))
+
+(use-package! ivy-avy
+  :after ivy)
+
+(after! hl-todo
+  (add-hook! 'org-mode-hook #'hl-todo-mode))
+
+(use-package! string-inflection
   :defer 1)
+
+(use-package! zoom
+  ;; :hook (doom-first-input . zoom-mode)
+  :config
+  (setq! zoom-size '(0.7 . 0.7)
+         zoom-ignored-major-modes '(ranger-mode helpful-mode)
+         zoom-ignored-buffer-name-regexps '("^*mu4e" "^*Org" "^*helpful")))
+
+;; (use-package! auto-dim-other-buffers
+;;   :config
+;;   (setq! ))
+
+;; Shows habits on a consistency graph.
+(use-package! org-habit :after org)
+
+;; Notify me when a deadline is fast approaching.
+(use-package! org-notify
+  :after org
+  :config
+  ;; One hour before a deadline, start sending system notifications every ten minutes.
+  ;; TODO If we're more than an hour past a deadline, don't notify at all.
+  (org-notify-add 'default '(:time "1h"
+                             :period "10m"
+                             :duration 10
+                             :actions -notify))
+  (org-notify-start))
+
+;; (use-package! pdf-continuous-scroll-mode)
+
+(use-package! dired-show-readme
+  :hook (dired-mode . dired-show-readme-mode))

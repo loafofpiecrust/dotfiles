@@ -55,14 +55,16 @@
     dejavu_fonts
     migu
     emacs-all-the-icons-fonts
+    # unstable.ibm-plex
     # corefonts # sometimes I need Times New Roman
     # Add user fonts to ~/.local/share/fonts
   ];
 
   fonts.fontconfig = {
+    penultimate.enable = true;
     defaultFonts = {
       monospace = [
-        "Fira Code" # Main preference, changes often.
+        "IBM Plex Mono" # Main preference, changes often.
         "Hasklig" # Provides almost all of the IPA symbols.
         "Noto Sans Mono CJK SC"
         "Noto Emoji"

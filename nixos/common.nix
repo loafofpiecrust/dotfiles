@@ -100,13 +100,13 @@ in {
     htop
     gksu
     unzip
-    nnn # file manager
     ranger
     xfce.gvfs
     gnupg
     ncdu
     parted
     tree
+    killall
 
     # user tools
     stow

@@ -11,29 +11,34 @@ Intended to replicate the functionality of `exec' from i3 config."
 (defun my-autostart ()
   (unless my-autostart-done
     (exec "autostart.sh")
-    (exec "wpg -m")
     (exec "picom --experimental-backends")
-    (exec "polybar main")
     (exec "davmail /home/snead/.config/davmail/.properties")
     (setq my-autostart-done t)))
 
 ;; Autostart stuff.
-(my-autostart)
+(add-hook 'after-init-hook #'my-autostart)
 
 (use-package! exwm
   :no-require t
   :init
-  (appendq! exwm-input-global-keys `((,(kbd "s-,") . ivy-switch-buffer-same-type)
+  (setq! exwm-debug t)
+  (appendq! exwm-input-global-keys `((,(kbd "s-,") . +ivy/switch-workspace-buffer)
                                      (,(kbd "s-\\") . set-input-method)
                                      (,(kbd "s-;") . toggle-input-method)
+                                     (,(kbd "<XF86MonBrightnessDown>") . ,(cmd! (shell-command-to-string "brightnessctl set 5%-")))
+                                     (,(kbd "<XF86MonBrightnessUp>") . ,(cmd! (shell-command-to-string "brightnessctl set 5%-")))
                                      ;; App Shortcuts
+                                     (,(kbd "s-`") . +vterm/toggle)
+                                     (,(kbd "s-a") . org-agenda)
+                                     (,(kbd "s-o") . counsel-linux-app)
+                                     (,(kbd "s-p") . counsel-projectile-switch-project)
                                      (,(kbd "s-b") . ,(cmd! (exec "firefox")))
                                      (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause"))))))
 
 ;; Replace the modeline with a bar up top.
 (use-package! mini-modeline
   :after exwm
-  :defer 1
+  :defer 0.5
   :config
   (setq! mini-modeline-r-format `("%e"
                                   mode-line-buffer-identification " "
@@ -43,8 +48,9 @@ Intended to replicate the functionality of `exec' from i3 config."
                                   mode-line-modified
                                   mode-line-remote " "
                                   mode-line-position)
-         mini-modeline-update-interval 0.2
-         mini-modeline-face-attr nil)
+         mini-modeline-update-interval 0.3
+         mini-modeline-face-attr nil
+         mini-modeline-display-gui-line nil)
   (mini-modeline-mode))
 
 (after! exwm
@@ -59,12 +65,8 @@ Intended to replicate the functionality of `exec' from i3 config."
     (let ((inhibit-message t) (default-directory "~"))
       (call-process "polybar-msg" nil 0 nil "hook" "exwm" "1")))
 
-  (add-hook! '(window-configuration-change-hook
-               evil-normal-state-entry-hook
-               evil-insert-state-entry-hook
-               evil-visual-state-entry-hook
-               evil-emacs-state-entry-hook)
-             #'my-bar-update))
+  ;; (add-hook! 'window-configuration-change-hook #'my-bar-update)
+  )
 
 ;; TODO try out golden-ratio/zoom to highlight active window.
 
@@ -92,27 +94,33 @@ Intended to replicate the functionality of `exec' from i3 config."
                                                                "[ \t]\\{3,\\}"))))
             networks)))
 
-(defun counsel-vpn-connect (&optional arg)
+(defun counsel-logout (&optional arg)
+  "Perform some system action related to logins."
   (interactive "P")
-  (ivy-read "Connect to a VPN: " (my-vpn-list)
+  (ivy-read "Log out: " '(("log out" . "kill -9 -1")
+                          ("reboot" . "systemctl reboot")
+                          ("shutdown" . "systemctl poweroff")
+                          ("sleep" . "systemctl suspend"))
+            :action (lambda (x) (call-process-shell-command (cdr x)))
+            :caller 'counsel-logout))
+
+(defun counsel-vpn-connect (&optional arg)
+  "Connect to a VPN server."
+  (interactive "P")
+  (ivy-read "Connect to a VPN: " '(("panama" . "openvpn-panama"))
             :action #'my-vpn-connect
             :caller 'counsel-vpn-connect))
 
-(defun my-vpn-list ()
-  '(("panama" . "openvpn-panama")))
-
 (defun my-vpn-connect (vpn)
   (shell-command "pgrep openvpn && systemctl stop \"openvpn-*\"")
-  (async-shell-command (format "systemctl start %s" (cdr vpn))
+  (async-shell-command (format "systemctl start \"%s\"" (cdr vpn))
                        "*help:iwctl*"))
 
 (after! (evil evil-collection)
   (map! :leader
         "ri" #'counsel-iwd-connect
-        "rv" #'counsel-vpn-connect))
-
-;; (after! ivy-posframe
-;;   (setq ivy-posframe-parameters '((parent-frame nil))))
+        "rv" #'counsel-vpn-connect
+        "qo" #'counsel-logout))
 
 ;; TODO Submit a PR to doom-emacs fixing this in +workspace/switch-to
 (defun +workspace/switch-to-other (index)
@@ -146,5 +154,65 @@ end of the workspace list."
               (+workspace-message (format "Already in %s" old-name) 'warn)
             (+workspace/display))))
     ('error (+workspace-error (cadr ex) t))))
+
+(after! ivy-posframe
+  (setq! ivy-posframe-parameters '((min-width . 90)
+                                   (min-height . 17)
+                                   (parent-frame . nil))))
+;; (defun counsel-linux-app--parse-file (file)
+;;   (with-temp-buffer
+;;     (insert-file-contents file)
+;;     (goto-char (point-min))
+;;     (let ((start (re-search-forward "^\\[Desktop Entry\\] *$" nil t))
+;;           (end (re-search-forward "^\\[" nil t))
+;;           (visible t)
+;;           name comment exec icon)
+;;       (catch 'break
+;;         (unless start
+;;           (push file counsel-linux-apps-faulty)
+;;           (message "Warning: File %s has no [Desktop Entry] group" file)
+;;           (throw 'break nil))
+
+;;         (goto-char start)
+;;         (when (re-search-forward "^\\(Hidden\\|NoDisplay\\) *= *\\(1\\|true\\) *$" end t)
+;;           (setq visible nil))
+;;         (setq name (match-string 1))
+
+;;         (goto-char start)
+;;         (unless (re-search-forward "^Type *= *Application *$" end t)
+;;           (throw 'break nil))
+;;         (setq name (match-string 1))
+
+;;         (goto-char start)
+;;         (unless (re-search-forward "^Name *= *\\(.+\\)$" end t)
+;;           (push file counsel-linux-apps-faulty)
+;;           (message "Warning: File %s has no Name" file)
+;;           (throw 'break nil))
+;;         (setq name (match-string 1))
+
+;;         (goto-char start)
+;;         (when (re-search-forward "^Comment *= *\\(.+\\)$" end t)
+;;           (setq comment (match-string 1)))
+
+;;         (goto-char start)
+;;         (unless (re-search-forward "^Exec *= *\\(.+\\)$" end t)
+;;           ;; Don't warn because this can technically be a valid desktop file.
+;;           (throw 'break nil))
+;;         (setq exec (match-string 1))
+
+;;         (goto-char start)
+;;         (unless (re-search-forward "^Icon *= *\\(.+\\)$" end t)
+;;           (throw 'break nil))
+;;         (setq icon (match-string 1))
+
+
+;;         (goto-char start)
+;;         (when (re-search-forward "^TryExec *= *\\(.+\\)$" end t)
+;;           (let ((try-exec (match-string 1)))
+;;             (unless (locate-file try-exec exec-path nil #'file-executable-p)
+;;               (throw 'break nil))))
+;;         (propertize
+;;          (funcall counsel-linux-app-format-function name comment exec icon)
+;;          'visible visible)))))
 
 (provide 'my-exwm-config)

@@ -6,6 +6,9 @@
     gcc
     gnumake
     cmake
+    automake
+    autoconf
+    libtool
     direnv
 
     # publishing
@@ -36,21 +39,25 @@
     html-tidy
     pipenv
     python37Packages.python-language-server
+    nodePackages.typescript-language-server
   ];
 
   nixpkgs.overlays = [
     (self: super: {
       libgccjit = pkgs.unstable.libgccjit;
       emacs = pkgs.unstable.emacs;
-      emacsCustom = pkgs.unstable.emacs;
-      # emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
-      #   config = builtins.readFile /home/snead/.config/emacs/init.el;
-      #   package = pkgs.emacsUnstable;
-      #   alwaysEnsure = true;
-      #   extraEmacsPackages = epkgs: [
-      #     epkgs.exwm
-      #   ];
-      # });
+      # emacsCustom = pkgs.unstable.emacs;
+      emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
+        config = builtins.readFile /home/snead/.config/emacs/init.el;
+        package = pkgs.emacsGcc.override { withXwidgets = true; };
+        alwaysEnsure = true;
+        # A few packages have native dependencies, so I need to add them here.
+        extraEmacsPackages = epkgs: [
+          epkgs.emacs-libvterm
+          epkgs.fuz
+          epkgs.ivy-fuz
+        ];
+      });
     })
   ];
 

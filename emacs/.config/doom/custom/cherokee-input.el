@@ -1,6 +1,6 @@
 (quail-define-package
  "cherokee" "UTF-8" "Cherokee" t
- "Input method for standard Cherokee using d/t consonants."
+ "Input method for Oklahoma and North Carolina Cherokee using d/t consonants."
  nil t nil nil nil nil nil nil nil nil t)
 
 (quail-define-rules

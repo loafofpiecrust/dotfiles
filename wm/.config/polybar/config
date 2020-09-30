@@ -62,10 +62,10 @@ padding-right = 1
 border-bottom-size = 2
 border-bottom-color = ${colors.secondary}
 
-font-0 = "monospace:pixelsize=11:weight=bold;2"
+font-0 = "monospace:pixelsize=12:weight=bold;2"
 ; Provides nice icons for audio, clock, power, etc.
 ; Might be able to find unicode replacements.
-font-1 = "Material Design Icons:pixelsize=13;2"
+font-1 = "Material Design Icons:pixelsize=13;3"
 ; Fallback for some unicode characters, like vertical meters.
 font-2 = "DejaVu Sans Mono:size=11:weight=bold;1"
 font-3 = "Noto Sans CJK JP:size=11:weight=bold;1"
@@ -298,8 +298,8 @@ interval = 20
 format-prefix = 
 format-prefix-foreground = ${colors.misc2}
 label = %date% %time%
-date = " %a"
-date-alt = " %a %m-%d,"
+date-alt = " %a"
+date = " %a %m-%d,"
 time = %I:%M %p
 time-alt = ${self.time}
 format-background = ${colors.background-alt}
@@ -379,7 +379,8 @@ bar-capacity-empty-foreground = ${colors.inactive}
 [module/powermenu]
 type = custom/text
 content = 
-click-left = rofi-logout.sh &
+; click-left = emacsclient -e "(counsel-logout)" &
+click-left = rofi-logout.sh
 content-foreground = ${colors.brightred}
 content-padding = 1
 

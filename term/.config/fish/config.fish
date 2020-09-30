@@ -26,8 +26,8 @@ set -x GOPATH ~/.go
 set -g fish_user_paths $HOME/.netlify/helper/bin $HOME/.config/emacs/bin $GOPATH/bin $HOME/.cargo/bin $HOME/.npm/bin $fish_user_paths
 
 # Gives firefox smooth touchpad scrolling.
-set -x MOZ_USE_XINPUT2 1
-set -x MOZ_ENABLE_WAYAND 1
+# set -x MOZ_USE_XINPUT2 1
+# set -x MOZ_ENABLE_WAYAND 1
 set -x _JAVA_AWT_WM_NONREPARENTING 1
 
 # Make some aliases for better cli tools!
@@ -49,15 +49,3 @@ if status --is-interactive
     starship init fish | source
 end
 
-# tabtab source for serverless package
-# uninstall by removing these lines or running `tabtab uninstall serverless`
-[ -f /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/serverless.fish ]
-and . /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/serverless.fish
-# tabtab source for sls package
-# uninstall by removing these lines or running `tabtab uninstall sls`
-[ -f /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/sls.fish ]
-and . /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/sls.fish
-# tabtab source for slss package
-# uninstall by removing these lines or running `tabtab uninstall slss`
-[ -f /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/slss.fish ]
-and . /home/snead/pie/turntable-cloud/node_modules/tabtab/.completions/slss.fish

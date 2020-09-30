@@ -1,11 +1,16 @@
 ;;; desktop/exwm/config.el -*- lexical-binding: t; -*-
 
+(defun +wm/screenshot ()
+  "Take a screenshot."
+  (interactive)
+  (desktop-environment-screenshot)
+  (message "Screenshot saved to %s" desktop-environment-screenshot-directory))
+
 (use-package! exwm
   :if (getenv "EMACS_EXWM")
   :hook (after-init . exwm-enable)
   :init
   (setq exwm-input-global-keys `((,(kbd "s-SPC") . ,doom-leader-map)
-                                 (,(kbd "s-p") . counsel-linux-app)
                                  ;; TODO Launch programs in new window.
                                  ;; Select windows.
                                  (,(kbd "s-h") . evil-window-left)
@@ -42,27 +47,30 @@
                                  (,(kbd "s-r") . exwm-reset)
                                  (,(kbd "s-<") . ivy-switch-buffer)
                                  (,(kbd "s-,") . ivy-switch-buffer-same-type)
-                                 (,(kbd "<XF86MonBrightnessDown>") . desktop-environment-brightness-decrement)
-                                 (,(kbd "<XF86MonBrightnessUp>") . desktop-environment-brightness-increment)
-                                 (,(kbd "<XF86AudioMute>") . desktop-environment-toggle-mute)
+                                 ;; I don't want a big message just for muting
+                                 ;; the volume. I have a bar to show me if it worked.
+                                 (,(kbd "<XF86AudioMute>") . ,(cmd! (shell-command-to-string desktop-environment-volume-toggle-command)))
                                  (,(kbd "<XF86AudioRaiseVolume>") . desktop-environment-volume-increment)
                                  (,(kbd "<XF86AudioLowerVolume>") . desktop-environment-volume-decrement)
-                                 (,(kbd "<print>") . desktop-environment-screenshot)
+                                 (,(kbd "<print>") . +wm/screenshot)
                                  ;; App Shortcuts
                                  (,(kbd "<s-return>") . eshell)
-                                 (,(kbd "M-x") . counsel-M-x)
-                                 (,(kbd "s-`") . +eshell/toggle)))
+                                 (,(kbd "M-x") . counsel-M-x)))
 
-  (setq exwm-input-prefix-keys (list ?\M-\  ?\C-s ?\M-x))
-  (setq exwm-input-simulation-keys '())
   ;; Show all buffers on all displays since we have DOOM workspaces.
   (setq exwm-workspace-show-all-buffers t
         exwm-layout-show-all-buffers t)
+
   ;; Pass all keys directly to windows.
+  ;; TODO Leverage exwm line and char modes for evil keybindings.
   (setq exwm-manage-configurations '((t char-mode t)))
 
+  ;; FIXME May not need this given the above.
+  (setq exwm-input-prefix-keys (list ?\M-\  ?\C-s ?\M-x))
+  (setq exwm-input-simulation-keys '())
+
   :config
-  ;; I must be able to copy stuff!
+  ;; Let me copy things from other programs.
   (map! :map exwm-mode-map "C-c" nil)
 
   ;; Fix exwm buffer switching for DOOM.
@@ -71,30 +79,33 @@
   ;; Pass keys directly to windows.
   (add-hook 'exwm-mode-hook #'evil-emacs-state)
 
-  ;; Rename buffers to their window title.
   (defun exwm-rename-buffer ()
+    "Rename the current buffer to match its corresponding window title."
     (interactive)
     (exwm-workspace-rename-buffer
-     (concat exwm-class-name ": "
+     (concat "[" exwm-class-name "] "
              (if (<= (length exwm-title) 60) exwm-title
                (substring exwm-title 0 59)))))
 
-  ;; Add these hooks in a suitable place (e.g., as done in exwm-config-default)
+  ;; Update each exwm buffer name to match the window class and title.
   (add-hook! '(exwm-update-class-hook exwm-update-title-hook)
              #'exwm-rename-buffer)
 
-  ;; Fix issues with persp not saving X windows.
   (defun exwm--update-utf8-title-advice (oldfun id &optional force)
-    "Only update the exwm-title when the buffer is visible."
+    "Only update the window title when the buffer is visible."
     (when (get-buffer-window (exwm--id->buffer id))
       (funcall oldfun id force)))
+  ;; Allow persp-mode to restore window configurations involving exwm buffers by
+  ;; only changing names of visible buffers.
   (advice-add #'exwm--update-utf8-title :around #'exwm--update-utf8-title-advice)
 
+  ;; Show the program title of exwm buffers in ibuffer.
   (define-ibuffer-column exwm-class (:name "Class")
     (if (bound-and-true-p exwm-class-name)
         exwm-class-name
       "")))
 
+;; Use emacs input methods in any application.
 (use-package! exwm-xim
   :after exwm
   :config
@@ -107,10 +118,17 @@
   (setenv "SDL_VIDEODRIVER" "x11")
   (exwm-xim-enable))
 
-(after! (exwm persp-mode)
-  (defun +workspace/display ()
-    "Do nothing. EXWM is enabled so I'm showing workspaces in polybar."
-    (interactive)))
+;; Automatically handle multiple monitors.
+;; Each monitor corresponds to an Emacs frame, and each frame can focus on a
+;; different workspace. Workspaces are always shared between all frames.
+(use-package! exwm-randr
+  :after exwm
+  :config
+  (setq exwm-randr-workspace-monitor-plist '(0 "eDP1"
+                                               1 "HDMI1"))
+  (add-hook 'exwm-randr-screen-change-hook
+            (lambda () (exec "xrandr --output HDMI1 --right-of eDP1 --auto")))
+  (exwm-randr-enable))
 
 (after! (exwm ivy)
   (defun ivy-switch-buffer-prefiltered (prompt predicate)

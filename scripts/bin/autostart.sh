@@ -16,18 +16,22 @@
 # General
 # ibus controls input methods
 # ibus-daemon -s -d -n xfce4-session
-# xfce4-power-manager &
+xsetroot -cursor_name left_ptr
+xfce4-power-manager & disown
 # Prevent the screen going dark while watching videos.
-# caffeine &
+caffeine &
+~/.config/wpg/wp_init.sh
+sleep 0.5 && polybar main & disown
 
 # Restore last wallpaper
 # Starts notification manager as well
-xsetroot -cursor_name left_ptr
 # sleep 0.5 && /home/snead/.config/wpg/wp_init.sh &
 # wpg -m &
 
 # Window compositor to make bspwm prettier :cat:
 # picom --experimental-backends &
+
+# polybar main &
 
 # Bar
 # polybar main &

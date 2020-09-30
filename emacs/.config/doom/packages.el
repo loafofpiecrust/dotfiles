@@ -6,10 +6,6 @@
 ;; use 'M-x doom/reload'.
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
-;; Use latest version of straight to facilitate native compilation.
-(package! straight
-  :pin "5d046ad09413f3aba6198229e392cdd3f07e77ee")
-
 (package! tree-sitter
   :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
            :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock")))
@@ -18,8 +14,6 @@
            :files ("langs/*.el" "langs/queries")))
 
 ;; Highlight markdown comments in certain modes.
-;; (package! typer-mode
-;;   :recipe (:host gitlab :repo "monnier/typer" :files ("emacs/*.el")))
 (package! emojify)
 (package! theme-changer :pin "61945695a30d678e6a5d47cbe7c8aff59a8c30ea")
 (package! ewal)
@@ -27,21 +21,20 @@
 ;; (package! ewal-evil-cursors)
 
 ;; Extra languages
-(package! bazel-mode :disable t)
 (package! graphql-mode)
 (package! polymode)
 (package! poly-markdown)
 (package! poly-org)
 ;; Toggle rendered latex preview when point is over it.
-(package! org-fragtog :disable t)
+;;(package! org-fragtog :disable t)
 ;; (package! outshine)
 (package! literate-calc-mode)
-;; (package! string-inflection)
+(package! string-inflection)
 ;; (package! deadgrep)
 ;; Better tool for git merges or any 3-way diff.
 ;; (package! vdiff :disable t)
 ;; (package! vdiff-magit :disable t)
-(package! magit-delta :disable t)
+;; (package! magit-delta :disable t)
 ;; Edit markdown comments in an indirect buffer.
 ;; (package! separedit)
 ;; Show registers before using them!
@@ -50,13 +43,13 @@
 (package! flycheck-inline
   :recipe (:host github :repo "loafofpiecrust/flycheck-inline" :branch "moving-point"))
 
-(package! valign
-  :disable t
-  :recipe (:host github :repo "casouri/valign"))
+;; (package! valign
+;;   :disable t
+;;   :recipe (:host github :repo "casouri/valign"))
 
-(package! explain-pause-mode
-  :disable t
-  :recipe (:host github :repo "lastquestion/explain-pause-mode"))
+;; (package! explain-pause-mode
+;;   :disable t
+;;   :recipe (:host github :repo "lastquestion/explain-pause-mode"))
 
 (package! flycheck-posframe :disable t)
 (package! flycheck-popup-tip :disable t)
@@ -66,8 +59,7 @@
 ;; Desktop notifications upon receiving new emails.
 (package! mu4e-alert)
 (package! mu4e-send-delay
-  :disable t
-  :recipe (:host github :repo "bennyandresen/mu4e-send-delay"))
+  :recipe (:host github :repo "cacology/mu4e-send-delay"))
 
 (package! olivetti)
 
@@ -80,8 +72,6 @@
 (package! transmission :disable t)
 
 ;; System stuff!
-;; TODO Make a doom module instead of just one custom file.
-;; (package! exwm-x :recipe (:no-native-compile t))
 (package! exwm-edit :recipe (:no-native-compile t))
 (package! desktop-environment)
 (package! mini-modeline)
@@ -90,22 +80,35 @@
 (package! mini-frame :disable t)
 (package! mount-mode
   :recipe (:host github :repo "zellerin/mount-mode"))
-(package! fuz)
-(package! ivy-fuz)
 (package! ivy-posframe :recipe (:no-native-compile t))
+(package! ivy-avy)
 
 (package! org-cv
   :recipe (:host gitlab :repo "Titan-C/org-cv"))
 
-(package! highlight-numbers :disable t)
+;; (package! highlight-numbers :disable t)
 (package! fcitx :disable t)
 
 (package! bitwarden
   :recipe (:host github :repo "seanfarley/emacs-bitwarden"))
 
-;; Name buffers relative to project root
-;; (package! relative-buffers
-;;   :recipe (:host github :repo "emacsmirror/relative-buffers"))
+(package! zoom)
+
+;; TODO vterm is slightly messed up, I'm not quite sure why.
+(package! vterm :recipe (:no-native-compile t))
+
+;; Show all todos for a project.
+(package! magit-todos)
+
+(package! emms)
+
+(package! pdf-tools :recipe (:no-native-compile t))
+
+(package! dired-show-readme
+  :recipe (:host gitlab :repo "kisaragi-hiu/dired-show-readme"))
+
+;; (package! pdf-continuous-scroll-mode
+;;   :recipe (:host github :repo "dalanicolai/pdf-continuous-scroll-mode.el"))
 
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:

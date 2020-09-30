@@ -3,6 +3,9 @@
 	email = taylorsnead@gmail.com
 	username = loafofpiecrust
 
+[init]
+	defaultBranch = main
+
 [credential]
 	helper = cache --timeout=7200
 
