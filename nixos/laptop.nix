@@ -60,7 +60,7 @@
       xfce = {
         # Bits of xfce that I need: power-manager, session?, xfsettingsd, xfconf
         # Don't need: xfce4-volumed-pulse, nmapplet
-        enable = true;
+        enable = false;
         noDesktop = true;
         enableXfwm = false;
         thunarPlugins = with pkgs; [
@@ -74,17 +74,17 @@
     name = "exwm";
     # TODO Try having these IM exports just in Emacs.
     start = ''
-      export XMODIFIERS=@im=exim
-      export GTK_IM_MODULE=xim
-      export QT_IM_MODULE=xim
-      export CLUTTER_IM_MODULE=xim
-      export QT_QPA_PLATFORM=xcb
+      # export XMODIFIERS=@im=exim
+      # export GTK_IM_MODULE=xim
+      # export QT_IM_MODULE=xim
+      # export CLUTTER_IM_MODULE=xim
+      # export QT_QPA_PLATFORM=xcb
       export MOZ_ENABLE_WAYLAND=0
       export SDL_VIDEODRIVER=x11
       xrdb ~/.Xdefaults
       ${pkgs.gnome3.gnome-settings-daemon}/libexec/gnome-settings-daemon &
       EMACS_EXWM=t ${pkgs.dbus}/bin/dbus-launch --exit-with-session ${pkgs.emacsCustom}/bin/emacs -mm
-        '';
+    '';
   };
   # displayManager.sessionCommands = "${pkgs.xorg.xhost}/bin/xhost +SI:localuser:$USER";
 
@@ -103,6 +103,7 @@
   services.fstrim.enable = true;
 
   environment.systemPackages = with pkgs; [
+    xkbset
     # Power management
     powertop
     brightnessctl
@@ -117,11 +118,25 @@
     gimp
     krita
     vlc
+    inkscape
+    # audacity
+    xfce.xfce4-power-manager
+    xfce.thunar
+    xfce.xfce4-session
+    xfce.xfce4-settings
+    xfce.xfce4-taskmanager
 
     # communication
-    unstable.discord
+    discord
     slack
     teams
+
+    # music
+    mpd
+    mpc_cli
+
+    # misc
+    ledger
   ];
 
   # Enable NVIDIA GPU
@@ -142,10 +157,19 @@
   # Undervolt to hopefully fix thermal throttling and fan issues.
   services.undervolt = {
     enable = true;
-    coreOffset = "-120";
-    gpuOffset = "-120";
+    coreOffset = -120;
+    gpuOffset = -120;
   };
   services.throttled.enable = true;
+
+  # Make the screen color warmer at night.
+  services.redshift = { enable = true; };
+  location.provider = "geoclue2";
+  services.geoclue2 = {
+    enable3G = false;
+    enableCDMA = false;
+    enableModemGPS = false;
+  };
 
   # Use newer intel graphics drivers.
   hardware.opengl = {

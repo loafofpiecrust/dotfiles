@@ -10,9 +10,10 @@
     autoconf
     libtool
     direnv
+    neovim # backup editor of choice, after emacs ;)
 
     # publishing
-    tectonic
+    unstable.tectonic # lean latex builds
     pandoc
 
     # languages
@@ -22,41 +23,55 @@
     yarn
     kotlin
     python3
-    terraform
+    terraform # infrastructure as code
+    jq # transforms json documents
 
     # Spellcheck
-    aspell
-    aspellDicts.en
-    aspellDicts.en-computers
-    aspellDicts.en-science
+    (aspellWithDicts (dicts: with dicts; [ en en-computers en-science ]))
 
     # fancy tools
     any-nix-shell
+    awscli
 
     # formatters + language servers
-    emacsCustom
+    editorconfig-core-c
     nixfmt
     html-tidy
     pipenv
     python37Packages.python-language-server
+    black
     nodePackages.typescript-language-server
+    nodePackages.prettier
+    unstable.rust-analyzer
+
+    # dev apps
+    staruml # diagrams!
+    plantuml # plain-text diagrams!
+
+    # editing!
+    emacsCustom
+    zstd # compression for emacs session files
+    pinentry_emacs
+    unstable.nyxt
   ];
 
   nixpkgs.overlays = [
     (self: super: {
-      libgccjit = pkgs.unstable.libgccjit;
-      emacs = pkgs.unstable.emacs;
-      # emacsCustom = pkgs.unstable.emacs;
       emacsCustom = (pkgs.emacsWithPackagesFromUsePackage {
         config = builtins.readFile /home/snead/.config/emacs/init.el;
-        package = pkgs.emacsGcc.override { withXwidgets = true; };
+        # Use native-comp branch for speed!
+        package = (pkgs.emacsGcc.override { withXwidgets = true; });
         alwaysEnsure = true;
         # A few packages have native dependencies, so I need to add them here.
-        extraEmacsPackages = epkgs: [
-          epkgs.emacs-libvterm
-          epkgs.fuz
-          epkgs.ivy-fuz
-        ];
+        extraEmacsPackages = epkgs:
+          with epkgs; [
+            vterm
+            fuz
+            ivy-fuz
+            undo-tree
+            pdf-tools
+            plantuml-mode
+          ];
       });
     })
   ];

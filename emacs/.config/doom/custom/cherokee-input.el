@@ -1,6 +1,6 @@
 (quail-define-package
  "cherokee" "UTF-8" "Cherokee" t
- "Input method for Oklahoma and North Carolina Cherokee using d/t consonants."
+ "Input method for Cherokee using d/t consonants."
  nil t nil nil nil nil nil nil nil nil t)
 
 (quail-define-rules
@@ -42,12 +42,13 @@
  ("no" "Ꮓ")
  ("nu" "Ꮔ")
  ("nv" "Ꮕ")
- ("kwa" "Ꮖ")
- ("kwe" "Ꮗ")
- ("kwi" "Ꮘ")
- ("kwo" "Ꮙ")
- ("kwu" "Ꮚ")
- ("kwv" "Ꮛ")
+ ;; Both kw- and qu- forms are in use.
+ ("kwa" "Ꮖ") ("qua" "Ꮖ")
+ ("kwe" "Ꮗ") ("que" "Ꮗ")
+ ("kwi" "Ꮘ") ("qui" "Ꮘ")
+ ("kwo" "Ꮙ") ("quo" "Ꮙ")
+ ("kwu" "Ꮚ") ("quu" "Ꮚ")
+ ("kwv" "Ꮛ") ("quv" "Ꮛ")
  ("sa" "Ꮜ")
  ("s" "Ꮝ")
  ("se" "Ꮞ")
@@ -71,12 +72,13 @@
  ("tlo" "Ꮰ")
  ("tlu" "Ꮱ")
  ("tlv" "Ꮲ")
- ("ja" "Ꮳ")
- ("je" "Ꮴ")
- ("ji" "Ꮵ")
- ("jo" "Ꮶ")
- ("ju" "Ꮷ")
- ("jv" "Ꮸ")
+ ;; Provide both j- and ts- forms, as both are used.
+ ("ja" "Ꮳ") ("tsa" "Ꮳ")
+ ("je" "Ꮴ") ("tse" "Ꮴ")
+ ("ji" "Ꮵ") ("tsi" "Ꮵ")
+ ("jo" "Ꮶ") ("tso" "Ꮶ")
+ ("ju" "Ꮷ") ("tsu" "Ꮷ")
+ ("jv" "Ꮸ") ("tsv" "Ꮸ")
  ("wa" "Ꮹ")
  ("we" "Ꮺ")
  ("wi" "Ꮻ")

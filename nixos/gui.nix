@@ -4,10 +4,12 @@
   # imports = [ ./wayland.nix ];
   environment.systemPackages = with pkgs; [
     gnome3.file-roller # provides all archive formats
-    unstable.alacritty
+    alacritty
     pavucontrol
+    ffmpeg
 
     # desktop environment
+    gnome3.gtk
     polkit_gnome
     picom # compositor
     polybar
@@ -19,6 +21,9 @@
     caffeine-ng # prevent screen from sleeping sometimes
     gsettings-desktop-schemas
     farge # color picker
+    caffeine-ng
+    scrot
+    ksuperkey
 
     # gtk themes
     arc-theme
@@ -26,8 +31,9 @@
     bibata-cursors
 
     # apps I want everywhere
-    chromium
-    firefox # backup browser (SAD)
+    # chromium
+    firefox # primary browser
+    tridactyl-native
     cmus # music player
     libreoffice
     spotify
@@ -35,8 +41,10 @@
 
     # system tools
     libnotify
-    pkgs.unstable.xdg-desktop-portal
+    xdg-desktop-portal
     imagemagick
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
   ];
 
   fonts.enableDefaultFonts = true;
@@ -45,26 +53,30 @@
     noto-fonts-cjk
     noto-fonts-emoji
     noto-fonts-extra
-    hasklig
-    material-design-icons
     charis-sil # IPA font
     google-fonts
     ubuntu_font_family
-    unstable.fira-code
-    symbola
-    dejavu_fonts
     migu
+    dejavu_fonts
+
+    # symbols
+    material-design-icons
+    symbola
     emacs-all-the-icons-fonts
-    # unstable.ibm-plex
-    # corefonts # sometimes I need Times New Roman
+
+    # programming fonts
+    fira-code
+    ibm-plex
+    jetbrains-mono
+    hasklig
+
     # Add user fonts to ~/.local/share/fonts
   ];
 
   fonts.fontconfig = {
-    penultimate.enable = true;
     defaultFonts = {
       monospace = [
-        "IBM Plex Mono" # Main preference, changes often.
+        "JetBrains Mono" # Main preference, changes often.
         "Hasklig" # Provides almost all of the IPA symbols.
         "Noto Sans Mono CJK SC"
         "Noto Emoji"
@@ -87,7 +99,6 @@
       });
       polybar = super.polybar.override { pulseSupport = true; };
       waybar = super.waybar.override { pulseSupport = true; };
-      # ibus = super.ibus.override { withWayland = true; };
     })
   ];
 
@@ -169,7 +180,7 @@
   # Enable better XDG integration.
   xdg.portal.enable = true;
   xdg.portal.extraPortals = with pkgs; [
-    pkgs.unstable.xdg-desktop-portal-wlr
+    xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
   ];
   xdg.portal.gtkUsePortal = true;

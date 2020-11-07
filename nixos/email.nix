@@ -2,7 +2,7 @@
   # We use mu4e, which requires mu.
   # mu4e automatically syncs using offlineimap so I don't need a constantly
   # running service.
-  environment.systemPackages = with pkgs; [ unstable.mu isync davmail ];
+  environment.systemPackages = with pkgs; [ mu isync davmail ];
 
   # Use davmail to manage Outlook accounts, mainly my university email.
   # systemd.user.services.davmail = {

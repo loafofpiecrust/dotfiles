@@ -3,6 +3,7 @@
 ;; References:
 ;; https://github.com/rougier/elegant-emacs
 
+;; Keep emacs from being sluggish while typing.
 (setq-default gc-cons-percentage 0.3)
 
 ;; Let me load my custom packages.
@@ -30,10 +31,12 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq doom-font (font-spec :family "monospace" :size 15 :weight 'medium)
+(setq doom-font (font-spec :family "monospace" :size 15 :weight 'normal)
       doom-variable-pitch-font (font-spec :family "sans" :size 17)
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
+
+(setq-default line-spacing 1)
 
 ;; Emacs 28 adds this new face with a different font for comments.
 ;; I want to retain the same font as normal code for now.
@@ -45,9 +48,10 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-solarized-light
+(setq doom-theme 'doom-acario-light
       doom-gruvbox-brighter-comments t
       doom-peacock-brighter-comments t
+      doom-monokai-classic-brighter-comments t
       doom-acario-light-brighter-comments t
       doom-one-light-brighter-comments t)
 
@@ -79,7 +83,7 @@
   (push '("Modifier Letter Small H" "Modifier Letter Small H"
           ("DejaVu Sans Mono"))
         unicode-fonts-overrides-mapping)
-  (setq unicode-fonts-fallback-font-list '("Symbola monospacified for Source Code Pro" "Hasklig"))
+  (setq unicode-fonts-fallback-font-list '("Symbola monospacified for Source Code Pro" "Source Code Pro"))
   (setq unicode-fonts-restrict-to-fonts (append '("DejaVu Sans Mono"
                                                   "Noto Sans"
                                                   "Noto Sans Symbols"
@@ -92,54 +96,57 @@
                                                   "Noto Sans CJK TC")
                                                 my/private-use-fonts)))
 
+;;;; Themes and color management
 (use-package! ewal
   :after doom-themes
   :config (ewal-load-colors)
   :init
   ;; Use all 16 colors from our palette, not just the primary 8.
-  (setq ewal-ansi-color-name-symbols '(black red green yellow blue purple cyan white brightblack brightred brightgreen brightyellow brightblue brightpurple brightcyan brightwhite)))
+  (setq ewal-ansi-color-name-symbols '(black red green yellow blue magenta cyan white brightblack brightred brightgreen brightyellow brightblue brightmagenta brightcyan brightwhite)))
 (use-package! ewal-doom-themes
   :after ewal
   :config
   (setq ewal-doom-vibrant-brighter-comments t))
-
 (use-package! theme-changer
   :after doom-themes
-  :defer 1
-  :config
+  :defer 0.5
+  :init
   (setq calendar-location-name "Boston, MA"
-        calendar-latitude 42.3601
-        calendar-longitude -71.0589)
-  (change-theme 'doom-one-light 'doom-gruvbox))
+        calendar-latitude 42.360
+        calendar-longitude -71.059)
+  :config
+  (change-theme doom-theme 'ewal-doom-dark))
 
-
+;;;; org-mode adjustments
 (use-package! org
   :no-require t
   ;; If you use `org' and don't want your org files in the default location below,
   ;; change `org-directory'. It must be set before org loads!
   :init (setq org-directory "~/org/")
   :config
+  ;; Change some org display properties.
   (setq-default org-link-descriptive t
-                org-indent-indentation-per-level 1
-                org-latex-compiler "xelatex"
-                org-latex-pdf-process '("tectonic %f")
-                org-latex-prefer-user-labels t
-                org-log-done t
+                org-indent-indentation-per-level 2
                 org-use-property-inheritance t
                 org-list-allow-alphabetical t
                 org-catch-invisible-edits 'smart
                 org-ellipsis " ▾ "
-                org-highlight-latex-and-related '(native script entities)
                 org-link-descriptive nil
-                org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+"))))
+                org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+")))
+  ;; Adjust LaTeX display and export with tectonic.
+  (setq-default org-latex-compiler "xelatex"
+                org-latex-pdf-process '("tectonic %f")
+                org-latex-prefer-user-labels t
+                org-log-done t
+                org-highlight-latex-and-related '(native script entities)))
 
 (after! org-superstar
-  ;; Bullet symbols: ‣•◦⦾⦿✷🟆➤⮞⁕⊙ ⁖🜔🜕🜖🜗🝆🝎❯⁕✸✿✤✜◆∴
-  (setq org-superstar-headline-bullets-list '("⁖" "✸" "✿" "✤" "❁" "✜" "◆")
+  ;; Bullet symbols: ‣•◦⦾⦿✷🟆➤⮞⁕⊙ ⁖🜔🜕🜖🜗🝆🝎❯⁕✸✿✤✜◆∴∷
+  (setq org-superstar-headline-bullets-list '("∷" "✽" "✿" "✤" "✸" "❁" "✜")
         org-superstar-prettify-item-bullets t
-        org-superstar-item-bullet-alist '((?* . ?‣)
-                                          (?- . ?•)
-                                          (?+ . ?◦))))
+        org-superstar-item-bullet-alist '((?* . ?◆)
+                                          (?- . ?●)
+                                          (?+ . ?⭘))))
 
 (after! calc
   (setq calc-symbolic-mode t))
@@ -172,9 +179,13 @@
 (after! (undo-tree evil evil-collection)
   (map! :map undo-tree-map
         (:leader "ou" 'undo-tree-visualize)
-        :n "U" 'undo-tree-redo
-        :i "C-z" 'undo-tree-undo
-        :i "C-S-Z" 'undo-tree-redo))
+        ;; :n "U" 'undo-tree-redo
+        ;; :i "C-z" 'undo-tree-undo
+        ;; :i "C-S-Z" 'undo-tree-redo
+        ))
+
+(after! (evil evil-collection)
+  (map! :n "U" 'evil-redo))
 
 (after! (counsel evil evil-collection)
   (map! :leader
@@ -213,22 +224,33 @@
   (map! :map (org-mode-map)
         :nv "gr" (general-simulate-key "C-c C-c")))
 
+(use-package! tree-sitter
+  :hook (doom-first-buffer . global-tree-sitter-mode)
+  :config
+  (require 'tree-sitter-langs)
+  ;; TODO Fix JSX support.
+  (appendq! tree-sitter-major-mode-language-alist
+            '((typescript-tsx-mode . typescript)))
+  (add-hook! 'tree-sitter-mode-hook #'tree-sitter-hl-mode))
 
-;; (use-package! tree-sitter-langs :after tree-sitter)
-;; (use-package! tree-sitter
-;;   :hook ((python-mode rustic-mode) . tree-sitter-mode)
-;;   :config
-;;   ;; Add support for JSX.
-;;   (appendq! tree-sitter-major-mode-language-alist
-;;             '((typescript-tsx-mode . typescript)
-;;               (rjsx-mode . javascript))))
+(after! (spell-fu tree-sitter)
+  ;; Make spell-fu compatible with tree-sitter.
+  (setq-default spell-fu-faces-include
+                '(tree-sitter-hl-face:comment
+                  tree-sitter-hl-face:doc
+                  tree-sitter-hl-face:string
+                  font-lock-comment-face
+                  font-lock-doc-face
+                  font-lock-string-face)))
 
 (after! prog-mode
-  ;; (set-company-backend! 'prog-mode '(company-capf company-dabbrev-code))
   ;; Consider each segment of a camelCase one word,
-  (add-hook! 'prog-mode-hook '(auto-fill-mode subword-mode toggle-truncate-lines))
+  (add-hook! 'prog-mode-hook '(auto-fill-mode subword-mode))
   ;; Automatically wrap comments in code
   (setq-default comment-auto-fill-only-comments t))
+
+(setq-hook! '(text-mode-hook prog-mode-hook vterm-mode-hook eshell-mode-hook)
+  truncate-lines nil)
 
 (after! lsp-mode
   (setq lsp-eldoc-render-all nil
@@ -248,7 +270,7 @@
 (custom-set-faces! '(show-paren-match :background nil))
 
 (after! (evil evil-collection)
-  ;; (add-hook 'evil-insert-state-exit-hook 'company-abort)
+  (add-hook 'evil-insert-state-exit-hook 'company-abort)
   ;; Associate TAB with all workspace bindings, instead of brackets + w.
   (map! :n "[ TAB" '+workspace/switch-left
         :n "] TAB" '+workspace/switch-right)
@@ -263,11 +285,9 @@
   (map! :map compilation-mode-map
         :n "gr" #'recompile)
   (map! :leader "os" 'eshell)
-  (map! :mv "zw" 'count-words)
+  (map! :nv "zw" 'count-words
+        :n "zG" '+spell/remove-word)
   (map! :leader "oc" 'calc))
-
-(after! rustic
-  (setq rustic-lsp-server 'rust-analyzer))
 
 ;; TODO Figure out pipe matching for rust considering single | in match patterns.
 ;; (after! (smartparens rustic)
@@ -290,14 +310,7 @@
   :mode (("\\.gql\\'" . graphql-mode)
          ("\\.graphql\\'" . graphql-mode)))
 
-;; TODO Midnight mode?
 ;; TODO Learn multi-cursor bindings
-;;;; Icons & Emojis
-(use-package! emojify
-  :hook (doom-first-buffer . global-emojify-mode)
-  :config
-  (setq emojify-emoji-styles '(unicode github))
-  (global-emojify-mode))
 
 ;; Focus project tree with "op" instead of toggling.
 (after! treemacs
@@ -350,10 +363,9 @@ Use `treemacs-select-window' command for old functionality."
 ;; TODO Rebind C-c C-c in with-editor-mode (magit commit messages) to "gr" or similar
 
 (after! (company company-box)
-  (setq company-auto-complete 'company-explicit-action-p
+  (setq company-auto-commit 'company-explicit-action-p
         ;; company-idle-delay 0.35
-        company-box-doc-delay 2
-        )
+        company-box-doc-delay 2)
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -363,7 +375,10 @@ Use `treemacs-select-window' command for old functionality."
 
 (use-package! evil-owl
   :after evil
-  :config (evil-owl-mode))
+  :config
+  (setq! evil-owl-display-method 'posframe
+         evil-owl-idle-delay 0.5)
+  (evil-owl-mode))
 
 (use-package! flycheck-inline
   :after flycheck
@@ -406,14 +421,12 @@ Use `treemacs-select-window' command for old functionality."
 
 ;; Turn all wavy underlines into straight ones for readability.
 (custom-set-faces!
-  '(spell-fu-incorrect-face :underline (:style line :color "red"))
-  '(flycheck-info :underline (:style line :color "#22ad6a"))
-  '(flycheck-warning :underline (:style line :color "#f2b64b"))
-  '(flycheck-error :underline (:style line :color "#ab1f38")))
+  '(spell-fu-incorrect-face :underline (:style line :color "red")))
 
 (after! ivy
   ;; Use a hydra for ivy alternate actions.
-  (setq ivy-read-action-function 'ivy-hydra-read-action)
+  (setq ivy-read-action-function 'ivy-read-action-by-key
+        ivy-truncate-lines nil)
   (map! :map ivy-minibuffer-map
         "C-RET" 'ivy-immediate-done))
 
@@ -452,7 +465,7 @@ Use `treemacs-select-window' command for old functionality."
                 (with~mu4e-context-vars (mu4e-context-determine msg nil)
                     (if +mu4e-context-gmail
                         (+mu4e--mark-seen docid msg target)
-                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N")))))
+                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N-u")))))
 
         ;; Refile will be my "archive" function.
         (alist-get 'refile mu4e-marks)
@@ -464,7 +477,7 @@ Use `treemacs-select-window' command for old functionality."
                 (with~mu4e-context-vars (mu4e-context-determine msg nil)
                     (if +mu4e-context-gmail
                         (+mu4e--mark-seen docid msg target)
-                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N"))))))
+                      (mu4e~proc-move docid (mu4e~mark-check-target target) "-N-u"))))))
 
   (defun +mu4e-gmail-fix-flags-h (mark msg)
     "This hook correctly modifies gmail flags on emails when they are marked.
@@ -481,6 +494,8 @@ are ineffectual otherwise."
 
   (add-hook! 'mu4e-mark-execute-pre-hook #'+mu4e-gmail-fix-flags-h))
 
+(setq mu4e-update-interval 300)
+
 (after! mu4e
   ;; Gmail handles labels/folders differently than others do?!
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
@@ -490,8 +505,8 @@ are ineffectual otherwise."
         ;; mu4e-split-view 'horizontal
         mu4e-compose-cite-function 'message-cite-original
         ;; mu4e-headers-visible-columns 100
-        ;; mu4e-get-mail-command "mbsync -a"
         mu4e-attachment-dir "~/Downloads"
+        mu4e-headers-include-related nil
         mu4e-headers-skip-duplicates nil
         mu4e-headers-leave-behavior 'apply
         mu4e-view-prefer-html t
@@ -607,25 +622,26 @@ are ineffectual otherwise."
       (mu4e~compose-mail to subject headers)))
   )
 
-(after! (mu4e persp-mode)
-  (persp-def-auto-persp "*email*"
-                        :buffer-name "^\\*mu4e"
-                        :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
-                                   (persp-add-buffer-on-find-file nil)
-                                   persp-add-buffer-on-after-change-major-mode)
-                        :hooks '(after-switch-to-buffer-functions)
-                        :switch 'frame)
-  (persp-def-auto-persp "browse"
-                        :buffer-name "^\\[Firefox\\]"
-                        :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
-                                   (persp-add-buffer-on-find-file nil)
-                                   persp-add-buffer-on-after-change-major-mode)
-                        :hooks '(after-switch-to-buffer-functions)
-                        :switch 'frame))
+;; (after! (mu4e persp-mode)
+;;   (persp-def-auto-persp "*email*"
+;;                         :buffer-name "^\\*mu4e"
+;;                         :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
+;;                                    (persp-add-buffer-on-find-file nil)
+;;                                    persp-add-buffer-on-after-change-major-mode)
+;;                         :hooks '(after-switch-to-buffer-functions)
+;;                         :switch 'frame)
+;;   (persp-def-auto-persp "browse"
+;;                         :buffer-name "^\\[Firefox\\]"
+;;                         :dyn-env '(after-switch-to-buffer-functions ;; prevent recursion
+;;                                    (persp-add-buffer-on-find-file nil)
+;;                                    persp-add-buffer-on-after-change-major-mode)
+;;                         :hooks '(after-switch-to-buffer-functions)
+;;                         :switch 'frame))
 
 ;; Write emails in markdown, sent as legit HTML!
 (use-package! md-msg
-  :defer-incrementally (mu4e polymode)
+  ;; Enable markdown for all mu4e reading and writing purposes.
+  :hook (mu4e-headers-mode . md-msg-mode)
   :config
   (setq mml-content-disposition-alist '((text (rtf . "attachment")
                                               (t . nil))
@@ -633,19 +649,21 @@ are ineffectual otherwise."
   ;; TODO Move this binding to md-msg itself.
   (map! :map md-msg-view-mode-map
         :n "q" 'md-msg-view-quit-buffer)
+  (map! :map md-msg-edit-mode-map
+        :n "gr" 'message-send-and-exit)
   ;; Make email nicer to read and write.
-  (add-hook! '(md-msg-view-mode-hook md-msg-edit-mode-hook) #'olivetti-mode)
-  ;; Enable markdown for all mu4e reading and writing purposes.
-  (md-msg-mode))
+  (add-hook! '(md-msg-view-mode-hook md-msg-edit-mode-hook) #'olivetti-mode))
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
-  :after mu4e
+  :defer 3
   :config
   (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
-        mu4e-alert-interesting-mail-query (format "flag:unread and (%s)" my/show-all-inboxes))
-  (mu4e-alert-enable-notifications))
+        mu4e-alert-interesting-mail-query (format "flag:unread and (%s) and not flag:trashed" my/show-all-inboxes))
+  (mu4e-alert-enable-notifications)
+  ;; FIXME Start mu4e in the background to retrieve new mail at boot.
+  (mu4e t))
 
 (use-package! mu4e-send-delay
   :disabled
@@ -657,79 +675,88 @@ are ineffectual otherwise."
 (after! web-mode
   (add-to-list 'web-mode-engines-alist '("django" . "\\.tera\\.(xml|html)\\'")))
 
+(defun disable-line-numbers ()
+  (display-line-numbers-mode -1))
+
 (use-package! olivetti
   :commands olivetti-mode
   :init
   (map! :leader "to" #'olivetti-mode)
-  (add-hook! '(org-mode-hook markdown-mode-hook) #'olivetti-mode)
-  (defun disable-line-numbers ()
-    (display-line-numbers-mode -1))
-  (add-hook 'olivetti-mode-hook #'disable-line-numbers)
+  (after! org
+    (add-hook 'org-mode-hook #'olivetti-mode))
+  (after! markdown-mode
+    (add-hook 'markdown-mode-hook #'olivetti-mode))
+  (after! magit
+    (add-hook 'magit-status-mode-hook #'olivetti-mode))
 
   :config
+  (add-hook 'olivetti-mode-hook #'disable-line-numbers)
   (setq-default olivetti-body-width 80))
 
-(setq +ligatures-extra-symbols
-      '(:name "»"
-        :src_block "»"
-        :src_block_end "«"
-        :quote "“"
-        :quote_end "”"
-        :lambda "λ"
-        :def "ƒ"
-        :composition "∘"
-        :map "↦"
-        :null "∅"
-        :not "¬"
-        :in "∈"
-        :not-in "∉"
-        :and "∧"
-        :or "∨"
-        ;; :for "∀"
-        :some "∃"
-        :return "⤷"
-        :yield "∑"
-        :union "⋃"
-        :intersect "∩"
-        :diff "∖"
-        :tuple "⨂"
-        ;; :pipe ""
-        :dot "•"
-        ;; Org-specific symbols
-        :title "⁖"
-        :subtitle "𝙩"
-        :begin_quote   "❮"
-        :end_quote     "❯"
-        :begin_export  "⯮"
-        :end_export    "⯬"
-        ;; :properties    "⛭"
-        :end           "∎"
-        :exclamation "!"
-        :dash "-"
-        :endash "--"
-        :asterisk "*"
-        :lt "<"
-        :nothing ""
-        :at_symbol "@"
-        :pound "#"
-        :pipe "|"
-        :turnstile "|—"
-        :arrow "->"))
+
+(setq! +ligatures-extra-symbols
+       '(:name "»"
+         :src_block "»"
+         :src_block_end "«"
+         :quote "“"
+         :quote_end "”"
+         :lambda "λ"
+         :def "ƒ"
+         :composition "∘"
+         :map "↦"
+         :null "∅"
+         ;; :not "¬"
+         ;; :in "∈"
+         ;; :not-in "∉"
+         ;; :and "∧"
+         ;; :or "∨"
+         ;; :for "∀"
+         ;; :some "∃"
+         :return "↑"
+         :yield "∃"
+         :union "⋃"
+         :intersect "∩"
+         ;; :diff "∖"
+         ;; :tuple "⨂"
+         ;; :pipe ""
+         :dot "•"
+         ;; Org-specific symbols
+         :title "∷"
+         :subtitle "𝙩"
+         :begin_quote   "❮"
+         :end_quote     "❯"
+         :begin_export  "⯮"
+         :end_export    "⯬"
+         :section    "§"
+         :end           "∎"
+         :exclamation "!"
+         :dash "-"
+         :endash "--"
+         :asterisk "*"
+         :lt "<"
+         :nothing ""
+         :at_symbol "@"
+         :pound "#"
+         :pipe "|"
+         :turnstile "|—"
+         :arrow "->"))
 
 (after! org
   (set-ligatures! 'org-mode
-    :merge t
     :title "#+TITLE:"
     :begin_quote "#+BEGIN_QUOTE"
     :end_quote "#+END_QUOTE"
     :begin_export "#+BEGIN_EXPORT"
     :end_export "#+END_EXPORT"
-    ;; :properties ":PROPERTIES:"
+    :section ":PROPERTIES:"
     :end ":END:"))
 
 (after! markdown-mode
   (set-ligatures! 'markdown-mode
     :src_block "```"))
+
+(after! web-mode
+  (setq! web-mode-prettify-symbols-alist nil))
 
 
 ;; Prettify escaped symbols in viewed emails as much as possible.
@@ -772,6 +799,7 @@ are ineffectual otherwise."
                                          "\\`\\*forge"
                                          "\\`*ivy-occur"
                                          "magit"
+                                         "\\`vterm"
                                          "\\`\\*eshell"
                                          "Aweshell:")
         clean-buffer-list-delay-general 1
@@ -780,12 +808,12 @@ are ineffectual otherwise."
         midnight-period (* 60 60))
   (midnight-mode))
 
-(setq window-divider-default-right-width 3
-      window-divider-default-bottom-width 3)
+(setq window-divider-default-right-width 6
+      window-divider-default-bottom-width 6)
 
 (after! ivy-posframe
   (setcdr (assoc t ivy-posframe-display-functions-alist)
-          'ivy-posframe-display-at-frame-center)
+          'ivy-posframe-display-at-frame-top-center)
 
   (setq ivy-posframe-width 130
         ivy-posframe-height 20))
@@ -839,30 +867,116 @@ are ineffectual otherwise."
 (use-package! zoom
   ;; :hook (doom-first-input . zoom-mode)
   :config
-  (setq! zoom-size '(0.7 . 0.7)
+  (setq! zoom-size '(0.65 . 0.65)
          zoom-ignored-major-modes '(ranger-mode helpful-mode)
          zoom-ignored-buffer-name-regexps '("^*mu4e" "^*Org" "^*helpful")))
-
-;; (use-package! auto-dim-other-buffers
-;;   :config
-;;   (setq! ))
 
 ;; Shows habits on a consistency graph.
 (use-package! org-habit :after org)
 
 ;; Notify me when a deadline is fast approaching.
 (use-package! org-notify
-  :after org
+  :defer 5
   :config
-  ;; One hour before a deadline, start sending system notifications every ten minutes.
-  ;; TODO If we're more than an hour past a deadline, don't notify at all.
-  (org-notify-add 'default '(:time "1h"
-                             :period "10m"
-                             :duration 10
-                             :actions -notify))
+  (org-notify-add 'default
+                  ;; If we're more than an hour past the deadline, don't notify at all.
+                  '(:time "-1h"
+                    :actions ())
+                  ;; A couple hours before a deadline, start sending system notifications every 20 minutes.
+                  '(:time "2h"
+                    :period "20m"
+                    :duration 10
+                    :actions -notify))
   (org-notify-start))
 
-;; (use-package! pdf-continuous-scroll-mode)
+;; FIXME evil bindings don't work and workspaces mess this up.
+(use-package! pdf-continuous-scroll-mode
+  ;; :hook (pdf-view-mode . pdf-continuous-scroll-mode)
+  :disabled
+  :config
+  (map! :map 'pdf-continuous-scroll-mode-map
+        :n "j" #'pdf-continuous-scroll-forward
+        :n "k" #'pdf-continuous-scroll-backward
+        :n "C-j" #'pdf-continuous-next-page
+        :n "C-k" #'pdf-continuous-previous-page
+        :n "G" #'pdf-cscroll-last-page
+        :n "g g" #'pdf-cscroll-first-page
+        :n "<mouse-4>" #'pdf-continuous-scroll-forward
+        :n "<mouse-5>" #'pdf-continuous-scroll-backward))
 
 (use-package! dired-show-readme
+  :disabled
   :hook (dired-mode . dired-show-readme-mode))
+
+(after! evil
+  (defun playerctl-play-pause ()
+    (interactive)
+    (exec "playerctl play-pause"))
+  (defun playerctl-next ()
+    (interactive)
+    (exec "playerctl next"))
+  (defun playerctl-previous ()
+    (interactive)
+    (exec "playerctl previous"))
+  (defun open-browser ()
+    (interactive)
+    (exec "firefox"))
+  (map! :leader
+        "j" #'ace-window
+        "o o" #'counsel-linux-app
+        "o b" #'open-browser
+        "w U" #'winner-redo
+        "w D" #'delete-other-windows
+        "<f19>" #'+ivy/projectile-find-file
+        "TAB" #'+workspace/switch-to-other
+        "\\" #'set-input-method
+        ";" #'toggle-input-method
+        "w s" (cmd! (evil-window-vsplit) (other-window 1))
+        "w v" (cmd! (evil-window-split) (other-window 1))
+        "m c" #'playerctl-play-pause
+        "m n" #'playerctl-next
+        "m p" #'playerctl-previous
+        "m s" #'+wm/screenshot
+        "m S" #'desktop-environment-screenshot-part
+        "DEL" #'+workspace/delete))
+
+;; Show window hints big and above X windows.
+(after! ace-window
+  (setq! aw-display-style 'posframe
+         aw-posframe-parameters '((parent-frame . nil))))
+
+;; Allow easy NPM commands in most programming buffers.
+(add-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) #'npm-mode)
+
+(use-package! ivy-fuz
+  :disabled
+  :after ivy
+  :defer-incrementally fuz
+  :custom
+  (ivy-sort-matches-functions-alist '((t . ivy-fuz-sort-fn)))
+  (ivy-re-builders-alist '((t . ivy-fuz-regex-fuzzy)))
+  :config
+  (add-to-list 'ivy-highlight-functions-alist '(ivy-fuz-regex-fuzzy . ivy-fuz-highlight-fn)))
+
+(use-package! spotify
+  :commands (spotify-remote-mode global-spotify-remote-mode)
+  :config
+  (setq spotify-oauth2-client-id "f3e530a58362402fab4ca04976916f80"
+        spotify-oauth2-client-secret "71a43675cd8247edafa85351bede7cf6")
+  (map! :map spotify-mode-map
+        doom-localleader-key 'spotify-command-map))
+
+
+;; LSP formatting is messed up for Javascript, so disable it.
+(setq! +format-with-lsp nil)
+
+;; (after! js2-mode
+;;   (setq-hook! js2-mode-hook +format-with-lsp nil))
+
+;; (after! web-mode
+;;   (setq-hook! typescript-tsx-mode-hook +format-with-lsp nil))
+;; (setq-hook! typescript-mode-hook +format-with-lsp nil)
+
+;; (setq! fancy-splash-image "~/.config/wpg/.current"
+;;        +doom-dashboard-banner-padding '(0 . 0)
+;;        +doom-dashboard--width 0.9)

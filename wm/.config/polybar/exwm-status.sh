@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-emacsclient -e "(my-bar-contents)" | xargs
+content=$(emacsclient -e "(polybar--contents)")
+echo "${content:1:-1}"

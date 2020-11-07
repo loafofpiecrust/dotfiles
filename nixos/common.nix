@@ -84,7 +84,7 @@ in {
 
   # Limit journal size
   services.journald.extraConfig = ''
-    SystemMaxUse=512M
+    SystemMaxUse=256M
   '';
 
   # Hmm... Not sure why I explicitly set this.
@@ -93,20 +93,26 @@ in {
   environment.systemPackages = with pkgs; [
     # nixos necessities
     niv
+    nix-prefetch-git
 
     # system tools
     binutils
-    ripgrep
+    (ripgrep.override { withPCRE2 = true; })
+    fd
     htop
     gksu
     unzip
-    ranger
+    # ranger
     xfce.gvfs
     gnupg
     ncdu
     parted
     tree
     killall
+    jmtpfs
+    exfat
+    moreutils
+    gnutls
 
     # user tools
     stow

@@ -91,8 +91,6 @@
 ;; The following is my configuration as an Example
 
 ;; (require 'md-msg)
-;; (setq md-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil")
-;; (setq md-msg-startup "hidestars indent inlineimages")
 ;; (setq md-msg-greeting-fmt "\nHi %s,\n\n")
 ;; (setq md-msg-greeting-fmt-mailto t)
 ;; (setq md-msg-signature "
@@ -200,8 +198,8 @@ Example:
                            ,inline-src))
                   inline-modes)))
     `((del nil ((color . "grey") (border-left . "none")
-                       (text-decoration . "line-through") (margin-bottom . "0px")
-                       (margin-top . "10px") (line-height . "11pt")))
+                (text-decoration . "line-through") (margin-bottom . "0px")
+                (margin-top . "10px") (line-height . "11pt")))
       ;; (a nil (,color))
       (a reply-header ((color . "black") (text-decoration . "none")))
       (div reply-header ((padding . "3.0pt 0in 0in 0in")
@@ -210,8 +208,8 @@ Example:
       (span underline ((text-decoration . "underline")))
       (nil org-ul ((list-style-type . "square")))
       (nil org-ol (,line-height (margin-bottom . "0px")
-                          (margin-top . "0px") (margin-left . "30px")
-                          (padding-top . "0px") (padding-left . "5px")))
+                                (margin-top . "0px") (margin-left . "30px")
+                                (padding-top . "0px") (padding-left . "5px")))
       (nil signature ((margin-bottom . "20px")))
       (blockquote nil ((padding-left . "1ex") (margin-left . "0")
                        (margin-top . "10px") (margin-bottom . "0")
@@ -363,8 +361,8 @@ during email generation where '&apos;' is turned into
         ((and (listp xml) (equal xml '(p nil)))
          "<o:p>\n</o:p>")
         ((stringp xml) xml)
-         ;; (replace-regexp-in-string " " "&nbsp;"
-         ;;                           (md-msg-xml-escape-string xml)))
+        ;; (replace-regexp-in-string " " "&nbsp;"
+        ;;                           (md-msg-xml-escape-string xml)))
         ((eq (car xml) 'comment)
          (format "<!--%s-->" (caddr xml)))
         ((eq (car xml) 'style)
@@ -491,29 +489,29 @@ is the XML tree and CSS the style."
     ;; Add a bold property to the prefixes like "From", "Date",
     ;; "Subject", ...
     (md-msg-list-foreach (e (cdr div))
-                         (when (stringp (cadr e))
-                           (let ((prefix (car (split-string (cadr e) ":"))))
-                             (setcar (cdr e) (replace-regexp-in-string prefix "" (cadr e)))
-                             (setcdr e (cons `(b nil ,(capitalize prefix)) (cdr e)))
-                             (setf e (cdr e)))))
+      (when (stringp (cadr e))
+        (let ((prefix (car (split-string (cadr e) ":"))))
+          (setcar (cdr e) (replace-regexp-in-string prefix "" (cadr e)))
+          (setcdr e (cons `(b nil ,(capitalize prefix)) (cdr e)))
+          (setf e (cdr e)))))
     ;; Transform mail addresses into "mailto" links
     (md-msg-list-foreach (e (cdr div))
-                         (when (stringp (cadr e))
-                           (let ((mailto (md-msg-str-to-mailto (cadr e) css)))
-                             (when mailto
-                               (setf mailto (append mailto (cddr e)))
-                               (setcdr e mailto)))))
+      (when (stringp (cadr e))
+        (let ((mailto (md-msg-str-to-mailto (cadr e) css)))
+          (when mailto
+            (setf mailto (append mailto (cddr e)))
+            (setcdr e mailto)))))
     (when css
       (assq-delete-all 'hr (assq 'body xml))
       (assq-delete-all 'align (cadr div))
       (setf (cadr div) (assq-delete-all 'style (cadr div)))
       (let ((div-style (md-msg-build-style 'div
-					                                 md-msg-reply-header-class css))
-	          (p-style (md-msg-build-style 'p md-msg-reply-header-class css)))
-	      (when div-style
-	        (push `(style . ,div-style) (cadr div)))
-	      (when p-style
-	        (setf (cddr div) `((p ((style . ,p-style)) ,@(cddr div)))))))))
+					   md-msg-reply-header-class css))
+	    (p-style (md-msg-build-style 'p md-msg-reply-header-class css)))
+	(when div-style
+	  (push `(style . ,div-style) (cadr div)))
+	(when p-style
+	  (setf (cddr div) `((p ((style . ,p-style)) ,@(cddr div)))))))))
 
 (defun md-msg-xml-walk (xml fun)
   "Recursively walk a XML tree and call FUN on each node."
@@ -585,8 +583,8 @@ absolute paths."
                                  "pandoc -f gfm -t html --wrap=preserve --columns=80"
                                  nil t)
         (let ((xml (md-msg-html-buffer-to-xml base)))
-            (kill-buffer)
-            xml)))))
+          (kill-buffer)
+          xml)))))
 
 (defun md-msg-markdown-to-text-plain ()
   "Transform the current Md-Msg buffer into a text plain form."
@@ -624,15 +622,15 @@ absolute paths."
   "Build and return the XML tree for current markdownMsg buffer."
   (let ((css (md-msg-load-css)))
     (cl-flet ((enforce (xml)
-	       (let* ((tag (car xml))
-		      (tmp (assq 'class (cadr xml)))
-		      (class (when tmp
-			       (intern (cdr tmp))))
-		      (style (md-msg-build-style tag class css)))
-		 (when style
-		   (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
-		   (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
-		   (push `(style . ,style) (cadr xml)))))
+	               (let* ((tag (car xml))
+		              (tmp (assq 'class (cadr xml)))
+		              (class (when tmp
+			               (intern (cdr tmp))))
+		              (style (md-msg-build-style tag class css)))
+		         (when style
+		           (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
+		           (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
+		           (push `(style . ,style) (cadr xml)))))
 	      (fix-img-src (xml)
 			   (let ((src (assq 'src (cadr xml))))
 			     (when (string-prefix-p "file://" (cdr src))
@@ -713,16 +711,16 @@ It parses the 'To:' field of the current `md-msg-edit-mode'
 buffer to extract and return the first name.  It is used to
 automatically greet the right name, see `md-msg-greeting-fmt'."
   (cl-flet ((recipient2name (r)
-	     (cl-multiple-value-bind (name mail) r
-		 (when name
-		   (let* ((split (split-string name ", " t))
-			  (first-name (if (= (length split) 2)
-					  (cadr split)
-					(car (split-string name " " t)))))
-		     (setf first-name (capitalize first-name))
-		     (if md-msg-greeting-fmt-mailto
-			 (format "[[mailto:%s][%s]]" mail first-name)
-		       first-name))))))
+	                    (cl-multiple-value-bind (name mail) r
+		              (when name
+		                (let* ((split (split-string name ", " t))
+			               (first-name (if (= (length split) 2)
+					               (cadr split)
+					             (car (split-string name " " t)))))
+		                  (setf first-name (capitalize first-name))
+		                  (if md-msg-greeting-fmt-mailto
+			              (format "[[mailto:%s][%s]]" mail first-name)
+		                    first-name))))))
     (save-excursion
       (let ((to (md-msg-message-fetch-field "to")))
 	(if to
@@ -792,7 +790,7 @@ area."
           (when md-msg-signature
             (insert md-msg-signature))
           (md-msg-edit-mode))
-  (set-buffer-modified-p nil))
+        (set-buffer-modified-p nil))
       (if (md-msg-message-fetch-field "to")
           (md-msg-goto-body)
         (message-goto-to)))))
@@ -847,18 +845,18 @@ function is called.  `org-cycle' is called otherwise."
      (save-restriction
        (widen)
        (let ((start (point))
-	     (citation-start (md-msg-end)))
-	 (when (< start citation-start)
-	   (goto-char citation-start))
-	 (re-search-forward ,regexp (point-max) t)))))
+             (citation-start (md-msg-end)))
+         (when (< start citation-start)
+           (goto-char citation-start))
+         (re-search-forward ,regexp (point-max) t)))))
 
 (defun md-msg-kill-buffer ()
   "Delete temporary files."
   (let ((files (md-msg-get-prop "reply-to")))
     (dolist (file files)
       (when (and (not (string= "" file)) (file-exists-p file))
-	(cond ((file-directory-p file) (delete-directory file t))
-	      ((delete-file file)))))))
+        (cond ((file-directory-p file) (delete-directory file t))
+              ((delete-file file)))))))
 
 (defun md-msg-mode-mu4e ()
   "Setup the hook for mu4e mail user agent."
@@ -908,7 +906,7 @@ HTML emails."
     (advice-remove 'message-mail #'md-msg-post-setup)
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message md-msg-edit-mode)
-					                              bbdb-mua-mode-alist)))))
+                                        bbdb-mua-mode-alist)))))
 
 (defvar md-msg-font-lock-keywords
   (let ((content "[ \t]*\\(.+\\(\n[ \t].*\\)*\\)\n?"))
@@ -935,6 +933,9 @@ HTML emails."
           nil)))
   "Additional expressions to highlight in OrgMsg mode.")
 
+;; Composing messages in Markdown requires the header to remain in mu4e-compose-mode
+;; for address completion, adding attachments, etc.
+;; Then, the body can simply switch to markdown-mode, giving its full editing power.
 (define-hostmode poly-mu4e-compose-hostmode
   :mode 'mu4e-compose-mode)
 
@@ -948,6 +949,23 @@ HTML emails."
 (define-polymode md-msg-edit-mode
   :hostmode 'poly-mu4e-compose-hostmode
   :innermodes '(poly-markdown-msg-headers-innermode))
+
+
+;; md-msg-view-mode
+;; (define-hostmode poly-mu4e-view-hostmode
+;;   :mode 'mu4e-view-mode)
+
+;; (define-innermode poly-markdown-msg-content-innermode
+;;   :mode 'markdown-view-mode
+;;   ;; Message headers never contain two newlines, as that indicates the start of content.
+;;   :head-matcher "^$"
+;;   :tail-matcher "\\'"
+;;   :head-mode 'host
+;;   :tail-mode 'host)
+
+;; (define-polymode md-msg-view-mode
+;;   :hostmode 'poly-mu4e-view-hostmode
+;;   :innermodes '(poly-markdown-msg-content-innermode))
 
 (defun md-msg-view-quit-buffer ()
   "Quit the mu4e-view buffer.

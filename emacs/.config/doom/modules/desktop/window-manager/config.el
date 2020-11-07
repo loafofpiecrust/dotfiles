@@ -10,43 +10,43 @@
   :if (getenv "EMACS_EXWM")
   :hook (after-init . exwm-enable)
   :init
-  (setq exwm-input-global-keys `((,(kbd "s-SPC") . ,doom-leader-map)
+  (setq exwm-input-global-keys `(;;(,(kbd "s-SPC") . ,doom-leader-map)
                                  ;; TODO Launch programs in new window.
                                  ;; Select windows.
-                                 (,(kbd "s-h") . evil-window-left)
-                                 (,(kbd "s-l") . evil-window-right)
-                                 (,(kbd "s-j") . evil-window-down)
-                                 (,(kbd "s-k") . evil-window-up)
+                                 ;; (,(kbd "s-h") . evil-window-left)
+                                 ;; (,(kbd "s-l") . evil-window-right)
+                                 ;; (,(kbd "s-j") . evil-window-down)
+                                 ;; (,(kbd "s-k") . evil-window-up)
                                  ;; Move windows around.
-                                 (,(kbd "s-H") . +evil/window-move-left)
-                                 (,(kbd "s-J") . +evil/window-move-down)
-                                 (,(kbd "s-K") . +evil/window-move-up)
-                                 (,(kbd "s-L") . +evil/window-move-right)
-                                 (,(kbd "s-u") . winner-undo)
-                                 (,(kbd "s-U") . winner-redo)
+                                 ;; (,(kbd "s-H") . +evil/window-move-left)
+                                 ;; (,(kbd "s-J") . +evil/window-move-down)
+                                 ;; (,(kbd "s-K") . +evil/window-move-up)
+                                 ;; (,(kbd "s-L") . +evil/window-move-right)
+                                 ;; (,(kbd "s-u") . winner-undo)
+                                 ;;(,(kbd "s-U") . winner-redo)
                                  ;; TODO hydra for moving windows.
                                  ;; Split the frame, and follow.
-                                 (,(kbd "s-s") . ,(cmd! (evil-window-vsplit) (other-window 1)))
-                                 (,(kbd "s-v") . ,(cmd! (evil-window-split) (other-window 1)))
+                                 ;; (,(kbd "s-s") . ,(cmd! (evil-window-vsplit) (other-window 1)))
+                                 ;; (,(kbd "s-v") . ,(cmd! (evil-window-split) (other-window 1)))
                                  ;; TODO delete buffer too if it's an app.
                                  (,(kbd "C-w") . kill-current-buffer)
-                                 (,(kbd "s-w") . kill-current-buffer)
+                                 ;; (,(kbd "s-w") . kill-current-buffer)
                                  ;; Workspace commands
-                                 (,(kbd "s-q") . +workspace/close-window-or-workspace)
-                                 (,(kbd "s-f") . exwm-floating-toggle-floating)
-                                 (,(kbd "<s-tab>") . +workspace/switch-to-other)
-                                 (,(kbd "<s-backspace>") . +workspace/delete)
-                                 (,(kbd "s-n") . +workspace/new)
-                                 (,(kbd "s-[") . +workspace/switch-left)
-                                 (,(kbd "s-]") . +workspace/switch-right)
-                                 (,(kbd "s-1") . +workspace/switch-to-0)
-                                 (,(kbd "s-2") . +workspace/switch-to-1)
-                                 (,(kbd "s-3") . +workspace/switch-to-2)
-                                 (,(kbd "s-4") . +workspace/switch-to-3)
-                                 (,(kbd "s-5") . +workspace/switch-to-4)
-                                 (,(kbd "s-r") . exwm-reset)
-                                 (,(kbd "s-<") . ivy-switch-buffer)
-                                 (,(kbd "s-,") . ivy-switch-buffer-same-type)
+                                 ;;(,(kbd "s-q") . +workspace/close-window-or-workspace)
+                                 ;;(,(kbd "s-f") . exwm-floating-toggle-floating)
+                                 ;; (,(kbd "<s-tab>") . +workspace/switch-to-other)
+                                 ;; (,(kbd "<s-backspace>") . +workspace/delete)
+                                 ;; (,(kbd "s-n") . +workspace/new)
+                                 ;; (,(kbd "s-[") . +workspace/switch-left)
+                                 ;; (,(kbd "s-]") . +workspace/switch-right)
+                                 ;; (,(kbd "s-1") . +workspace/switch-to-0)
+                                 ;; (,(kbd "s-2") . +workspace/switch-to-1)
+                                 ;; (,(kbd "s-3") . +workspace/switch-to-2)
+                                 ;; (,(kbd "s-4") . +workspace/switch-to-3)
+                                 ;; (,(kbd "s-5") . +workspace/switch-to-4)
+                                 ;;(,(kbd "s-r") . exwm-reset)
+                                 ;; (,(kbd "s-<") . ivy-switch-buffer)
+                                 ;; (,(kbd "s-,") . ivy-switch-buffer-same-type)
                                  ;; I don't want a big message just for muting
                                  ;; the volume. I have a bar to show me if it worked.
                                  (,(kbd "<XF86AudioMute>") . ,(cmd! (shell-command-to-string desktop-environment-volume-toggle-command)))
@@ -54,7 +54,7 @@
                                  (,(kbd "<XF86AudioLowerVolume>") . desktop-environment-volume-decrement)
                                  (,(kbd "<print>") . +wm/screenshot)
                                  ;; App Shortcuts
-                                 (,(kbd "<s-return>") . eshell)
+                                 ;; (,(kbd "<s-return>") . eshell)
                                  (,(kbd "M-x") . counsel-M-x)))
 
   ;; Show all buffers on all displays since we have DOOM workspaces.
@@ -63,13 +63,16 @@
 
   ;; Pass all keys directly to windows.
   ;; TODO Leverage exwm line and char modes for evil keybindings.
-  (setq exwm-manage-configurations '((t char-mode t)))
+  ;; (setq exwm-manage-configurations '((t char-mode t)))
 
   ;; FIXME May not need this given the above.
-  (setq exwm-input-prefix-keys (list ?\M-\  ?\C-s ?\M-x))
+  (setq exwm-input-prefix-keys (list ?\M-\  ?\M-x (aref (kbd "<Multi_key>") 0) (aref (kbd "s-SPC") 0) (aref (kbd "<f19>") 0)))
   (setq exwm-input-simulation-keys '())
 
   :config
+  (map! :leader
+        "w f" #'exwm-floating-toggle-floating)
+
   ;; Let me copy things from other programs.
   (map! :map exwm-mode-map "C-c" nil)
 
@@ -83,9 +86,9 @@
     "Rename the current buffer to match its corresponding window title."
     (interactive)
     (exwm-workspace-rename-buffer
-     (concat "[" exwm-class-name "] "
-             (if (<= (length exwm-title) 60) exwm-title
-               (substring exwm-title 0 59)))))
+     (concat ":" exwm-class-name ": "
+             (if (<= (length exwm-title) 50) exwm-title
+               (substring exwm-title 0 49)))))
 
   ;; Update each exwm buffer name to match the window class and title.
   (add-hook! '(exwm-update-class-hook exwm-update-title-hook)

@@ -39,12 +39,13 @@
 
        :desktop
        window-manager
+       polybar
 
        :completion
        (company +childframe)           ; the ultimate code completion backend
        ;; (helm +childframe)              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
-       (ivy +childframe +prescient +icons)               ; a search engine for love and life
+       (ivy +prescient +icons)               ; a search engine for love and life
 
        :ui
        ;;deft              ; notational velocity for Emacs
@@ -61,7 +62,7 @@
        ;;neotree           ; a project drawer, like NERDTree for vim
        ophints            ; highlight the region an operation acts on
        (popup +defaults)   ; tame sudden yet inevitable temporary windows
-       (ligatures)         ; ligatures or substitute text with pretty symbols
+       (ligatures +extra)         ; ligatures or substitute text with pretty symbols
        ;;tabs              ; an tab bar for Emacs
        treemacs         ; a project drawer, like neotree but cooler
        unicode          ; extended unicode support for various languages
@@ -70,6 +71,7 @@
        window-select     ; visually switch windows
        workspaces        ; tab emulation, persistence & separate workspaces
        ;;zen               ; distraction-free coding or writing
+       (emoji +github +unicode)
 
        :editor
        (evil +everywhere); come to the dark side, we have cookies
@@ -82,14 +84,14 @@
        ;;objed             ; text object editing for the innocent
        ;;parinfer          ; turn lisp into python, sort of
        ;;rotate-text       ; cycle region at point between text candidates
-       ;; snippets          ; my elves. They type so I don't have to
+       snippets          ; my elves. They type so I don't have to
        ;; word-wrap         ; soft wrapping with language-aware indent
 
        :emacs
        (dired +icons +ranger)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
-       (undo +tree)      ; persistent, smarter undo for your inevitable mistakes
+       (undo)      ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
@@ -165,7 +167,7 @@
        ;;nim               ; python + lisp at the speed of c
        nix               ; I hereby declare "nix geht mehr!"
        ;;ocaml             ; an objective camel
-       (org +dragndrop +pomodoro)               ; organize your plain life in plain text
+       (org +pretty +dragndrop +pomodoro)               ; organize your plain life in plain text
        ;;perl              ; write code no one else can comprehend
        php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
@@ -179,7 +181,7 @@
        (rust +lsp)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
        ;;scala             ; java, but good
        ;; scheme            ; a fully conniving family of lisps
-       (sh +fish +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
+       (sh +fish)                ; she sells {ba,z,fi}sh shells on the C xor
        ;;sml
        ;;solidity          ; do you need a blockchain? No.
        (swift +lsp)             ; who asked for emoji variables?
@@ -200,4 +202,4 @@
 
        :config
        ;;literate
-       (default +bindings +smartparens))
+       (default +bindings))

@@ -16,57 +16,34 @@ Intended to replicate the functionality of `exec' from i3 config."
     (setq my-autostart-done t)))
 
 ;; Autostart stuff.
-(add-hook 'after-init-hook #'my-autostart)
+(add-hook 'exwm-init-hook #'my-autostart)
 
 (use-package! exwm
   :no-require t
   :init
-  (setq! exwm-debug t)
-  (appendq! exwm-input-global-keys `((,(kbd "s-,") . +ivy/switch-workspace-buffer)
-                                     (,(kbd "s-\\") . set-input-method)
-                                     (,(kbd "s-;") . toggle-input-method)
-                                     (,(kbd "<XF86MonBrightnessDown>") . ,(cmd! (shell-command-to-string "brightnessctl set 5%-")))
-                                     (,(kbd "<XF86MonBrightnessUp>") . ,(cmd! (shell-command-to-string "brightnessctl set 5%-")))
+  (appendq! exwm-input-global-keys `(;;(,(kbd "s-,") . +ivy/switch-workspace-buffer)
+                                     ;; (,(kbd "s-\\") . set-input-method)
+                                     ;; (,(kbd "s-;") . toggle-input-method)
+                                     (,(kbd "<f19>") . ,doom-leader-map)
+                                     (,(kbd "<XF86MonBrightnessDown>") . desktop-environment-brightness-decrement)
+                                     (,(kbd "<XF86MonBrightnessUp>") . desktop-environment-brightness-increment)
+                                     ;; (,(kbd "<Multi_key>") . ,doom-leader-map)
                                      ;; App Shortcuts
-                                     (,(kbd "s-`") . +vterm/toggle)
-                                     (,(kbd "s-a") . org-agenda)
-                                     (,(kbd "s-o") . counsel-linux-app)
-                                     (,(kbd "s-p") . counsel-projectile-switch-project)
-                                     (,(kbd "s-b") . ,(cmd! (exec "firefox")))
-                                     (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause"))))))
+                                     ;; (,(kbd "s-`") . +vterm/toggle)
+                                     ;; (,(kbd "s-a") . org-agenda)
+                                     ;; (,(kbd "s-o") . ,doom-leader-open-map)
+                                     ;; (,(kbd "s-p") . ,doom-leader-project-map)
+                                     ;; (,(kbd "s-b") . ,(cmd! (exec "firefox")))
+                                     ;; (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
+                                     )))
 
-;; Replace the modeline with a bar up top.
-(use-package! mini-modeline
-  :after exwm
-  :defer 0.5
+(use-package! anzu
+  :after evil
   :config
-  (setq! mini-modeline-r-format `("%e"
-                                  mode-line-buffer-identification " "
-                                  current-input-method-title
-                                  ;; ,anzu--mode-line-format
-                                  evil-mode-line-tag
-                                  mode-line-modified
-                                  mode-line-remote " "
-                                  mode-line-position)
-         mini-modeline-update-interval 0.3
-         mini-modeline-face-attr nil
-         mini-modeline-display-gui-line nil)
-  (mini-modeline-mode))
+  (setq! anzu-cons-mode-line-p nil)
+  (global-anzu-mode))
 
-(after! exwm
-  ;; TODO saved state, buffer title, input method.
-  ;; TODO anzu in mini-modeline
-  (defun my-bar-contents ()
-    (mapconcat 'identity
-               (list (+workspace-current-name))
-               " / "))
-
-  (defun my-bar-update ()
-    (let ((inhibit-message t) (default-directory "~"))
-      (call-process "polybar-msg" nil 0 nil "hook" "exwm" "1")))
-
-  ;; (add-hook! 'window-configuration-change-hook #'my-bar-update)
-  )
+(use-package! evil-anzu :after (evil anzu))
 
 ;; TODO try out golden-ratio/zoom to highlight active window.
 
@@ -155,64 +132,91 @@ end of the workspace list."
             (+workspace/display))))
     ('error (+workspace-error (cadr ex) t))))
 
+;; Place ivy frames above X windows.
 (after! ivy-posframe
   (setq! ivy-posframe-parameters '((min-width . 90)
                                    (min-height . 17)
                                    (parent-frame . nil))))
-;; (defun counsel-linux-app--parse-file (file)
-;;   (with-temp-buffer
-;;     (insert-file-contents file)
-;;     (goto-char (point-min))
-;;     (let ((start (re-search-forward "^\\[Desktop Entry\\] *$" nil t))
-;;           (end (re-search-forward "^\\[" nil t))
-;;           (visible t)
-;;           name comment exec icon)
-;;       (catch 'break
-;;         (unless start
-;;           (push file counsel-linux-apps-faulty)
-;;           (message "Warning: File %s has no [Desktop Entry] group" file)
-;;           (throw 'break nil))
 
-;;         (goto-char start)
-;;         (when (re-search-forward "^\\(Hidden\\|NoDisplay\\) *= *\\(1\\|true\\) *$" end t)
-;;           (setq visible nil))
-;;         (setq name (match-string 1))
+(use-package mini-frame
+  :hook (ivy-mode . mini-frame-mode)
+  :config
+  (setq! mini-frame-show-parameters '((left . 0.5)
+                                      (top . 28)
+                                      (width . 0.55)
+                                      (height . 1)
+                                      (left-fringe . 8)
+                                      (right-fringe . 8)
+                                      (parent-frame . nil))
+         mini-frame-resize 'grow-only))
 
-;;         (goto-char start)
-;;         (unless (re-search-forward "^Type *= *Application *$" end t)
-;;           (throw 'break nil))
-;;         (setq name (match-string 1))
+(after! counsel
+  (defun counsel-linux-app-format-function-custom (name comment exec icon)
+    (format "% -35s: %s"
+            (propertize (ivy--truncate-string name 35)
+                        'face 'counsel-application-name)
+            (or comment "")))
+  (setq counsel-linux-app-format-function #'counsel-linux-app-format-function-custom)
+  (defun counsel-linux-app--parse-file (file)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (let ((start (re-search-forward "^\\[Desktop Entry\\] *$" nil t))
+            (end (re-search-forward "^\\[" nil t))
+            (visible t)
+            name comment exec icon)
+        (catch 'break
+          (unless start
+            (push file counsel-linux-apps-faulty)
+            (message "Warning: File %s has no [Desktop Entry] group" file)
+            (throw 'break nil))
 
-;;         (goto-char start)
-;;         (unless (re-search-forward "^Name *= *\\(.+\\)$" end t)
-;;           (push file counsel-linux-apps-faulty)
-;;           (message "Warning: File %s has no Name" file)
-;;           (throw 'break nil))
-;;         (setq name (match-string 1))
+          (goto-char start)
+          (when (re-search-forward "^\\(Hidden\\|NoDisplay\\) *= *\\(1\\|true\\) *$" end t)
+            (setq visible nil))
+          (setq name (match-string 1))
 
-;;         (goto-char start)
-;;         (when (re-search-forward "^Comment *= *\\(.+\\)$" end t)
-;;           (setq comment (match-string 1)))
+          (goto-char start)
+          (unless (re-search-forward "^Type *= *Application *$" end t)
+            (throw 'break nil))
+          (setq name (match-string 1))
 
-;;         (goto-char start)
-;;         (unless (re-search-forward "^Exec *= *\\(.+\\)$" end t)
-;;           ;; Don't warn because this can technically be a valid desktop file.
-;;           (throw 'break nil))
-;;         (setq exec (match-string 1))
+          (goto-char start)
+          (unless (re-search-forward "^Name *= *\\(.+\\)$" end t)
+            (push file counsel-linux-apps-faulty)
+            (message "Warning: File %s has no Name" file)
+            (throw 'break nil))
+          (setq name (match-string 1))
 
-;;         (goto-char start)
-;;         (unless (re-search-forward "^Icon *= *\\(.+\\)$" end t)
-;;           (throw 'break nil))
-;;         (setq icon (match-string 1))
+          (goto-char start)
+          (when (re-search-forward "^Comment *= *\\(.+\\)$" end t)
+            (setq comment (match-string 1)))
+
+          (goto-char start)
+          (unless (re-search-forward "^Exec *= *\\(.+\\)$" end t)
+            ;; Don't warn because this can technically be a valid desktop file.
+            (throw 'break nil))
+          (setq exec (match-string 1))
+
+          ;; (goto-char start)
+          ;; (unless (re-search-forward "^Icon *= *\\(.+\\)$" end t)
+          ;;   (throw 'break nil))
+          ;; (let* ((icon-entry (match-string 1))
+          ;;       (icon-path (first (split-string (shell-command-to-string
+          ;;                                  (format "find /run/current-system/sw/share/icons -name \"%s.png\""
+          ;;                                          icon-entry))
+          ;;                                       "\n"))))
+          ;;   (setq icon (if (s-blank? icon-path) icon-entry icon-path)))
 
 
-;;         (goto-char start)
-;;         (when (re-search-forward "^TryExec *= *\\(.+\\)$" end t)
-;;           (let ((try-exec (match-string 1)))
-;;             (unless (locate-file try-exec exec-path nil #'file-executable-p)
-;;               (throw 'break nil))))
-;;         (propertize
-;;          (funcall counsel-linux-app-format-function name comment exec icon)
-;;          'visible visible)))))
+          (goto-char start)
+          (when (re-search-forward "^TryExec *= *\\(.+\\)$" end t)
+            (let ((try-exec (match-string 1)))
+              (unless (locate-file try-exec exec-path nil #'file-executable-p)
+                (throw 'break nil))))
+          (propertize
+           (funcall counsel-linux-app-format-function name comment exec icon)
+           'visible visible))))))
+
 
 (provide 'my-exwm-config)

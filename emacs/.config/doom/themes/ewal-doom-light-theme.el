@@ -41,7 +41,7 @@
   :group 'ewal-doom-light-theme
   :type 'boolean)
 
-(defcustom ewal-doom-light-brighter-comments nil
+(defcustom ewal-doom-light-brighter-comments t
   "If non-nil, comments will be highlighted in more vivid colors."
   :group 'ewal-doom-light-theme
   :type 'boolean)
@@ -86,7 +86,7 @@ Can be an integer to determine the exact padding."
    (orange     (ewal-doom-themes-get-color 'red       -2))
    (green      (ewal-doom-themes-get-color 'green    0))
    (teal       (ewal-doom-themes-get-color 'green     -3))
-   (yellow     (ewal-doom-themes-get-color 'yellow   -1))
+   (yellow     (ewal-doom-themes-get-color 'yellow   -2))
    (dark-yellow     (ewal-doom-themes-get-color 'yellow   -3))
    (blue       (ewal-doom-themes-get-color 'blue      +2))
    (dark-blue  (ewal-doom-themes-get-color 'blue     0))
@@ -100,8 +100,8 @@ Can be an integer to determine the exact padding."
    (vertical-bar   (doom-darken base1 0.1))
    (selection      dark-blue)
    (builtin        magenta)
-   (comments       teal)
-   (doc-comments   base5)
+   (comments       base5)
+   (doc-comments   teal)
    (constants      orange)
    (functions      magenta)
    (keywords       dark-blue)
@@ -147,9 +147,13 @@ Can be an integer to determine the exact padding."
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
    ((line-number &override) :foreground base4)
-   ((line-number-current-line &override) :foreground fg)
+   ((line-number-current-line &override) :foreground orange)
+
+   (hl-fill-column-face :background bg-alt :foreground fg-alt)
 
    (font-lock-comment-face
+    :inherit 'fixed-pitch-serif
+    :slant 'italic
     :foreground comments
     :background (if ewal-doom-light-comment-bg (doom-lighten bg 0.05)))
    (font-lock-doc-face
@@ -175,13 +179,19 @@ Can be an integer to determine the exact padding."
     :box (if -modeline-pad `(:line-width ,-modeline-pad :color ,modeline-bg-inactive-l)))
 
    ;; Doom modeline
-   (doom-modeline-bar :background (if -modeline-bright modeline-bg highlight))
-   (doom-modeline-buffer-file :inherit 'mode-line-buffer-id :weight 'bold)
-   (doom-modeline-buffer-path :inherit 'mode-line-emphasis :weight 'bold)
-   (doom-modeline-buffer-project-root :foreground green :weight 'bold)
+   ;; (doom-modeline-bar :background (if -modeline-bright modeline-bg highlight))
+   ;; (doom-modeline-buffer-file :inherit 'mode-line-buffer-id :weight 'bold)
+   ;; (doom-modeline-buffer-path :inherit 'mode-line-emphasis :weight 'bold)
+   ;; (doom-modeline-buffer-project-root :foreground green :weight 'bold)
+
+;;;;; whitespace
+   (whitespace-indentation :inherit 'default)
+   (whitespace-big-indent :inherit 'default)
 
    ;; ivy-mode
-   (ivy-current-match :background bg-alt :distant-foreground blue :weight 'normal)
+   (ivy-current-match :background base4 :distant-foreground blue :weight 'normal)
+   (ivy-posframe :background base2 :foreground fg)
+   (internal-border :background fg-alt)
 
    ;; --- major-mode faces -------------------
    ;; css-mode / scss-mode
@@ -196,11 +206,81 @@ Can be an integer to determine the exact padding."
 
    ;; org-mode
    (org-hide :foreground hidden)
-   (solaire-org-hide-face :foreground hidden))
+   (solaire-org-hide-face :foreground hidden)
+
+   ;; magit
+   (magit-blame-culprit :foreground cyan)
+   (magit-blame-header :foreground green)
+   (magit-blame-sha1 :foreground cyan)
+   (magit-blame-subject :foreground cyan)
+   (magit-blame-time :foreground green)
+   (magit-blame-name :foreground cyan)
+   (magit-blame-heading :foreground green)
+   (magit-blame-hash :foreground cyan)
+   (magit-blame-summary :foreground cyan)
+   (magit-blame-date :foreground green)
+   (magit-log-date :foreground fg-alt)
+   (magit-log-graph :foreground fg-alt)
+   (magit-reflog-amend :foreground magenta)
+   (magit-reflog-other :foreground yellow)
+   (magit-reflog-rebase :foreground magenta)
+   (magit-reflog-remote :foreground yellow)
+   (magit-reflog-reset :foreground red)
+   (magit-branch :foreground magenta :weight 'bold)
+   (magit-branch-current :foreground blue :weight 'bold :box t)
+   (magit-branch-local :foreground blue :weight 'bold)
+   (magit-branch-remote :foreground orange :weight 'bold)
+   (magit-diff-file-header :foreground yellow)
+   (magit-diff-file-heading :foreground blue :weight 'light)
+   (magit-diff-file-heading-highlight :foreground blue :weight 'bold)
+   (magit-diff-file-heading-selection :foreground blue :weight 'bold :background base1)
+   (magit-diff-hunk-heading :foreground yellow :weight 'light)
+   (magit-diff-hunk-heading-highlight :foreground yellow :weight 'bold)
+   (magit-diff-hunk-heading-selection :inherit 'selection :weight 'bold)
+   (magit-diff-added :foreground green :weight 'light)
+   (magit-diff-removed :foreground red :weight 'light)
+   (magit-diff-context :foreground fg :weight 'light)
+   (magit-diff-added-highlight :foreground green :weight 'bold)
+   (magit-diff-removed-highlight :foreground red :weight 'bold)
+   (magit-diff-context-highlight :foreground fg :weight 'bold)
+   (magit-diff-base :foreground fg :weight 'light)
+   (magit-diff-base-highlight :foreground fg :weight 'bold)
+   (magit-diff-lines-boundary :background fg :foreground base2)
+   (magit-diff-lines-heading :background fg :foreground base2)
+   (magit-hash :foreground cyan)
+   (magit-item-highlight :background grey)
+   (magit-log-author :foreground cyan)
+   (magit-log-head-label-head :background cyan :foreground bg-alt :weight 'bold)
+   (magit-log-head-label-local :background red :foreground bg-alt :weight 'bold)
+   (magit-log-head-label-remote :background green :foreground bg-alt :weight 'bold)
+   (magit-log-head-label-tags :background magenta :foreground bg-alt :weight 'bold)
+   (magit-log-head-label-wip :background yellow :foreground bg-alt :weight 'bold)
+   (magit-log-sha1 :foreground green)
+   (magit-process-ng :foreground orange :weight 'bold)
+   (magit-process-ok :foreground cyan :weight 'bold)
+   (magit-section-heading :foreground red)
+   (magit-section-highlight :weight 'bold)
+   (section-heading-selection :foreground red :weight 'bold)
+   (magit-section-title :background bg-alt :foreground red :weight 'bold)
+   (magit-cherry-equivalent :foreground magenta)
+   (magit-cherry-unmatched :foreground orange)
+   (magit-reflog-checkout :foreground blue)
+   (magit-reflog-cherry-pick :foreground green)
+   (magit-bisect-bad :foreground red)
+   (magit-bisect-good :foreground green)
+   (magit-bisect-skip :foreground fg)
+   (magit-diff-conflict-heading :foreground fg)
+   (magit-dimmed :foreground base8)
+   (magithub-ci-no-status :foreground grey)
+   (magithub-issue-number :foreground fg)
+   (magithub-notification-reason :foreground fg)
+   )
+
 
 
   ;; --- extra variables ---------------------
-  ()
+  ;; ((evil-insert-state-cursor `(box ,red))
+  ;;  (evil-normal-state-cursor `(box ,green)))
   )
 
 (provide-theme 'ewal-doom-light)

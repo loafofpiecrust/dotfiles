@@ -17,7 +17,18 @@
 # ibus controls input methods
 # ibus-daemon -s -d -n xfce4-session
 xsetroot -cursor_name left_ptr
+
+# Enable sticky modifier keys!
+# xkbset sticky -twokey -latchlock
+# xkbset mousekeys
+# xkbset exp 1 =sticky =mousekeys =sticky =twokey =latchlock
+
+# Turn super into a normal key, for use as a prefix key.
+xmodmap -e "keycode 133 = F19"
+xmodmap -e "clear Mod4"
+
 xfce4-power-manager & disown
+xfsettingsd & disown
 # Prevent the screen going dark while watching videos.
 caffeine &
 ~/.config/wpg/wp_init.sh
