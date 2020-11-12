@@ -59,13 +59,13 @@ padding-left = 1
 padding-right = 1
 ; module-margin = 1
 
-border-bottom-size = 2
-border-bottom-color = ${colors.secondary}
+border-bottom-size = 3
+border-bottom-color = ${colors.inactive}
 
 font-0 = "monospace:size=11:weight=bold;2"
 ; Provides nice icons for audio, clock, power, etc.
 ; Might be able to find unicode replacements.
-font-1 = "Material Design Icons:pixelsize=12;1"
+font-1 = "Material Design Icons:pixelsize=13;2"
 ; Fallback for some unicode characters, like vertical meters.
 font-2 = "DejaVu Sans Mono:size=11:weight=bold;1"
 font-3 = "Noto Sans CJK JP:size=11:weight=bold;1"
@@ -77,7 +77,7 @@ modules-right = iwd randpaper cpu memory volume battery date
 ; Reserve room for about four tray items.
 tray-position = right
 tray-detached = true
-tray-offset-x = -575
+tray-offset-x = -590
 
 scroll-up = bspwm-desknext
 scroll-down = bspwm-deskprev

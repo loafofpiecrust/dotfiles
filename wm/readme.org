@@ -1,0 +1,20 @@
+#+TITLE: Windowing Systems
+
+|               | X11            | Wayland                 |
+|---------------+----------------+-------------------------|
+| Screenshare   | +works!        | -only in chromium       |
+| Browser       | +firefox rules | -forced to use chromium |
+| Battery       | -hungry        | +stable                 |
+| Ricing        | +variety       | +modern, css            |
+| Multihead     | -buggy         | +fantastic!             |
+| Input Methods | +works         | ---not at all           |
+|               |                | ibus needs v2 protocol  |
+|               |                | big mess!!              |
+
+
+* Conclusion
+I have to switch back to X11, because wlroots/sway have nearly zero support for IMEs.
+I need input method support for much of the work that I do as a linguist: IPA, Chinese, Cherokee.
+I use emacs for writing which provides some lovely input method support but that doesn't extend to my browser (the main other place).
+If I need to google search in Chinese or Japanese I'm forced to type it out in Emacs or Google Translate.
+Even if it's not *all* the time, it's frequent enough.

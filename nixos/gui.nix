@@ -23,7 +23,6 @@
     farge # color picker
     caffeine-ng
     scrot
-    ksuperkey
 
     # gtk themes
     arc-theme
@@ -139,8 +138,8 @@
     layout = "us";
     # FIXME seemingly doesn't work.
     enableCtrlAltBackspace = true;
-    autoRepeatDelay = 300;
-    autoRepeatInterval = 35; # ms between key repeats
+    autoRepeatDelay = 250;
+    autoRepeatInterval = 30; # ms between key repeats
     # I don't use caps lock enough, swap it with escape!
     xkbOptions = "caps:swapescape, compose:ralt";
 
@@ -163,19 +162,10 @@
     #   table
     #   table-others
     # ];
-    # fcitx.engines = with pkgs.fcitx-engines; [
-    #   libpinyin
-    #   anthy
-    #   table-other
-    #   table-extra
-    # ];
   };
 
   # Give Firefox precise touchpad scrolling and wayland support.
-  environment.variables = {
-    MOZ_USE_XINPUT2 = "1";
-    # XDG_CURRENT_DESKTOP = "sway";
-  };
+  environment.variables = { MOZ_USE_XINPUT2 = "1"; };
 
   # Enable better XDG integration.
   xdg.portal.enable = true;

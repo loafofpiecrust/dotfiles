@@ -17,8 +17,6 @@ in {
         # to ensure `allowUnfree = true;` is propagated:
         config = config.nixpkgs.config;
       };
-      # Community packages not yet in nixpkgs.
-      # nur = import sources.nur {};
     })
   ];
 
@@ -41,10 +39,7 @@ in {
 
   # Enable networking. Use connman instead of networkmanager because it has
   # working iwd support. Saves battery and more reliable.
-  services.connman = {
-    enable = true;
-    wifi.backend = "iwd";
-  };
+  networking.wireless.iwd.enable = true;
 
   # Allow other machines to ssh in.
   services.openssh.enable = true;

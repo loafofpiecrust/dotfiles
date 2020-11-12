@@ -36,7 +36,7 @@
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
 
-(setq-default line-spacing 1)
+(setq-default line-spacing 0.1)
 
 ;; Emacs 28 adds this new face with a different font for comments.
 ;; I want to retain the same font as normal code for now.
@@ -108,8 +108,8 @@
   :config
   (setq ewal-doom-vibrant-brighter-comments t))
 (use-package! theme-changer
-  :after doom-themes
-  :defer 0.5
+  :after (doom-themes ewal)
+  ;; :defer 0.5
   :init
   (setq calendar-location-name "Boston, MA"
         calendar-latitude 42.360
@@ -124,6 +124,8 @@
   ;; change `org-directory'. It must be set before org loads!
   :init (setq org-directory "~/org/")
   :config
+  ;; Agenda settings
+  (setq-default org-deadline-warning-days 10)
   ;; Change some org display properties.
   (setq-default org-link-descriptive t
                 org-indent-indentation-per-level 2
@@ -162,14 +164,37 @@
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type t)
 
-;; (defun disable-line-numbers ()
-;;   (interactive)
-;;   (defvar doom--line-number-style display-line-numbers-type)
-;;   (setq display-line-numbers-type nil
-;;         doom--line-number-style nil))
-;;(add-hook! '(org-mode-hook markdown-mode-hook) 'doom-disable-line-numbers-h)
+;;;; Password Management!
+(use-package! bitwarden
+  :config
+  ;; I use my main email address for bitwarden, so don't prompt me for it.
+  (setq bitwarden-user user-mail-address)
 
-;; (global-visual-line-mode)
+  (defun bitwarden-get-password (domain username)
+    "Return the password for an account with the given USERNAME under the given DOMAIN.
+If the vault is locked, prompt the user for their master email and password."
+    (interactive)
+    ;; Ensure the vault is unlocked, prompting for login if not.
+    (unless (bitwarden-unlocked-p) (bitwarden-unlock))
+    ;; Look for the matching account under the given domain.
+    (let ((acc (seq-find (lambda (acc)
+                           (string= username (gethash "username" (gethash "login" acc))))
+                         (bitwarden-search domain))))
+      (and acc (gethash "password" (gethash "login" acc)))))
+
+  (defun counsel-bitwarden-getpass (&optional arg)
+    "Pick an account and copy the password for it to the kill-ring."
+    (interactive "P")
+    ;; Ensure the vault is unlocked, prompting for login if not.
+    (unless (bitwarden-unlocked-p) (bitwarden-unlock))
+    (ivy-read "Copy password for account: "
+              (mapcar (lambda (item) (gethash "username" item))
+                      (bitwarden-search))
+              :action (lambda (acc)
+                        (kill-new (bitwarden-getpass acc))
+                        (message "Copied password for %s" acc))
+              :caller 'counsel-bitwarden-getpass)))
+
 
 ;; Use alt + {j,k} for dragging stuff, not just arrow keys.
 (after! drag-stuff
@@ -225,7 +250,7 @@
         :nv "gr" (general-simulate-key "C-c C-c")))
 
 (use-package! tree-sitter
-  :hook (doom-first-buffer . global-tree-sitter-mode)
+  :hook ((typescript-tsx-mode rustic-mode python-mode json-mode js-mode js2-mode typescript-mode go-mode sh-mode) . tree-sitter-mode)
   :config
   (require 'tree-sitter-langs)
   ;; TODO Fix JSX support.
@@ -233,8 +258,8 @@
             '((typescript-tsx-mode . typescript)))
   (add-hook! 'tree-sitter-mode-hook #'tree-sitter-hl-mode))
 
+;; Make spell-fu compatible with tree-sitter.
 (after! (spell-fu tree-sitter)
-  ;; Make spell-fu compatible with tree-sitter.
   (setq-default spell-fu-faces-include
                 '(tree-sitter-hl-face:comment
                   tree-sitter-hl-face:doc
@@ -354,6 +379,7 @@ Use `treemacs-select-window' command for old functionality."
 ;;         ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together")))
 
 (use-package! polymode
+  :defer t
   :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave))
 (use-package! poly-markdown
   :mode (("\\.md\\'" . poly-markdown-mode)))
@@ -425,7 +451,7 @@ Use `treemacs-select-window' command for old functionality."
 
 (after! ivy
   ;; Use a hydra for ivy alternate actions.
-  (setq ivy-read-action-function 'ivy-read-action-by-key
+  (setq ivy-read-action-function 'ivy-read-action-ivy
         ivy-truncate-lines nil)
   (map! :map ivy-minibuffer-map
         "C-RET" 'ivy-immediate-done))
@@ -656,7 +682,7 @@ are ineffectual otherwise."
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
-  :defer 3
+  :defer 10
   :config
   (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
@@ -679,16 +705,8 @@ are ineffectual otherwise."
   (display-line-numbers-mode -1))
 
 (use-package! olivetti
-  :commands olivetti-mode
-  :init
-  (map! :leader "to" #'olivetti-mode)
-  (after! org
-    (add-hook 'org-mode-hook #'olivetti-mode))
-  (after! markdown-mode
-    (add-hook 'markdown-mode-hook #'olivetti-mode))
-  (after! magit
-    (add-hook 'magit-status-mode-hook #'olivetti-mode))
-
+  :hook ((org-mode markdown-mode magit-status-mode) . olivetti-mode)
+  :init (map! :leader "to" #'olivetti-mode)
   :config
   (add-hook 'olivetti-mode-hook #'disable-line-numbers)
   (setq-default olivetti-body-width 80))
@@ -721,7 +739,7 @@ are ineffectual otherwise."
          ;; :pipe ""
          :dot "•"
          ;; Org-specific symbols
-         :title "∷"
+         :title "#"
          :subtitle "𝙩"
          :begin_quote   "❮"
          :end_quote     "❯"
@@ -786,7 +804,7 @@ are ineffectual otherwise."
 
 ;;;; Periodically clean buffers
 (use-package midnight
-  :defer 5
+  :hook (doom-first-buffer . midnight-mode)
   :config
   (setq clean-buffer-list-kill-regexps '("\\`\\*Man "
                                          "\\`\\*helpful "
@@ -805,8 +823,7 @@ are ineffectual otherwise."
         clean-buffer-list-delay-general 1
         clean-buffer-list-delay-special (* 60 60 2)
         ;; Clean out potentially old buffers every hour
-        midnight-period (* 60 60))
-  (midnight-mode))
+        midnight-period (* 60 60)))
 
 (setq window-divider-default-right-width 6
       window-divider-default-bottom-width 6)
@@ -840,29 +857,13 @@ are ineffectual otherwise."
 ;; TODO We need chinese font with same height as my font.
 (after! pyim
   (setq! pyim-page-tooltip 'posframe))
-
-(use-package! bitwarden
-  :defer 1
-  :config
-  (defun counsel-bitwarden-getpass (&optional arg)
-    "Pick an account and copy the password for it to the kill-ring."
-    (interactive "P")
-    (ivy-read "Copy password for account: "
-              (mapcar (lambda (item) (gethash "name" item))
-                      (bitwarden-search))
-              :action (lambda (acc)
-                        (kill-new (bitwarden-getpass acc))
-                        (message "Copied password for %s" acc))
-              :caller 'counsel-bitwarden-getpass)))
-
-(use-package! ivy-avy
-  :after ivy)
+;; (use-package! ivy-avy
+;;   :after ivy)
 
 (after! hl-todo
   (add-hook! 'org-mode-hook #'hl-todo-mode))
 
-(use-package! string-inflection
-  :defer 1)
+(use-package! string-inflection)
 
 (use-package! zoom
   ;; :hook (doom-first-input . zoom-mode)
@@ -876,7 +877,7 @@ are ineffectual otherwise."
 
 ;; Notify me when a deadline is fast approaching.
 (use-package! org-notify
-  :defer 5
+  :defer 8
   :config
   (org-notify-add 'default
                   ;; If we're more than an hour past the deadline, don't notify at all.

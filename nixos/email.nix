@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }: {
   # We use mu4e, which requires mu.
-  # mu4e automatically syncs using offlineimap so I don't need a constantly
+  # mu4e automatically syncs using isync so I don't need a constantly
   # running service.
   environment.systemPackages = with pkgs; [ mu isync davmail ];
 
@@ -27,11 +27,4 @@
   #   };
   #   url = "https://outlook.office365.com/EWS/Exchange.asmx";
   # };
-
-  # nixpkgs.overlays = [
-  #   (self: super: {
-  #     # Allow me to render an email as a PDF.
-  #     mu = super.mu.override { withMug = true; };
-  #   })
-  # ];
 }

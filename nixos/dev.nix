@@ -82,6 +82,7 @@
     defaultEditor = true;
     package = pkgs.emacsCustom;
   };
+
   # Android debugging.
   programs.adb.enable = true;
 

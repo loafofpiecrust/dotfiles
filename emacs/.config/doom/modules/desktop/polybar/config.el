@@ -4,7 +4,7 @@
 (after! (anzu evil exwm)
   (setq-default mode-line-format nil)
 
-  (defcustom polybar-update-interval 0.25
+  (defcustom polybar-update-interval 0.2
     "How long to wait for Emacs to be idle before updating polybar.")
 
   (defcustom polybar-format
@@ -34,6 +34,6 @@
 
   (defun polybar--update ()
     (let ((inhibit-message t) (default-directory "~"))
-      (call-process "polybar-msg" nil 0 nil "hook" "exwm" "1")))
+      (start-process "polybar-msg" nil "polybar-msg" "hook" "exwm" "1")))
 
   (run-with-idle-timer polybar-update-interval t #'polybar--update))

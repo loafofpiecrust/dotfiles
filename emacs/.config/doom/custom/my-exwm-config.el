@@ -37,13 +37,11 @@ Intended to replicate the functionality of `exec' from i3 config."
                                      ;; (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
                                      )))
 
-(use-package! anzu
+(use-package! evil-anzu
   :after evil
   :config
   (setq! anzu-cons-mode-line-p nil)
   (global-anzu-mode))
-
-(use-package! evil-anzu :after (evil anzu))
 
 ;; TODO try out golden-ratio/zoom to highlight active window.
 
@@ -145,6 +143,7 @@ end of the workspace list."
                                       (top . 28)
                                       (width . 0.55)
                                       (height . 1)
+                                      (internal-border-width . 3)
                                       (left-fringe . 8)
                                       (right-fringe . 8)
                                       (parent-frame . nil))
