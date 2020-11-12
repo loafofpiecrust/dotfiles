@@ -30,7 +30,7 @@ CopyArrivalDate yes
 IMAPAccount gmail
 Host imap.gmail.com
 User taylorsnead@gmail.com
-PassCmd "emacsclient -ne '(bitwarden-get-password \"google.com\" \"taylorsnead@gmail.com\")'"
+PassCmd "get-password.sh google.com taylorsnead@gmail.com"
 SSLType IMAPS
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 Timeout 40
