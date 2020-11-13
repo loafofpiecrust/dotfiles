@@ -10,7 +10,7 @@ stow wm
 stow firefox
 stow system
 stow emacs
-stow misc
+stow aspell
 
 # Firefox profile setup.
 FIREFOX_PROFILE=$(find ~/.mozilla/firefox -name "*.default")

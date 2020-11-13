@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=wpgtk
+Exec=wpgtk
+Icon=nl.hjdskes.gcolor3
+Type=Application
+Terminal=false
+Categories=GTK;Graphics;

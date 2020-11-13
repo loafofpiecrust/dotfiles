@@ -13,6 +13,9 @@
     initrd.availableKernelModules = [ "usb_storage" "sd_mod" "bbswitch" ];
     initrd.kernelModules = [ "i915" ];
 
+    kernelModules = [ "acpi_call" ];
+    extraModulePackages = with config.boot.kernelPackages; [ acpi_call ];
+
     # boot niceties
     cleanTmpDir = true;
     consoleLogLevel = 3;
@@ -50,7 +53,6 @@
   services.xserver = {
     # windowManager.exwm.enable = true;
     # windowManager.exwm.enableDefaultConfig = false;
-    # windowManager.bspwm.enable = true;
     displayManager.gdm.enable = true;
     displayManager.defaultSession = "sway";
     videoDrivers = [ "intel" ]; # TODO: Pick gpu drivers
@@ -91,9 +93,13 @@
   # Automatic power saving.
   services.tlp.enable = true;
   powerManagement.powertop.enable = true;
-  # networking.networkmanager.wifi.powersave = true;
+  networking.networkmanager.wifi.powersave = true;
 
-  virtualisation.docker.enable = true;
+  virtualisation.podman = {
+    enable = true;
+    dockerCompat = true;
+  };
+  # virtualisation.docker.enable = true;
 
   # Let's try out bluetooth.
   hardware.bluetooth.enable = true;
@@ -157,19 +163,14 @@
   # Undervolt to hopefully fix thermal throttling and fan issues.
   services.undervolt = {
     enable = true;
-    coreOffset = -120;
-    gpuOffset = -120;
+    coreOffset = -130;
+    gpuOffset = -130;
   };
   services.throttled.enable = true;
 
   # Make the screen color warmer at night.
   services.redshift = { enable = true; };
   location.provider = "geoclue2";
-  services.geoclue2 = {
-    enable3G = false;
-    enableCDMA = false;
-    enableModemGPS = false;
-  };
 
   # Use newer intel graphics drivers.
   hardware.opengl = {

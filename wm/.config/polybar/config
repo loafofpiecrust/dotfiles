@@ -59,7 +59,7 @@ padding-left = 1
 padding-right = 1
 ; module-margin = 1
 
-border-bottom-size = 3
+border-bottom-size = 4
 border-bottom-color = ${colors.inactive}
 
 font-0 = "monospace:size=11:weight=bold;2"
@@ -306,8 +306,8 @@ format-padding = 1
 [module/volume]
 type = internal/volume
 
-format-volume-background = ${colors.background-alt}
-format-muted-background = ${self.format-volume-background}
+; format-volume-background = ${colors.background-alt}
+; format-muted-background = ${self.format-volume-background}
 format-volume-padding = 1
 format-muted-padding = 1
 

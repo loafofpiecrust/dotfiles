@@ -23,7 +23,7 @@ xsetroot -cursor_name left_ptr
 # xkbset mousekeys
 # xkbset exp 1 =sticky =mousekeys =sticky =twokey =latchlock
 
-# Turn super into a normal key, for use as a prefix key.
+
 xmodmap -e "keycode 133 = F19"
 xmodmap -e "clear Mod4"
 
