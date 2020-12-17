@@ -1,7 +1,8 @@
 # Config for Lenovo Ideapad 720s 14-IKB
 # Import this file into the main configuration.nix and call it a day.
 { config, lib, pkgs, ... }: {
-  imports = [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ./email.nix ];
+  imports =
+    [ ./common.nix ./gui.nix ./vpn.nix ./dev.nix ./email.nix ./music.nix ];
 
   boot = {
     # Use the systemd-boot EFI boot loader.
@@ -76,11 +77,6 @@
     name = "exwm";
     # TODO Try having these IM exports just in Emacs.
     start = ''
-      # export XMODIFIERS=@im=exim
-      # export GTK_IM_MODULE=xim
-      # export QT_IM_MODULE=xim
-      # export CLUTTER_IM_MODULE=xim
-      # export QT_QPA_PLATFORM=xcb
       export MOZ_ENABLE_WAYLAND=0
       export SDL_VIDEODRIVER=x11
       xrdb ~/.Xdefaults
@@ -88,7 +84,6 @@
       EMACS_EXWM=t ${pkgs.dbus}/bin/dbus-launch --exit-with-session ${pkgs.emacsCustom}/bin/emacs -mm
     '';
   };
-  # displayManager.sessionCommands = "${pkgs.xorg.xhost}/bin/xhost +SI:localuser:$USER";
 
   # Automatic power saving.
   services.tlp.enable = true;
@@ -118,7 +113,7 @@
     gnome3.gnome-settings-daemon
     calibre # ebook manager
     mate.atril # pdf viewer
-    xfce.parole # video player
+    #xfce.parole # video player
     font-manager
     deluge
     gimp
@@ -130,7 +125,7 @@
     xfce.thunar
     xfce.xfce4-session
     xfce.xfce4-settings
-    xfce.xfce4-taskmanager
+    #xfce.xfce4-taskmanager
 
     # communication
     discord
@@ -163,8 +158,8 @@
   # Undervolt to hopefully fix thermal throttling and fan issues.
   services.undervolt = {
     enable = true;
-    coreOffset = -130;
-    gpuOffset = -130;
+    coreOffset = -100;
+    gpuOffset = -100;
   };
   services.throttled.enable = true;
 

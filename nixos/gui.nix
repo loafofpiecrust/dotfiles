@@ -114,7 +114,7 @@
       qt5.qtwayland
       grim
       wl-clipboard
-      wf-recorder
+      # wf-recorder
     ];
     extraSessionCommands = let
       schema = pkgs.gsettings-desktop-schemas;

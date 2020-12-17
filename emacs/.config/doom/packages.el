@@ -7,17 +7,17 @@
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
 (package! tsc
-  :pin "f5fec6dcf3959cd5b9857c887e2425a17e1a54fb"
+  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
   :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
            :files ("core/*.el")))
 
 (package! tree-sitter
-  :pin "f5fec6dcf3959cd5b9857c887e2425a17e1a54fb"
+  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
   :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
            :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock")))
 
 (package! tree-sitter-langs
-  :pin "f5fec6dcf3959cd5b9857c887e2425a17e1a54fb"
+  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
   :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
            :files ("langs/*.el" "langs/queries")))
 
@@ -65,6 +65,8 @@
 (package! mu4e-send-delay
   :recipe (:host github :repo "cacology/mu4e-send-delay"))
 
+(package! counsel)
+
 ;; Manage citations and references with ease in org-mode.
 (package! org-ref)
 ;; Full elisp citation management solution. TBD on quality.
@@ -77,7 +79,6 @@
 (package! anzu :pin "7b8688c84d6032300d0c415182c7c1ad6cb7f819")
 (package! evil-anzu :pin "d3f6ed4773b48767bd5f4708c7f083336a8a8a86")
 (package! posframe)
-(package! mini-frame)
 (package! all-the-icons-ivy
   :pin "937ca700c6e9ad4cd957480b12e480cbd5c44175"
   :recipe (:branch "overwrite-args"))
@@ -102,16 +103,20 @@
 
 ;; TODO vterm is slightly messed up, I'm not quite sure why.
 ;; (package! vterm :recipe (:no-native-compile t))
+(package! treemacs :recipe (:no-native-compile t))
+(unpin! treemacs)
+(package! vterm :built-in 'prefer)
+(package! undo-tree :built-in 'prefer)
+(package! plantuml-mode :built-in 'prefer)
 
 (package! highlight-numbers :disable t)
 
-;; (package! emms)
-
-(package! pdf-tools :recipe (:no-native-compile t))
+(package! emms)
 
 (package! dired-show-readme
   :recipe (:host gitlab :repo "kisaragi-hiu/dired-show-readme"))
 
+(package! pdf-tools :built-in 'prefer)
 (package! pdf-continuous-scroll-mode
   :recipe (:host github :repo "dalanicolai/pdf-continuous-scroll-mode.el"))
 
@@ -124,6 +129,16 @@
 (package! ace-window
   :pin "57977baeba15b92c987eb7bf824629a9c746a3c8"
   :recipe (:host github :repo "loafofpiecrust/ace-window" :branch "posframe"))
+
+(package! doom-modeline)
+
+(package! emacs-webkit
+  :recipe (:local-repo "emacs-webkit"))
+
+(package! org-caldav)
+
+(package! mini-modeline
+  :recipe (:local-repo "emacs-mini-modeline" :no-native-compile t :no-byte-compile t))
 
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:

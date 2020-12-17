@@ -12,7 +12,9 @@ Intended to replicate the functionality of `exec' from i3 config."
   (unless my-autostart-done
     (exec "autostart.sh")
     (exec "picom --experimental-backends")
+    ;; Local endpoint for retrieving Outlook emails from behind OAuth
     (exec "davmail /home/snead/.config/davmail/.properties")
+    ;; System tray over the right side of the echo area
     (setq my-autostart-done t)))
 
 ;; Autostart stuff.
@@ -37,24 +39,31 @@ Intended to replicate the functionality of `exec' from i3 config."
                                      ;; (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
                                      )))
 
-(use-package! evil-anzu
-  :after evil
-  :config
-  (setq! anzu-cons-mode-line-p nil)
-  (global-anzu-mode))
+;; (use-package! evil-anzu
+;;   :after evil
+;;   :config
+;;   (setq! anzu-cons-mode-line-p nil)
+;;   (global-anzu-mode))
 
 ;; TODO try out golden-ratio/zoom to highlight active window.
 
 ;; Custom ivy prompt to connect to network.
-(defun counsel-iwd-connect (&optional arg)
-  (interactive "P")
-  (ivy-read "Connect to a network: " (my-iwd-network-list)
-            :predicate (lambda (x) (not (string-prefix-p "> " (cdr x))))
-            :action #'my-iwd-connect
-            :caller 'counsel-iwd-connect))
+(defun counsel-iwd-connect ()
+  (interactive)
+  (let* ((networks (my-iwd-network-list))
+         (network (completing-read
+                   "Connect to network: "
+                   networks
+                   (lambda (x) (not (string-prefix-p "> " (cdr x)))))))
+    (my-iwd-connect (assoc network networks))))
 
 ;; TODO Prompt for password if necessary.
 (defun my-iwd-connect (network)
+  ;; (async-start (lambda ()
+  ;;                (shell-command-to-string (format "iwctl station wlan0 connect \"%s\"" (cdr network))))
+  ;;              (lambda (output)
+  ;;                (unless (string-blank-p output)
+  ;;                  (message (string-trim output)))))
   (async-shell-command (format "iwctl station wlan0 connect \"%s\"" (cdr network))
                        "*help:iwctl*"))
 
@@ -69,93 +78,66 @@ Intended to replicate the functionality of `exec' from i3 config."
                                                                "[ \t]\\{3,\\}"))))
             networks)))
 
-(defun counsel-logout (&optional arg)
+(defun +snead/logout (&optional arg)
   "Perform some system action related to logins."
   (interactive "P")
-  (ivy-read "Log out: " '(("log out" . "kill -9 -1")
-                          ("reboot" . "systemctl reboot")
-                          ("shutdown" . "systemctl poweroff")
-                          ("sleep" . "systemctl suspend"))
-            :action (lambda (x) (call-process-shell-command (cdr x)))
-            :caller 'counsel-logout))
+  (let* ((options '(("log out" . "kill -9 -1")
+                    ("reboot" . "systemctl reboot")
+                    ("shutdown" . "systemctl poweroff")
+                    ("sleep" . "systemctl suspend")))
+         (pick (assoc (completing-read "Log out: " options)
+                      options)))
+    (call-process-shell-command (cdr pick))))
 
-(defun counsel-vpn-connect (&optional arg)
-  "Connect to a VPN server."
+(defun +snead/vpn-connect (vpn)
   (interactive "P")
-  (ivy-read "Connect to a VPN: " '(("panama" . "openvpn-panama"))
-            :action #'my-vpn-connect
-            :caller 'counsel-vpn-connect))
+  (let* ((options '(("Panama" . "openvpn-panama")))
+         (vpn (assoc (completing-read "Connect to VPN: " options)
+                     options)))
+    (shell-command "pgrep openvpn && systemctl stop \"openvpn-*\"")
+    (async-shell-command (format "systemctl start \"%s\"" (cdr vpn))
+                         "*help:iwctl*")))
 
-(defun my-vpn-connect (vpn)
-  (shell-command "pgrep openvpn && systemctl stop \"openvpn-*\"")
-  (async-shell-command (format "systemctl start \"%s\"" (cdr vpn))
-                       "*help:iwctl*"))
+(defun +snead/random-wallpaper ()
+  (interactive)
+  (exec "wpg -m"))
 
 (after! (evil evil-collection)
   (map! :leader
         "ri" #'counsel-iwd-connect
-        "rv" #'counsel-vpn-connect
-        "qo" #'counsel-logout))
+        "rv" #'+snead/vpn-connect
+        "rw" #'+snead/random-wallpaper
+        "qo" #'+snead/logout))
 
-;; TODO Submit a PR to doom-emacs fixing this in +workspace/switch-to
-(defun +workspace/switch-to-other (index)
-  "Switch to a workspace at a given INDEX. A negative number will start from the
-end of the workspace list."
-  (interactive
-   (list (or current-prefix-arg
-             (if (featurep! :completion ivy)
-                 (ivy-read "Switch to workspace: "
-                           (+workspace-list-names)
-                           :caller #'+workspace/switch-to
-                           :preselect +workspace--last)
-               (completing-read "Switch to workspace: " (+workspace-list-names))))))
-  (when (and (stringp index)
-             (string-match-p "^[0-9]+$" index))
-    (setq index (string-to-number index)))
-  (condition-case-unless-debug ex
-      (let ((names (+workspace-list-names))
-            (old-name (+workspace-current-name)))
-        (cond ((numberp index)
-               (let ((dest (nth index names)))
-                 (unless dest
-                   (error "No workspace at #%s" (1+ index)))
-                 (+workspace-switch dest)))
-              ((stringp index)
-               (+workspace-switch index t))
-              (t
-               (error "Not a valid index: %s" index)))
-        (unless (called-interactively-p 'interactive)
-          (if (equal (+workspace-current-name) old-name)
-              (+workspace-message (format "Already in %s" old-name) 'warn)
-            (+workspace/display))))
-    ('error (+workspace-error (cadr ex) t))))
 
 ;; Place ivy frames above X windows.
 (after! ivy-posframe
-  (setq! ivy-posframe-parameters '((min-width . 90)
+  (setq! ivy-posframe-parameters `((min-width . 70)
                                    (min-height . 17)
-                                   (parent-frame . nil))))
+                                   (parent-frame . nil)
+                                   (left-fringe . ,+snead/frame-fringe)
+                                   (right-fringe . ,+snead/frame-fringe)
+                                   (internal-border-width . ,+snead/frame-border-width))))
 
-(use-package mini-frame
-  :hook (ivy-mode . mini-frame-mode)
-  :config
-  (setq! mini-frame-show-parameters '((left . 0.5)
-                                      (top . 28)
-                                      (width . 0.55)
-                                      (height . 1)
-                                      (internal-border-width . 3)
-                                      (left-fringe . 8)
-                                      (right-fringe . 8)
-                                      (parent-frame . nil))
-         mini-frame-resize 'grow-only))
+
+
+;; (after! (evil-owl mini-frame)
+;;   (appendq! evil-owl-extra-posframe-args `(:background-color ,(mini-frame-get-background-color))))
 
 (after! counsel
+  (defun counsel-linux-app-clear-cache ()
+    (interactive)
+    (counsel-linux-apps-list)
+    nil)
+
   (defun counsel-linux-app-format-function-custom (name comment exec icon)
     (format "% -35s: %s"
             (propertize (ivy--truncate-string name 35)
                         'face 'counsel-application-name)
             (or comment "")))
+
   (setq counsel-linux-app-format-function #'counsel-linux-app-format-function-custom)
+
   (defun counsel-linux-app--parse-file (file)
     (with-temp-buffer
       (insert-file-contents file)
@@ -217,5 +199,13 @@ end of the workspace list."
            (funcall counsel-linux-app-format-function name comment exec icon)
            'visible visible))))))
 
+(after! exwm
+  (defun exwm-insert (orig-fn &rest args)
+    (if (eq major-mode 'exwm-mode)
+        (progn (evil-set-register ?+ (first args))
+               (exwm-input--fake-key ?\C-v))
+      (apply orig-fn args)))
+  ;; (advice-add #'insert :around #'exwm-insert)
+  )
 
 (provide 'my-exwm-config)

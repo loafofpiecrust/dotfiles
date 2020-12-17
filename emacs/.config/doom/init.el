@@ -14,8 +14,6 @@
 ;;      Alternatively, press 'gd' (or 'C-c g d') on a module to browse its
 ;;      directory (for easy access to its source code).
 
-(setq comp-deferred-compilation-black-list '("/exwm.*\\.el" "/xcb.*\\.el" "/ivy-posframe\\.el"))
-
 ;; Use SPC for global leader, and another single key for local leader.
 ;; Backslash default behavior is just Emacs mode, but , and ' may actually be useful.
 (setq doom-leader-key "SPC"
@@ -31,7 +29,8 @@
                                  "^MOZ_"
                                  "_IM_"
                                  "^EMACS_"
-                                 "^SWAYSOCK")))
+                                 "^SWAYSOCK"
+                                 "^BITWARDEN")))
 
 (doom! :input
        chinese
@@ -39,13 +38,14 @@
 
        :desktop
        window-manager
-       polybar
+       ;; polybar
 
        :completion
        (company +childframe)           ; the ultimate code completion backend
        ;; (helm +childframe)              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
-       (ivy +prescient +icons)               ; a search engine for love and life
+       ;;(ivy +prescient +icons)               ; a search engine for love and life
+       (selectrum +prescient +childframe)
 
        :ui
        ;;deft              ; notational velocity for Emacs
@@ -55,9 +55,9 @@
        ;;fill-column       ; a `fill-column' indicator
        hl-todo           ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
        hydra
-       ;; indent-guides     ; highlighted indent columns
+       indent-guides     ; highlighted indent columns
        ;;minimap           ; show a map of the code on the side
-       ;; modeline          ; snazzy, Atom-inspired modeline, plus API
+       modeline          ; snazzy, Atom-inspired modeline, plus API
        ;;nav-flash         ; blink cursor line after big motions
        ;;neotree           ; a project drawer, like NERDTree for vim
        ophints            ; highlight the region an operation acts on
@@ -91,7 +91,7 @@
        (dired +icons +ranger)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
-       (undo +tree)      ; persistent, smarter undo for your inevitable mistakes
+       undo      ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
@@ -158,7 +158,7 @@
        (javascript +lsp)        ; all(hope(abandon(ye(who(enter(here))))))
        ;; (julia +lsp)             ; a better, faster MATLAB
        kotlin            ; a better, slicker Java(Script)
-       (latex +lsp)             ; writing papers in Emacs has never been so fun
+       ;; (latex +lsp)             ; writing papers in Emacs has never been so fun
        ;;lean
        ;;factor
        ledger            ; an accounting system in Emacs

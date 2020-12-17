@@ -197,23 +197,19 @@ Example:
                     `(code ,(intern (concat "src src-" (symbol-name mode)))
                            ,inline-src))
                   inline-modes)))
-    `((del nil ((color . "grey") (border-left . "none")
-                (text-decoration . "line-through") (margin-bottom . "0px")
-                (margin-top . "10px") (line-height . "11pt")))
+    `(;; (del nil ((color . "grey") (border-left . "none")
+      ;;           (text-decoration . "line-through") (margin-bottom . "0px")
+      ;;           (margin-top . "10px") (line-height . "11pt")))
       ;; (a nil (,color))
       (a reply-header ((color . "black") (text-decoration . "none")))
       (div reply-header ((padding . "3.0pt 0in 0in 0in")
                          (border-top . "solid #e1e1e1 1.0pt")
                          (margin-bottom . "20px")))
       (span underline ((text-decoration . "underline")))
-      (nil org-ul ((list-style-type . "square")))
-      (nil org-ol (,line-height (margin-bottom . "0px")
-                                (margin-top . "0px") (margin-left . "30px")
-                                (padding-top . "0px") (padding-left . "5px")))
       (nil signature ((margin-bottom . "20px")))
-      (blockquote nil ((padding-left . "1ex") (margin-left . "0")
-                       (margin-top . "10px") (margin-bottom . "0")
-                       (border-left . "1px solid #ccc")))
+      ;; (blockquote nil ((margin . "0px 0px 0px 0.8ex")
+      ;;                  (padding-left . "1ex")
+      ;;                  (border-left . "1px solid rgb(204,204,204)")))
       (code nil (,font-size (font-family . "monospace")))
       ,@code-src
       (nil linenr ((padding-right . "1em")
@@ -224,7 +220,6 @@ Example:
                 (margin . "0px")
                 (font-size . "9pt")
                 (font-family . "monospace")))
-      (div org-src-container ((margin-top . "10px")))
       (nil figure-number ,ftl-number)
       ;; (nil table-number)
       (caption nil ((text-align . "left")
@@ -233,7 +228,6 @@ Example:
       (nil t-bottom ((caption-side . "bottom")))
       (nil listing-number ,ftl-number)
       (nil figure ,ftl-number)
-      (nil org-src-name ,ftl-number)
 
       (table nil (,@table ,line-height (border-collapse . "collapse")))
       (th nil ((border . "1px solid white")
@@ -287,6 +281,7 @@ Example:
 (defun md-msg-mml-recursive-support ()
   (fboundp 'mml-expand-all-html-into-multipart-related))
 
+;; Works perfect!
 (defun md-msg-save-article-for-reply-mu4e ()
   "Export the currently visited mu4e article as HTML."
   (let* ((msg mu4e-compose-parent-message)
@@ -315,17 +310,17 @@ Example:
             (goto-char (point-max))
             (insert "</body></html>")))
         ;; Insert reply header after body tag
-        (when (re-search-forward "<body\\(.*?\\)>" nil t)
-          (goto-char (match-end 0))
-          (insert "<div align=\"left\">\n"
-                  (mapconcat #'field2str
-                             `((:from . ,#'mails2str)
-                               (:subject . identity)
-                               (:to . ,#'mails2str)
-                               (:cc . ,#'mails2str)
-                               (:date . message-make-date))
-                             "")
-                  "</div>\n<hr>\n"))
+        ;; (when (re-search-forward "<body\\(.*?\\)>" nil t)
+        ;;   (goto-char (match-end 0))
+        ;;   (insert "<div>\n"
+        ;;           (mapconcat #'field2str
+        ;;                      `((:from . ,#'mails2str)
+        ;;                        (:subject . identity)
+        ;;                        (:to . ,#'mails2str)
+        ;;                        (:cc . ,#'mails2str)
+        ;;                        (:date . message-make-date))
+        ;;                      "")
+        ;;           "</div>\n<hr>\n"))
         (write-file file))
       (list file))))
 
@@ -360,15 +355,14 @@ during email generation where '&apos;' is turned into
          "<o:p>&nbsp;</o:p>")
         ((and (listp xml) (equal xml '(p nil)))
          "<o:p>\n</o:p>")
-        ((stringp xml) xml)
-        ;; (replace-regexp-in-string " " "&nbsp;"
-        ;;                           (md-msg-xml-escape-string xml)))
+        ((stringp xml) (md-msg-xml-escape-string xml))
         ((eq (car xml) 'comment)
          (format "<!--%s-->" (caddr xml)))
         ((eq (car xml) 'style)
          (format "<style>%s</style>" (caddr xml)))
         ((cddr xml)
-         (format "<%s%s>%s</%s>" (symbol-name (car xml))
+         (format "<%s%s>%s</%s>"
+                 (symbol-name (car xml))
                  (md-msg-attrs-str (cadr xml))
                  (apply 'concat (mapcar 'md-msg-xml-to-str (cddr xml)))
                  (symbol-name (car xml))))
@@ -506,12 +500,12 @@ is the XML tree and CSS the style."
       (assq-delete-all 'align (cadr div))
       (setf (cadr div) (assq-delete-all 'style (cadr div)))
       (let ((div-style (md-msg-build-style 'div
-					   md-msg-reply-header-class css))
-	    (p-style (md-msg-build-style 'p md-msg-reply-header-class css)))
-	(when div-style
-	  (push `(style . ,div-style) (cadr div)))
-	(when p-style
-	  (setf (cddr div) `((p ((style . ,p-style)) ,@(cddr div)))))))))
+                                           md-msg-reply-header-class css))
+            (p-style (md-msg-build-style 'p md-msg-reply-header-class css)))
+        (when div-style
+          (push `(style . ,div-style) (cadr div)))
+        (when p-style
+          (setf (cddr div) `((p ((style . ,p-style)) ,@(cddr div)))))))))
 
 (defun md-msg-xml-walk (xml fun)
   "Recursively walk a XML tree and call FUN on each node."
@@ -556,9 +550,9 @@ and include the SVG content into the email XML tree."
                                                                          (point-max))))))
                                    (setcar xml (car svg))
                                    (setcdr xml (cdr svg))))))))
-      (let ((xml (libxml-parse-html-region (point-min) (point-max))))
+      (let ((xml (libxml-parse-html-region (point-min) (point-max) base)))
         (when base
-          (md-msg-xml-walk xml #'make-img-abs)
+          ;; (md-msg-xml-walk xml #'make-img-abs)
           (md-msg-xml-walk xml #'inline-svg))
         (assq-delete-all 'title (assq 'head xml))
         xml))))
@@ -588,6 +582,10 @@ absolute paths."
 
 (defun md-msg-markdown-to-text-plain ()
   "Transform the current Md-Msg buffer into a text plain form."
+  ;; (let ((end (md-msg-end)))
+  ;;   ;; Delete the citation separator.
+  ;;   (md-msg-delete-separator)
+  ;;   )
   (buffer-substring-no-properties (md-msg-start) (md-msg-end))
   ;; (save-window-excursion
   ;;   (let ((str ))
@@ -597,8 +595,8 @@ absolute paths."
 (defun md-msg-load-css ()
   "Load the CSS definition according to `md-msg-enforce-css'."
   (cond ((listp md-msg-enforce-css) md-msg-enforce-css)
-	((stringp md-msg-enforce-css)
-	 (md-msg-css-file-to-list md-msg-enforce-css))))
+        ((stringp md-msg-enforce-css)
+         (md-msg-css-file-to-list md-msg-enforce-css))))
 
 (defmacro md-msg-with-match-prop (prop &rest body)
   "Look for the markdown PROP property and call @BODY on match."
@@ -618,40 +616,63 @@ absolute paths."
   (md-msg-with-match-prop prop
     (replace-match (format "%S" val) nil nil nil 3)))
 
+(defun md-msg-citation-line ()
+  (save-excursion
+    (goto-char (md-msg-end))
+    (forward-line)
+    (let ((start (point)))
+      (forward-line)
+      (buffer-substring-no-properties start (point)))))
+
 (defun md-msg-build ()
   "Build and return the XML tree for current markdownMsg buffer."
   (let ((css (md-msg-load-css)))
     (cl-flet ((enforce (xml)
-	               (let* ((tag (car xml))
-		              (tmp (assq 'class (cadr xml)))
-		              (class (when tmp
-			               (intern (cdr tmp))))
-		              (style (md-msg-build-style tag class css)))
-		         (when style
-		           (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
-		           (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
-		           (push `(style . ,style) (cadr xml)))))
-	      (fix-img-src (xml)
-			   (let ((src (assq 'src (cadr xml))))
-			     (when (string-prefix-p "file://" (cdr src))
-			       (setcdr src (substring (cdr src) (length "file://")))))))
-      (let* ((org (buffer-substring-no-properties (md-msg-start) (md-msg-end)))
-	     (reply (md-msg-markdown-to-xml org default-directory))
-	     (temp-files (md-msg-get-prop "reply-to"))
-	     (original (when temp-files
-			 (md-msg-load-html-file (car temp-files)))))
-	(assq-delete-all 'h1 (assq 'div (assq 'body reply)))
-	(md-msg-xml-walk (assq 'body reply) #'fix-img-src)
-	(when css
-	  (assq-delete-all 'style (assq 'head reply))
-	  (md-msg-xml-walk (assq 'body reply) #'enforce))
-	(if (not original)
-	    (assq-delete-all 'script (assq 'head reply))
-	  (md-msg-improve-reply-header original css)
-	  (push (or (assq 'article (assq 'body reply))
-		    (assq 'div (assq 'body reply)))
-		(cddr (assq 'body original))))
-	(or original reply)))))
+                       (let* ((tag (car xml))
+                              (tmp (assq 'class (cadr xml)))
+                              (class (when tmp
+                                       (intern (cdr tmp))))
+                              (style (md-msg-build-style tag class css)))
+                         (when style
+                           (setf (cadr xml) (assq-delete-all 'style (cadr xml)))
+                           (setf (cadr xml) (assq-delete-all 'class (cadr xml)))
+                           (push `(style . ,style) (cadr xml)))))
+              (fix-img-src (xml)
+                           (let ((src (assq 'src (cadr xml))))
+                             (when (string-prefix-p "file://" (cdr src))
+                               (setcdr src (substring (cdr src) (length "file://")))))))
+      (let* ((org (md-msg-markdown-to-text-plain))
+             (citation-line (md-msg-citation-line))
+             (reply (md-msg-markdown-to-xml org default-directory))
+             (temp-file (md-msg-reply-to-temp))
+             (original (when temp-file
+                         (md-msg-load-html-file temp-file)))
+             (original-body (when original
+                              (assq 'body original))))
+        ;; (assq-delete-all 'h1 (assq 'div (assq 'body reply)))
+        (md-msg-xml-walk (assq 'body reply) #'fix-img-src)
+        (when css
+          (assq-delete-all 'style (assq 'head reply))
+          (md-msg-xml-walk (assq 'body reply) #'enforce))
+        (if (not original)
+            (assq-delete-all 'script (assq 'head reply))
+          ;; FIXME Add defcustom for this, because some reply styles should have
+          ;; the headers. Outlook, for example, does this.
+          ;; (md-msg-improve-reply-header original css)
+          ;; each one looks like '(body attrs a b c d)
+          (setf (cddr (assq 'body reply))
+                (append (cddr (assq 'body reply))
+                        ;; Mimic Gmail quote structure.
+                        (list (list 'div '((class . "gmail_quote"))
+                                    (list 'div '((class . "gmail_attr"))
+                                          citation-line
+                                          '(br nil))
+                                    (append `(blockquote ((type . "cite")
+                                                          (class . "gmail_quote")))
+                                            (if original-body
+                                                (cddr original-body)
+                                              (cddr original))))))))
+        reply))))
 
 (defun md-msg-preview (arg)
   "Create a temporary mail and open it with `browse-url'.
@@ -660,13 +681,13 @@ With the prefix argument ARG set, it calls
   (interactive "P")
   (save-window-excursion
     (let ((browse-url-browser-function (if arg
-					   'xwidget-webkit-browse-url
-					 browse-url-browser-function))
-	  (tmp-file (make-temp-file "md-msg" nil ".html"))
-	  (mail (md-msg-build)))
+                                           'xwidget-webkit-browse-url
+                                         browse-url-browser-function))
+          (tmp-file (make-temp-file "md-msg" nil ".html"))
+          (mail (md-msg-build)))
       (with-temp-buffer
-	(insert (md-msg-xml-to-str mail))
-	(write-file tmp-file))
+        (insert (md-msg-xml-to-str mail))
+        (write-file tmp-file))
       (browse-url (concat "file://" tmp-file)))))
 
 (defun md-msg-prepare-to-send ()
@@ -682,11 +703,12 @@ This function is a hook for `message-send-hook'."
         (insert "<#multipart type=alternative><#part type=text/plain>\n")
         ;; (mml-insert-multipart "alternative")
         ;; (mml-insert-part "text/plain")
-        (goto-char (md-msg-end))
+        (md-msg-delete-separator)
+        (goto-char (point-max))
         ;; (insert md-msg-text-plain)
         (forward-line)
         ;; (mml-insert-part "text/html")
-        (insert "<#part type=text/html>")
+        (insert "<#part type=text/html>\n<!DOCTYPE html>")
         (insert (md-msg-xml-to-str mail))
         (insert "<#/multipart>\n")))))
 
@@ -695,7 +717,7 @@ This function is a hook for `message-send-hook'."
 If FILE does not have an extension, \"text/plain\" is returned."
   (let ((extension (file-name-extension file)))
     (if extension
-	(mailcap-extension-to-mime extension)
+        (mailcap-extension-to-mime extension)
       "text/plain")))
 
 (defun md-msg-message-fetch-field (field-name)
@@ -705,30 +727,34 @@ If FILE does not have an extension, \"text/plain\" is returned."
       (message-narrow-to-headers)
       (message-fetch-field field-name))))
 
+(defun md-msg-reply-to-temp ()
+  (let ((msg (md-msg-message-fetch-field "In-reply-to")))
+    (when msg (concat "/tmp/" (substring msg 1 -1)))))
+
 (defun md-msg-get-to-first-name ()
   "Return the first name of the recipient.
 It parses the 'To:' field of the current `md-msg-edit-mode'
 buffer to extract and return the first name.  It is used to
 automatically greet the right name, see `md-msg-greeting-fmt'."
   (cl-flet ((recipient2name (r)
-	                    (cl-multiple-value-bind (name mail) r
-		              (when name
-		                (let* ((split (split-string name ", " t))
-			               (first-name (if (= (length split) 2)
-					               (cadr split)
-					             (car (split-string name " " t)))))
-		                  (setf first-name (capitalize first-name))
-		                  (if md-msg-greeting-fmt-mailto
-			              (format "[[mailto:%s][%s]]" mail first-name)
-		                    first-name))))))
+                            (cl-multiple-value-bind (name mail) r
+                              (when name
+                                (let* ((split (split-string name ", " t))
+                                       (first-name (if (= (length split) 2)
+                                                       (cadr split)
+                                                     (car (split-string name " " t)))))
+                                  (setf first-name (capitalize first-name))
+                                  (if md-msg-greeting-fmt-mailto
+                                      (format "[[mailto:%s][%s]]" mail first-name)
+                                    first-name))))))
     (save-excursion
       (let ((to (md-msg-message-fetch-field "to")))
-	(if to
-	    (let ((recipients (mail-extract-address-components to t)))
-	      (when md-msg-greeting-name-limit
-		(setf recipients (seq-take recipients md-msg-greeting-name-limit)))
-	      (mapconcat #'recipient2name recipients ", "))
-	  "")))))
+        (if to
+            (let ((recipients (mail-extract-address-components to t)))
+              (when md-msg-greeting-name-limit
+                (setf recipients (seq-take recipients md-msg-greeting-name-limit)))
+              (mapconcat #'recipient2name recipients ", "))
+          "")))))
 
 (defun md-msg-header (reply-to)
   "Build the markdown OPTIONS and PROPERTIES blocks.
@@ -779,7 +805,7 @@ area."
             (save-excursion
               (insert "\n")
               (funcall message-citation-line-function)
-              ;; (insert "\n\n" md-msg-separator "\n")
+              (insert "\n" md-msg-separator "\n")
               (delete-region (line-beginning-position)
                              (1+ (line-end-position)))
               ;; (dolist (rep '(("^>+ *" . "") ("___+" . "---")))
@@ -787,8 +813,8 @@ area."
               ;;     (while (re-search-forward (car rep) nil t)
               ;;       (replace-match (cdr rep)))))
               ))
-          (when md-msg-signature
-            (insert md-msg-signature))
+          ;; (when md-msg-signature
+          ;;   (insert md-msg-signature))
           (md-msg-edit-mode))
         (set-buffer-modified-p nil))
       (if (md-msg-message-fetch-field "to")
@@ -815,6 +841,7 @@ function is called.  `org-cycle' is called otherwise."
   (if (message-in-body-p)
       (markdown-cycle)
     (message-tab)))
+
 (defun md-msg-start ()
   "Return the point of the beginning of the message body."
   (save-excursion
@@ -826,9 +853,16 @@ function is called.  `org-cycle' is called otherwise."
   (save-excursion
     (goto-char (point-min))
     (or (when (re-search-forward
-	       (concat "^" (regexp-quote md-msg-separator) "$") nil t)
-	  (match-beginning 0))
-	(point-max))))
+               (concat "^" (regexp-quote md-msg-separator) "$") nil t)
+          (match-beginning 0))
+        (point-max))))
+
+(defun md-msg-delete-separator ()
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward
+           (concat "^" (regexp-quote md-msg-separator) "$") nil t)
+      (delete-region (match-beginning 0) (match-end 0)))))
 
 (defun md-msg-goto-body ()
   "Move point to the beginning of the message body."
@@ -836,7 +870,7 @@ function is called.  `org-cycle' is called otherwise."
   (goto-char (point-min))
   (if md-msg-signature
       (when (search-forward md-msg-signature nil t)
-	(goto-char (match-beginning 0)))
+        (goto-char (match-beginning 0)))
     (message-goto-body)))
 
 (defun md-msg-font-lock-make-header-matcher (regexp)
@@ -882,8 +916,12 @@ HTML emails."
   (md-msg-mua-call 'mode)
   (if md-msg-mode
       (progn
-        (add-hook 'message-send-hook 'md-msg-prepare-to-send)
-        (add-hook 'message-sent-hook 'undo)
+        ;; Edit emails in a markdown buffer.
+        (add-hook 'message-mode-hook #'md-msg-post-setup)
+        ;; Convert them to multipart plain text and html for sending.
+        (add-hook 'message-send-hook #'md-msg-prepare-to-send)
+        ;; Revert to the original message after sending.
+        (add-hook 'message-sent-hook #'undo)
         ;; FIXME
         ;; (add-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
         (add-to-list 'message-syntax-checks '(invisible-text . disabled))
@@ -891,11 +929,12 @@ HTML emails."
         ;;   (advice-add 'mml-expand-html-into-multipart-related
         ;;               :around #'md-msg-mml-into-multipart-related))
         ;; (advice-add 'org-html--todo :around #'md-msg-html--todo)
-        (advice-add 'message-mail :after #'md-msg-post-setup)
+        ;; (advice-add 'message-mail :after #'md-msg-post-setup)
         (when (boundp 'bbdb-mua-mode-alist)
           (add-to-list 'bbdb-mua-mode-alist '(message md-msg-edit-mode))))
-    (remove-hook 'message-send-hook 'md-msg-prepare-to-send)
-    (remove-hook 'message-sent-hook 'undo)
+    (remove-hook 'message-send-hook #'md-msg-prepare-to-send)
+    (remove-hook 'message-sent-hook #'undo)
+    (remove-hook 'message-mode-hook #'md-msg-post-setup)
     ;; (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
                                         message-syntax-checks))
@@ -903,7 +942,7 @@ HTML emails."
     ;;   (advice-remove 'mml-expand-html-into-multipart-related
     ;;                  #'md-msg-mml-into-multipart-related))
     ;; (advice-remove 'org-html--todo #'md-msg-html--todo)
-    (advice-remove 'message-mail #'md-msg-post-setup)
+    ;; (advice-remove 'message-mail #'md-msg-post-setup)
     (when (boundp 'bbdb-mua-mode-alist)
       (setq bbdb-mua-mode-alist (delete '(message md-msg-edit-mode)
                                         bbdb-mua-mode-alist)))))
@@ -1029,6 +1068,18 @@ other windows."
   (setq-local markdown-mode-font-lock-keywords
               (append markdown-mode-font-lock-keywords message-font-lock-keywords
                       md-msg-font-lock-keywords))
+
+  ;; TODO Figure out how to hide a particular message header.
+  ;; If we can, then hide the subject line to put it only in the header-line.
+
+  ;; (let ((subject (concat " " (mu4e-message-field-at-point :subject) " ")))
+  ;;   (add-text-properties 0 1 '(display (space :align-to left)) subject)
+  ;;   (add-text-properties 1 (length subject) '(face magit-header-line) subject)
+  ;;   (add-text-properties (- (length subject) 1) (length subject) '(display
+  ;;   (space :align-to right)) subject)
+  ;;   ;; TODO Add a face to this so we can make it big.
+  ;;   (setq-local header-line-format subject))
+
   ;; Hide line numbers.
   (setq-local display-line-numbers-type nil)
   ;; Display images embedded in the email, but remote ones take too long.

@@ -30,9 +30,10 @@ xmodmap -e "clear Mod4"
 xfce4-power-manager & disown
 xfsettingsd & disown
 # Prevent the screen going dark while watching videos.
-caffeine &
-~/.config/wpg/wp_init.sh
-sleep 0.5 && polybar main & disown
+# caffeine &
+~/.config/wpg/wp_init.sh &
+stalonetray & disown
+# sleep 0.5 && polybar main & disown
 
 # Restore last wallpaper
 # Starts notification manager as well

@@ -39,10 +39,20 @@ in {
 
   # Enable networking. Use connman instead of networkmanager because it has
   # working iwd support. Saves battery and more reliable.
-  networking.wireless.iwd.enable = true;
+  # networking.wireless.iwd.enable = true;
+  services.connman = {
+    enable = true;
+    wifi.backend = "iwd";
+    enableVPN = false;
+  };
 
   # Allow other machines to ssh in.
   services.openssh.enable = true;
+  # Remember ssh passwords for a few hours.
+  programs.ssh = {
+    startAgent = true;
+    agentTimeout = "2h";
+  };
 
   # Allow easy discovery of network devices (like printers).
   services = {
@@ -57,16 +67,12 @@ in {
   programs = {
     # Our two lovely shell choices, fish and zsh.
     fish.enable = true;
-    # zsh = {
-    #   enable = false;
-    #   # Using alternative highlighting package.
-    #   syntaxHighlighting.enable = false;
-    #   enableCompletion = false;
-    # };
     dconf.enable = true;
     java.enable = true;
-    gnupg.agent.enable = true;
-    gnupg.agent.enableSSHSupport = true;
+    gnupg.agent = {
+      enable = true;
+      pinentryFlavor = "emacs";
+    };
     # seahorse.enable = true; # GUI to manage keyring passwords.
   };
 

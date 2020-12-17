@@ -1,0 +1,10 @@
+#+TITLE: dotfiles
+
+Hello! These are my personal dotfiles that I manage my laptop's linux environment with.
+
+| Problem | Solution    |
+|---------+-------------|
+| OS      | NixOS 20.09 |
+| WM      | =exwm=      |
+| IM      | =exwm-xim=  |
+| Editor  | =emacs=     |

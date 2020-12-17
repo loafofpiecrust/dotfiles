@@ -3,23 +3,14 @@
 ;; References:
 ;; https://github.com/rougier/elegant-emacs
 
-;; Keep emacs from being sluggish while typing.
-(setq-default gc-cons-percentage 0.3)
-
 ;; Let me load my custom packages.
 (add-load-path! "custom")
 
-;; remove all scrollbars!
-(horizontal-scroll-bar-mode -1)
-(column-number-mode)
-
-;; Place your private configuration here! Remember, you do not need to run 'doom
-;; sync' after modifying this file!
-
-;; Some functionality uses this to identify you, e.g. GPG configuration, email
-;; clients, file templates and snippets.
-(setq user-full-name "Taylor Snead"
-      user-mail-address "taylorsnead@gmail.com")
+;; Make shell commands run faster...
+(setq shell-file-name "/bin/bash")
+;; ...But let me use fish for interactive sessions.
+(after! vterm
+  (setq vterm-shell "/run/current-system/sw/bin/fish"))
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
@@ -36,11 +27,122 @@
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
 
-(setq-default line-spacing 0.1)
+(defun +snead/increase-mem ()
+  "Allow Emacs to use up to 1 GB of memory.
+It seems excessive, but apparently necessary for fluid LSP usage!"
+  (setq +lsp--default-gcmh-high-cons-threshold 1073741824
+        gcmh-high-cons-threshold 1073741824))
 
-;; Emacs 28 adds this new face with a different font for comments.
-;; I want to retain the same font as normal code for now.
-(custom-set-faces! '(fixed-pitch-serif :family nil))
+;; Increase garbage collection threshold while active.
+;; This keeps emacs from being sluggish while typing.
+(after! lsp-mode (+snead/increase-mem))
+(after! gcmh (+snead/increase-mem))
+
+(after! gcmh
+  (setq-default gcmh-idle-delay 5))
+
+(defvar +snead/frame-border-width 3)
+(defvar +snead/frame-fringe 8)
+
+(after! hide-mode-line
+  (setq-default hide-mode-line-format nil)
+  (setq-hook! 'hide-mode-line-mode-hook header-line-format nil))
+
+;; Disable line highlighting by default, relying on mode-specific faces and
+;; highlighting the current line number.
+(setq global-hl-line-modes '())
+
+(setq tab-always-indent t)
+
+(use-package! emacs
+  :config
+  (setq-default gc-cons-percentage 0.5)
+
+  ;; Some functionality uses this to identify you, e.g. GPG configuration, email
+  ;; clients, file templates and snippets.
+  (setq user-full-name "Taylor Snead"
+        user-mail-address "taylorsnead@gmail.com")
+
+  (setq-default truncate-lines nil)
+
+  (setq delete-by-moving-to-trash t
+        x-stretch-cursor t)
+
+  (setq-hook! '(vterm-mode-hook eshell-mode-hook)
+    truncate-lines nil)
+
+  (setq custom-safe-themes t))
+
+(use-package! solar
+  :config
+  (setq calendar-location-name "Boston, MA"
+        calendar-latitude 42.360
+        calendar-longitude -71.059))
+
+(after! scroll-bar
+  ;; remove all scrollbars!
+  (horizontal-scroll-bar-mode -1))
+
+(after! frame
+  (setq window-divider-default-right-width 4
+        window-divider-default-bottom-width 4))
+
+;; Store various logins and things in a gpg file when necessary.
+(after! auth-source
+  (setq auth-sources '("~/.authinfo.gpg")))
+
+;; Always show line numbers.
+(after! display-line-numbers
+  (setq display-line-numbers-type t
+        display-line-numbers-grow-only t))
+
+(after! prog-mode
+  ;; Consider each segment of a camelCase one word,
+  (add-hook! 'prog-mode-hook '(auto-fill-mode subword-mode))
+  ;; Automatically wrap comments in code
+  (setq-default comment-auto-fill-only-comments t))
+
+(after! calc
+  (setq calc-symbolic-mode t))
+
+(after! browse-url
+  ;; Open urls with xdg-open so that app links open directly.
+  ;; This let's me open zoommtg:// urls right into zoom.
+  (setq browse-url-generic-program "xdg-open"
+        browse-url-browser-function #'browse-url-generic))
+
+
+(custom-set-faces!
+  '(org-document-title :weight extra-bold :height 1.5)
+  '(outline-1 :weight extra-bold :height 1.3)
+  '(outline-2 :weight bold :height 1.2)
+  '(outline-3 :weight bold :height 1.1)
+  '(outline-4 :weight semi-bold :height 1.08)
+  '(outline-5 :weight semi-bold :height 1.06)
+  '(outline-6 :weight semi-bold :height 1.03)
+  '((outline-7 outline-8 outline-9) :weight semi-bold)
+  ;; Style markdown headers the same way.
+  '(markdown-header-face-1 :inherit outline-1)
+  '(markdown-header-face-2 :inherit outline-2)
+  '(markdown-header-face-3 :inherit outline-3)
+  '(markdown-header-face-4 :inherit outline-4)
+  '(markdown-header-face-5 :inherit outline-5)
+  ;; Not all themes provide this inheritance.
+  '(org-level-1 :inherit outline-1)
+  '(org-level-2 :inherit outline-2)
+  '(org-level-3 :inherit outline-3)
+  '(org-level-4 :inherit outline-4)
+  '(org-level-5 :inherit outline-5)
+  '(org-level-6 :inherit outline-6)
+  ;; Make line numbers more visible on many themes.
+  '(line-number :foreground nil :inherit org-tag)
+  ;; Emacs 28 adds this new face with a different font for comments.
+  ;; I want to retain the same font as normal code for now.
+  '(fixed-pitch-serif :family nil)
+  ;; Disable background color for highlighted parens
+  ;; '(show-paren-match :background nil)
+  '(minibuffer-prompt :family nil)
+  '(pyim-page :height 1.1))
 
 ;; Test for unicode icons (should be marked "seen" and "important")
 ;; neu          11:43:48        Information Technology... Received: INC0628880 – Fwd: Office 365 Transition Ridiculous
@@ -48,7 +150,7 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-acario-light
+(setq doom-theme 'ewal-doom-dark
       doom-gruvbox-brighter-comments t
       doom-peacock-brighter-comments t
       doom-monokai-classic-brighter-comments t
@@ -96,6 +198,9 @@
                                                   "Noto Sans CJK TC")
                                                 my/private-use-fonts)))
 
+;; (after! doom-themes
+;;   (setq doom-themes-padded-modeline t))
+
 ;;;; Themes and color management
 (use-package! ewal
   :after doom-themes
@@ -103,17 +208,14 @@
   :init
   ;; Use all 16 colors from our palette, not just the primary 8.
   (setq ewal-ansi-color-name-symbols '(black red green yellow blue magenta cyan white brightblack brightred brightgreen brightyellow brightblue brightmagenta brightcyan brightwhite)))
+
 (use-package! ewal-doom-themes
   :after ewal
   :config
   (setq ewal-doom-vibrant-brighter-comments t))
+
 (use-package! theme-changer
-  :after (doom-themes ewal)
-  ;; :defer 0.5
-  :init
-  (setq calendar-location-name "Boston, MA"
-        calendar-latitude 42.360
-        calendar-longitude -71.059)
+  :after doom-themes
   :config
   (change-theme doom-theme 'ewal-doom-dark))
 
@@ -150,25 +252,15 @@
                                           (?- . ?●)
                                           (?+ . ?⭘))))
 
-(after! calc
-  (setq calc-symbolic-mode t))
-
-(setq auth-sources '("~/.authinfo.gpg"))
-
-(setq delete-by-moving-to-trash t
-      x-stretch-cursor t
-      ;; auto-save-default t
-      )
-
-;; This determines the style of line numbers in effect. If set to `nil', line
-;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type t)
-
 ;;;; Password Management!
 (use-package! bitwarden
   :config
   ;; I use my main email address for bitwarden, so don't prompt me for it.
-  (setq bitwarden-user user-mail-address)
+  (setq bitwarden-user user-mail-address
+        ;; TODO Use auth-source to save my bitwarden password?? Seems bad to
+        ;; save my master password literally anywhere. Plus, I would just need
+        ;; my store password to unlock the BW pass.
+        bitwarden-automatic-unlock (lambda () (read-passwd "[Bitwarden] Master password: ")))
 
   (defun bitwarden-get-password (domain username)
     "Return the password for an account with the given USERNAME under the given DOMAIN.
@@ -182,19 +274,63 @@ If the vault is locked, prompt the user for their master email and password."
                          (bitwarden-search domain))))
       (and acc (gethash "password" (gethash "login" acc)))))
 
+  (defun bitwarden--read (prompt &optional search-str)
+    (let* ((items (mapcar (lambda (item) `(,(gethash "name" item) . ,item))
+                          (bitwarden-search search-str)))
+           (choice (completing-read (concat "[Bitwarden] " prompt)
+                                    items)))
+      (cdr (assoc choice items))))
+
+  ;; TODO Fix login, then unlock after sync.
   (defun counsel-bitwarden-getpass (&optional arg)
     "Pick an account and copy the password for it to the kill-ring."
     (interactive "P")
     ;; Ensure the vault is unlocked, prompting for login if not.
     (unless (bitwarden-unlocked-p) (bitwarden-unlock))
-    (ivy-read "Copy password for account: "
-              (mapcar (lambda (item) (gethash "username" item))
-                      (bitwarden-search))
-              :action (lambda (acc)
-                        (kill-new (bitwarden-getpass acc))
-                        (message "Copied password for %s" acc))
-              :caller 'counsel-bitwarden-getpass)))
+    (let ((acc (bitwarden--read "Copy password: ")))
+      (kill-new (gethash "password" (gethash "login" acc)))
+      (message "Copied %s password for %s"
+               (gethash "name" acc)
+               (gethash "username" (gethash "login" acc)))))
 
+  (map! :leader "yp" #'counsel-bitwarden-getpass)
+
+  (defun bitwarden-search (&optional search-str search-type)
+    "Search for vault for items containing SEARCH-STR.
+
+Returns a vector of hashtables of the results."
+    (let* ((args (and search-str (list (format "--%s" (or search-type "search"))
+                                       search-str)))
+           (ret (bitwarden--auto-cmd (append (list "list" "items") args)))
+           (result (bitwarden--handle-message ret)))
+      (when result
+        (let* ((json-object-type 'hash-table)
+               (json-key-type 'string)
+               (json (json-read-from-string result)))
+          json))))
+
+  (defun bitwarden--encode (obj)
+    (shell-command-to-string (format "echo '%s' | bw encode" (json-encode obj))))
+
+  (defun bitwarden-edit (&optional existing-account)
+    (interactive)
+    (unless (bitwarden-unlocked-p) (bitwarden-unlock))
+    (let* ((acc (or existing-account (bitwarden--read "Edit account: ")))
+           (login (gethash "login" acc))
+           (username (read-string "Username: " (gethash "username" login)))
+           (password (read-string "Password: " (gethash "password" login))))
+      ;; Replace the existing username and password.
+      (puthash 'username username login)
+      (puthash 'password password login)
+      (puthash 'login login acc)
+      ;; Push the updated entry to the vault.
+      (call-process bitwarden-bw-executable nil 0 nil
+                    "edit" "item"
+                    (gethash "id" acc)
+                    (bitwarden--encode acc))))
+
+  (require 'auth-source-bitwarden)
+  (auth-source-bitwarden-enable))
 
 ;; Use alt + {j,k} for dragging stuff, not just arrow keys.
 (after! drag-stuff
@@ -250,7 +386,7 @@ If the vault is locked, prompt the user for their master email and password."
         :nv "gr" (general-simulate-key "C-c C-c")))
 
 (use-package! tree-sitter
-  :hook ((typescript-tsx-mode rustic-mode python-mode json-mode js-mode js2-mode typescript-mode go-mode sh-mode) . tree-sitter-mode)
+  :hook ((rustic-mode python-mode json-mode js-mode js2-mode typescript-mode go-mode sh-mode) . tree-sitter-mode)
   :config
   (require 'tree-sitter-langs)
   ;; TODO Fix JSX support.
@@ -268,21 +404,11 @@ If the vault is locked, prompt the user for their master email and password."
                   font-lock-doc-face
                   font-lock-string-face)))
 
-(after! prog-mode
-  ;; Consider each segment of a camelCase one word,
-  (add-hook! 'prog-mode-hook '(auto-fill-mode subword-mode))
-  ;; Automatically wrap comments in code
-  (setq-default comment-auto-fill-only-comments t))
-
-(setq-hook! '(text-mode-hook prog-mode-hook vterm-mode-hook eshell-mode-hook)
-  truncate-lines nil)
-
 (after! lsp-mode
   (setq lsp-eldoc-render-all nil
         lsp-signature-render-documentation nil
         lsp-symbol-highlighting-skip-current t
         ;; Don't show flycheck stuff in the sideline.
-        lsp-ui-sideline-show-diagnostics nil
         lsp-ui-sideline-enable nil
         lsp-ui-sideline-update-mode 'line))
 
@@ -290,9 +416,6 @@ If the vault is locked, prompt the user for their master email and password."
   (map! :map git-timemachine-mode-map
         "[r" 'git-timemachine-show-previous-revision
         "]r" 'git-timemachine-show-next-revision))
-
-;; Disable background color for highlighted parens
-(custom-set-faces! '(show-paren-match :background nil))
 
 (after! (evil evil-collection)
   (add-hook 'evil-insert-state-exit-hook 'company-abort)
@@ -313,10 +436,6 @@ If the vault is locked, prompt the user for their master email and password."
   (map! :nv "zw" 'count-words
         :n "zG" '+spell/remove-word)
   (map! :leader "oc" 'calc))
-
-;; TODO Figure out pipe matching for rust considering single | in match patterns.
-;; (after! (smartparens rustic)
-;;   (sp-local-pair 'rustic-mode "|" "|"))
 
 (use-package! org-ref
   :after org
@@ -348,7 +467,6 @@ been removed.
 
 Use `treemacs-select-window' command for old functionality."
     (interactive)
-    (require 'treemacs)
     (if (doom-project-p)
         (treemacs-add-and-display-current-project)
       (treemacs-select-window)))
@@ -373,10 +491,11 @@ Use `treemacs-select-window' command for old functionality."
 ;;   (setq magit-delta-default-dark-theme "ansi-dark"))
 
 ;; Spell check options
-;; (after! ispell
-;;   (setq ispell-dictionary "en_US"
-;;         ;; Add camelCase spellcheck
-;;         ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together")))
+(after! ispell
+  (setq ispell-dictionary "en"
+        ispell-personal-dictionary "~/.aspell.en.pws"
+        ;; ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together")
+        ))
 
 (use-package! polymode
   :defer t
@@ -389,9 +508,16 @@ Use `treemacs-select-window' command for old functionality."
 ;; TODO Rebind C-c C-c in with-editor-mode (magit commit messages) to "gr" or similar
 
 (after! (company company-box)
-  (setq company-auto-commit 'company-explicit-action-p
-        ;; company-idle-delay 0.35
-        company-box-doc-delay 2)
+  (setq ;; company-auto-commit 'company-explicit-action-p
+   ;; Icons make completion quite sluggish!
+   company-box-enable-icon nil
+   company-box-doc-frame-parameters `((internal-border-width . ,+snead/frame-border-width)
+                                      (left-fringe . ,+snead/frame-fringe)
+                                      (right-fringe . ,+snead/frame-fringe)
+                                      (parent-frame . nil))
+   company-idle-delay 0.25
+   ;;company-box-doc-delay 2)
+   )
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -402,8 +528,11 @@ Use `treemacs-select-window' command for old functionality."
 (use-package! evil-owl
   :after evil
   :config
-  (setq! evil-owl-display-method 'posframe
-         evil-owl-idle-delay 0.5)
+  (setq evil-owl-display-method 'posframe
+        evil-owl-extra-posframe-args `(:internal-border-width ,+snead/frame-border-width
+                                       :left-fringe ,+snead/frame-fringe
+                                       :right-fringe ,+snead/frame-fringe)
+        evil-owl-idle-delay 0.5)
   (evil-owl-mode))
 
 (use-package! flycheck-inline
@@ -413,53 +542,19 @@ Use `treemacs-select-window' command for old functionality."
 (use-package! cherokee-input)
 
 ;; Make headlines big!
-(custom-set-faces!
-  '(org-document-title :weight extra-bold :height 1.5)
-  '(outline-1 :weight extra-bold :height 1.3)
-  '(outline-2 :weight bold :height 1.2)
-  '(outline-3 :weight bold :height 1.1)
-  '(outline-4 :weight semi-bold :height 1.08)
-  '(outline-5 :weight semi-bold :height 1.06)
-  '(outline-6 :weight semi-bold :height 1.03)
-  '((outline-7 outline-8 outline-9) :weight semi-bold)
-  ;; Style markdown headers the same way.
-  '(markdown-header-face-1 :inherit outline-1)
-  '(markdown-header-face-2 :inherit outline-2)
-  '(markdown-header-face-3 :inherit outline-3)
-  '(markdown-header-face-4 :inherit outline-4)
-  '(markdown-header-face-5 :inherit outline-5)
-  ;; Not all themes provide this inheritance.
-  '(org-level-1 :inherit outline-1)
-  '(org-level-2 :inherit outline-2)
-  '(org-level-3 :inherit outline-3)
-  '(org-level-4 :inherit outline-4)
-  '(org-level-5 :inherit outline-5)
-  '(org-level-6 :inherit outline-6)
-  ;; Make line numbers more visible on many themes.
-  '(line-number :foreground nil :inherit org-tag))
 
 ;; (custom-set-faces!
 ;;   `(vertical-border :foreground ,(ewal-get-color 'green)))
 
-(custom-set-faces!
-  '(minibuffer-prompt :family nil)
-  '(pyim-page :height 1.1))
-
-;; Turn all wavy underlines into straight ones for readability.
-(custom-set-faces!
-  '(spell-fu-incorrect-face :underline (:style line :color "red")))
-
 (after! ivy
   ;; Use a hydra for ivy alternate actions.
-  (setq ivy-read-action-function 'ivy-read-action-ivy
-        ivy-truncate-lines nil)
+  (setq ;;ivy-read-action-function 'ivy-read-action-ivy
+   ivy-truncate-lines nil)
   (map! :map ivy-minibuffer-map
         "C-RET" 'ivy-immediate-done))
 
-;; Open urls with xdg-open so that app links open directly.
-;; This let's me open zoommtg:// urls right into zoom.
-(setq browse-url-generic-program "xdg-open"
-      browse-url-browser-function #'browse-url-generic)
+(after! all-the-icons-ivy
+  (setq all-the-icons-ivy-icon-args (list :height 1 :v-adjust -0.1)))
 
 (after! message
   (setq message-cite-style message-cite-style-thunderbird
@@ -521,24 +616,28 @@ are ineffectual otherwise."
   (add-hook! 'mu4e-mark-execute-pre-hook #'+mu4e-gmail-fix-flags-h))
 
 (setq mu4e-update-interval 300)
-
 (after! mu4e
-  ;; Gmail handles labels/folders differently than others do?!
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
         :ng "C--" nil)
   (setq +mu4e-backend 'mbsync
         +mu4e-workspace-name "*email*"
-        ;; mu4e-split-view 'horizontal
+        mu4e-completing-read-function 'completing-read
+        mu4e-split-view 'vertical
+        mu4e-headers-visible-columns 100
         mu4e-compose-cite-function 'message-cite-original
         ;; mu4e-headers-visible-columns 100
         mu4e-attachment-dir "~/Downloads"
+        ;; I can choose to view the whole thread if I want to see related messages.
         mu4e-headers-include-related nil
+        ;; Sometimes I have issues with duplicates, so I need to see them.
         mu4e-headers-skip-duplicates nil
         mu4e-headers-leave-behavior 'apply
         mu4e-view-prefer-html t
+        ;; mu4e-compose-format-flowed nil
         mu4e-update-interval 300
         mu4e-compose-context-policy 'ask
         mu4e-context-policy 'pick-first
+        mu4e-index-update-error-warning nil
         ;; I don't use mu4e built-in conversion to html.
         org-mu4e-convert-to-html nil
         ;; Add full citation when replying to emails.
@@ -551,16 +650,14 @@ are ineffectual otherwise."
         mu4e-headers-unread-mark '("u" . "◉")
         mu4e-headers-replied-mark '("R" . "⤷")
         mu4e-headers-attach-mark '("a" . "🖿")
+        mu4e-headers-time-format "%R"
         ;; Convert received messages from html to org.
-        mu4e-html2text-command "pandoc -f html -t markdown-raw_html-smart-link_attributes+emoji-header_attributes-blank_before_blockquote-simple_tables-multiline_tables-inline_code_attributes-escaped_line_breaks+hard_line_breaks --atx-headers --wrap=none --columns=80 --lua-filter ~/Downloads/remove-ids.lua"
+        mu4e-html2text-command "pandoc -f html -t markdown-raw_html-smart-link_attributes+emoji-header_attributes-blank_before_blockquote-simple_tables-inline_code_attributes-escaped_line_breaks+hard_line_breaks --atx-headers --wrap=auto --columns=80 --lua-filter ~/.config/doom/remove-ids.lua"
         mu4e-view-show-images t)
   ;; I really do want evil bindings for viewing emails.
   (remove-hook 'mu4e-view-mode-hook #'evil-emacs-state)
-  ;; Make sure we can view inline images
-  (when (fboundp 'imagemagick-register-types)
-    (imagemagick-register-types))
   ;; Disable line highlight when viewing emails.
-  (add-hook 'mu4e-view-mode-hook (lambda () (hl-line-mode -1)))
+  (add-hook 'mu4e-view-mode-hook #'doom-disable-hl-line-h)
   ;; Execute marks without confirmation.
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
         :n "x" (cmd! (mu4e-mark-execute-all t)))
@@ -583,11 +680,30 @@ are ineffectual otherwise."
                         (smtpmail-smtp-server . "localhost")
                         (smtpmail-stream-type . plain)
                         (+mu4e-context-gmail . ,nil)
+                        (mu4e-sent-messages-behavior . delete)
                         ;; Mimic outlook's citation style.
                         (message-yank-prefix . "")
                         (message-yank-cited-prefix . "")
                         (message-yank-empty-prefix . "")
-                        (message-citation-line-format . "\n\n-----------------------\nOn %a, %b %d %Y, %N wrote:\n")))
+                        (message-citation-line-format . "-----------------------\nOn %a, %b %d %Y, %N wrote:\n")))
+
+  (set-email-account! "personal"
+                      `((mu4e-sent-folder . "/personal/Sent")
+                        (mu4e-drafts-folder . "/personal/Drafts")
+                        (mu4e-trash-folder . "/personal/Trash")
+                        (mu4e-refile-folder . "/personal/Archive")
+                        (mu4e-spam-folder . "/personal/Junk")
+                        (user-mail-address . "taylor@snead.xyz")
+                        (smtpmail-smtp-user . "taylor@snead.xyz")
+                        (smtpmail-smtp-server . "smtp.mailbox.org")
+                        (smtpmail-smtp-service . 587)
+                        (smtpmail-stream-type . starttls)
+                        (+mu4e-context-gmail . ,nil)
+                        (message-yank-prefix . "> ")
+                        (message-yank-cited-prefix . "> ")
+                        (message-yank-empty-prefix . "> ")
+                        (mu4e-sent-messages-behavior . sent)
+                        (message-citation-line-format . "On %a, %b %d, %Y at %R %f wrote:\n")))
 
   (set-email-account! "gmail"
                       `((mu4e-sent-folder . "/gmail/[Gmail]/Sent Mail")
@@ -602,6 +718,10 @@ are ineffectual otherwise."
                         (smtpmail-smtp-server . "smtp.gmail.com")
                         (smtpmail-smtp-service . 587)
                         (smtpmail-stream-type . starttls)
+                        (mu4e-sent-messages-behavior . delete)
+                        (message-yank-prefix . "> ")
+                        (message-yank-cited-prefix . "> ")
+                        (message-yank-empty-prefix . "> ")
                         (message-citation-line-format . "On %a, %b %d, %Y at %R %f wrote:\n")))
 
   (defun mu4e-all-contexts-var (sym)
@@ -618,9 +738,8 @@ are ineffectual otherwise."
           my/hide-all-trash (concat (mapconcat (lambda (d) (format "not maildir:%s" d))
                                                (append all-trash all-spam) " and ")
                                     " and not flag:trashed")
-          my/show-all-inboxes (concat (mapconcat (lambda (d) (format "maildir:/%s/INBOX" d))
-                                                 '("gmail" "neu") " or ")
-                                      " and not flag:trashed")
+          my/show-all-inboxes (format "(%s) and not flag:trashed" (mapconcat (lambda (d) (format "maildir:/%s/INBOX" d))
+                                                                             '("gmail" "neu" "personal") " or "))
           my/show-all-archive (concat (mapconcat (lambda (d) (format "maildir:%s" d))
                                                  all-archive " or ")
                                       " and not flag:trashed")))
@@ -680,13 +799,23 @@ are ineffectual otherwise."
   ;; Make email nicer to read and write.
   (add-hook! '(md-msg-view-mode-hook md-msg-edit-mode-hook) #'olivetti-mode))
 
+(after! alert
+  (setq alert-default-style 'libnotify))
+
+;; Notify me when compilations finish!
+(after! compile
+  (defun +alert/compilation (buffer status)
+    (alert (s-capitalize status)
+           :title (buffer-name buffer)))
+  (add-to-list 'compilation-finish-functions #'+alert/compilation))
+
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
   :defer 10
   :config
   (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
-        mu4e-alert-interesting-mail-query (format "flag:unread and (%s) and not flag:trashed" my/show-all-inboxes))
+        mu4e-alert-interesting-mail-query (format "date:7d..now and flag:unread and (%s)" my/show-all-inboxes))
   (mu4e-alert-enable-notifications)
   ;; FIXME Start mu4e in the background to retrieve new mail at boot.
   (mu4e t))
@@ -705,67 +834,76 @@ are ineffectual otherwise."
   (display-line-numbers-mode -1))
 
 (use-package! olivetti
-  :hook ((org-mode markdown-mode magit-status-mode) . olivetti-mode)
+  :hook ((org-mode markdown-mode magit-status-mode forge-topic-mode) . olivetti-mode)
   :init (map! :leader "to" #'olivetti-mode)
   :config
   (add-hook 'olivetti-mode-hook #'disable-line-numbers)
-  (setq-default olivetti-body-width 80))
+  (setq-default olivetti-body-width 85))
 
 
-(setq! +ligatures-extra-symbols
-       '(:name "»"
-         :src_block "»"
-         :src_block_end "«"
-         :quote "“"
-         :quote_end "”"
-         :lambda "λ"
-         :def "ƒ"
-         :composition "∘"
-         :map "↦"
-         :null "∅"
-         ;; :not "¬"
-         ;; :in "∈"
-         ;; :not-in "∉"
-         ;; :and "∧"
-         ;; :or "∨"
-         ;; :for "∀"
-         ;; :some "∃"
-         :return "↑"
-         :yield "∃"
-         :union "⋃"
-         :intersect "∩"
-         ;; :diff "∖"
-         ;; :tuple "⨂"
-         ;; :pipe ""
-         :dot "•"
-         ;; Org-specific symbols
-         :title "#"
-         :subtitle "𝙩"
-         :begin_quote   "❮"
-         :end_quote     "❯"
-         :begin_export  "⯮"
-         :end_export    "⯬"
-         :section    "§"
-         :end           "∎"
-         :exclamation "!"
-         :dash "-"
-         :endash "--"
-         :asterisk "*"
-         :lt "<"
-         :nothing ""
-         :at_symbol "@"
-         :pound "#"
-         :pipe "|"
-         :turnstile "|—"
-         :arrow "->"))
+(setq +ligatures-extra-symbols
+      '(:name "»"
+        :src_block "»"
+        :src_block_end "«"
+        :quote "“"
+        :quote_end "”"
+        :lambda "λ"
+        :def "ƒ"
+        :composition "∘"
+        :map "↦"
+        :null "∅"
+        ;; :not "¬"
+        ;; :in "∈"
+        ;; :not-in "∉"
+        ;; :and "∧"
+        ;; :or "∨"
+        ;; :for "∀"
+        ;; :some "∃"
+        :return "↑"
+        :yield "∃"
+        :union "⋃"
+        :intersect "∩"
+        :dot "•"
+        ;; Org-specific symbols
+        :title "#"
+        :subtitle "##"
+        :begin_quote   "❮"
+        :end_quote     "❯"
+        :begin_export  "⯮"
+        :end_export    "⯬"
+        :section    "§"
+        :end           "∎"
+        :exclamation "!"
+        :dash "-"
+        :endash "--"
+        :asterisk "*"
+        :lt "<"
+        :nothing ""
+        :at_symbol "@"
+        :pound "#"
+        :pipe "|"
+        :turnstile "|—"
+        :arrow "->"
+        :vertical "│"
+        :merge-right "├╮"
+        :split-right "├╯"))
 
 (after! org
   (set-ligatures! 'org-mode
     :title "#+TITLE:"
-    :begin_quote "#+BEGIN_QUOTE"
-    :end_quote "#+END_QUOTE"
+    :title "#+title:"
+    :quote "#+BEGIN_QUOTE"
+    :quote_end "#+END_QUOTE"
+    :quote "#+begin_quote"
+    :quote_end "#+end_quote"
     :begin_export "#+BEGIN_EXPORT"
     :end_export "#+END_EXPORT"
+    :begin_export "#+begin_export"
+    :end_export "#+end_export"
+    :begin_quote "#+BEGIN_VERSE"
+    :end_quote "#+END_VERSE"
+    :begin_quote "#+begin_verse"
+    :end_quote "#+end_verse"
     :section ":PROPERTIES:"
     :end ":END:"))
 
@@ -773,8 +911,14 @@ are ineffectual otherwise."
   (set-ligatures! 'markdown-mode
     :src_block "```"))
 
+;; (after! magit
+;;   (set-ligatures! 'magit-log-mode
+;;     :merge-right "|\\"
+;;     :split-right "|/"
+;;     :vertical "|"))
+
 (after! web-mode
-  (setq! web-mode-prettify-symbols-alist nil))
+  (setq web-mode-prettify-symbols-alist nil))
 
 
 ;; Prettify escaped symbols in viewed emails as much as possible.
@@ -798,12 +942,14 @@ are ineffectual otherwise."
 
 
 
-(after! mixed-pitch
+(use-package! mixed-pitch
+  :commands mixed-pitch-mode
+  :config
   (appendq! mixed-pitch-fixed-pitch-faces '(outline-1 outline-2 outline-3 outline-4 outline-5
                                                       outline-6 outline-7 outline-8 outline-9)))
 
 ;;;; Periodically clean buffers
-(use-package midnight
+(use-package! midnight
   :hook (doom-first-buffer . midnight-mode)
   :config
   (setq clean-buffer-list-kill-regexps '("\\`\\*Man "
@@ -825,19 +971,16 @@ are ineffectual otherwise."
         ;; Clean out potentially old buffers every hour
         midnight-period (* 60 60)))
 
-(setq window-divider-default-right-width 6
-      window-divider-default-bottom-width 6)
-
 (after! ivy-posframe
   (setcdr (assoc t ivy-posframe-display-functions-alist)
           'ivy-posframe-display-at-frame-top-center)
 
-  (setq ivy-posframe-width 130
+  (setq ivy-posframe-width 110
         ivy-posframe-height 20))
 
 ;; Using C-/ for comments aligns with other editors.
-(after! evil
-  (map! :nv "C-/" 'comment-dwim))
+;; (after! evil
+;;   (map! :nv "C-/" 'comment-dwim))
 
 (use-package! ox-moderncv
   :after org
@@ -856,28 +999,26 @@ are ineffectual otherwise."
 ;; The default popup is SLOW, use posframe or minibuffer.
 ;; TODO We need chinese font with same height as my font.
 (after! pyim
-  (setq! pyim-page-tooltip 'posframe))
-;; (use-package! ivy-avy
-;;   :after ivy)
+  (setq pyim-page-tooltip 'posframe))
 
-(after! hl-todo
-  (add-hook! 'org-mode-hook #'hl-todo-mode))
+;; (use-package! hl-todo
+;;   :hook (org-mode . hl-todo-mode))
 
 (use-package! string-inflection)
 
 (use-package! zoom
+  :disabled
   ;; :hook (doom-first-input . zoom-mode)
   :config
-  (setq! zoom-size '(0.65 . 0.65)
-         zoom-ignored-major-modes '(ranger-mode helpful-mode)
-         zoom-ignored-buffer-name-regexps '("^*mu4e" "^*Org" "^*helpful")))
+  (setq zoom-size '(0.65 . 0.65)
+        zoom-ignored-major-modes '(ranger-mode helpful-mode)
+        zoom-ignored-buffer-name-regexps '("^*mu4e" "^*Org" "^*helpful")))
 
 ;; Shows habits on a consistency graph.
 (use-package! org-habit :after org)
 
 ;; Notify me when a deadline is fast approaching.
 (use-package! org-notify
-  :defer 8
   :config
   (org-notify-add 'default
                   ;; If we're more than an hour past the deadline, don't notify at all.
@@ -909,6 +1050,42 @@ are ineffectual otherwise."
   :disabled
   :hook (dired-mode . dired-show-readme-mode))
 
+;; TODO Submit a PR to doom-emacs fixing this in +workspace/switch-to
+(defun +workspace/switch-to-other (index)
+  "Switch to a workspace at a given INDEX. A negative number will start from the
+end of the workspace list."
+  (interactive
+   (list (or current-prefix-arg
+             (if (featurep! :completion ivy)
+                 (ivy-read "Switch to workspace: "
+                           (+workspace-list-names)
+                           :caller #'+workspace/switch-to
+                           :preselect +workspace--last)
+               (completing-read "Switch to workspace: "
+                                (+workspace-list-names)
+                                nil nil nil nil
+                                +workspace--last)))))
+  (when (and (stringp index)
+             (string-match-p "^[0-9]+$" index))
+    (setq index (string-to-number index)))
+  (condition-case-unless-debug ex
+      (let ((names (+workspace-list-names))
+            (old-name (+workspace-current-name)))
+        (cond ((numberp index)
+               (let ((dest (nth index names)))
+                 (unless dest
+                   (error "No workspace at #%s" (1+ index)))
+                 (+workspace-switch dest)))
+              ((stringp index)
+               (+workspace-switch index t))
+              (t
+               (error "Not a valid index: %s" index)))
+        (unless (called-interactively-p 'interactive)
+          (if (equal (+workspace-current-name) old-name)
+              (+workspace-message (format "Already in %s" old-name) 'warn)
+            (+workspace/display))))
+    ('error (+workspace-error (cadr ex) t))))
+
 (after! evil
   (defun playerctl-play-pause ()
     (interactive)
@@ -924,8 +1101,9 @@ are ineffectual otherwise."
     (exec "firefox"))
   (map! :leader
         "j" #'ace-window
-        "o o" #'counsel-linux-app
+        "o o" #'consult-linux-app
         "o b" #'open-browser
+        "o g" #'=calendar
         "w U" #'winner-redo
         "w D" #'delete-other-windows
         "<f19>" #'+ivy/projectile-find-file
@@ -943,11 +1121,12 @@ are ineffectual otherwise."
 
 ;; Show window hints big and above X windows.
 (after! ace-window
-  (setq! aw-display-style 'posframe
-         aw-posframe-parameters '((parent-frame . nil))))
+  (setq aw-display-style 'posframe
+        aw-posframe-parameters '((parent-frame . nil))))
 
 ;; Allow easy NPM commands in most programming buffers.
-(add-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) #'npm-mode)
+(use-package! npm-mode
+  :hook ((prog-mode text-mode conf-mode) . npm-mode))
 
 (use-package! ivy-fuz
   :disabled
@@ -969,15 +1148,182 @@ are ineffectual otherwise."
 
 
 ;; LSP formatting is messed up for Javascript, so disable it.
-(setq! +format-with-lsp nil)
-
-;; (after! js2-mode
-;;   (setq-hook! js2-mode-hook +format-with-lsp nil))
-
-;; (after! web-mode
-;;   (setq-hook! typescript-tsx-mode-hook +format-with-lsp nil))
-;; (setq-hook! typescript-mode-hook +format-with-lsp nil)
+(setq +format-with-lsp nil)
+(setq +format-on-save-enabled-modes
+      '(not emacs-lisp-mode
+            sql-mode
+            tex-mode
+            latex-mode
+            ;; There are several different formats I use web-mode for that
+            ;; can't be reliably formatted on save.
+            web-mode
+            mhtml-mode
+            mu4e-compose-mode
+            md-msg-edit-mode
+            message-mode))
 
 ;; (setq! fancy-splash-image "~/.config/wpg/.current"
 ;;        +doom-dashboard-banner-padding '(0 . 0)
 ;;        +doom-dashboard--width 0.9)
+
+(after! calfw
+  (remove-hook! 'cfw:calendar-mode-hook 'hide-mode-line-mode))
+
+(after! vterm
+  (setq vterm-buffer-name-string "vterm %s"))
+
+(after! highlight-indent-guides
+  (setq-default highlight-indent-guides-method 'character))
+
+;; (after! paren
+;;   (defun +snead/switch-show-paren (&optional arg)
+;;     (interactive)
+;;     (show-paren-mode -1)
+;;     (show-smartparens-mode arg))
+;;   (add-hook! 'show-paren-mode-hook #'+snead/switch-show-paren))
+
+(use-package! emms
+  :disabled
+  :defer 5
+  :custom
+  (emms-source-file-default-directory "~/Music/")
+  ;; (emms-player-list '(emms-player-mpg321
+  ;;                     emms-player-ogg123
+  ;;                     emms-player-mplayer))
+  :config
+  (emms-all)
+  (emms-default-players))
+
+;; (insert-image (create-image
+;; "~/.config/doom/vscode-icons/icons/file_type_rust.svg" 'svg nil :scale 1))
+
+;; (defun all-the-icons-ivy-icon-for-file (s)
+;;   "Return icon for filename S.
+;; Return the octicon for directory if S is a directory.
+;; Otherwise fallback to calling `all-the-icons-icon-for-file'."
+;;   (cond
+;;    ((string-match-p "\\/$" s)
+;;     (apply 'all-the-icons-octicon
+;;      (append
+;;       (list "file-directory")
+;;       all-the-icons-ivy-icon-args
+;;       (list :face 'all-the-icons-ivy-dir-face))))
+;;    (t
+;;     ;; TODO Create a cache, if necessary.
+;;     (let* ((icon-path "~/.config/doom/vscode-icons/icons")
+;;           (icon-file (format "%s/file_type_%s.svg" icon-path
+;;                              (file-name-extension s)))
+;;           (real-icon-file (if (file-exists-p icon-file) icon-file
+;;                             (format "%s/default_file.svg" icon-path))))
+;;       (create-image real-icon-file 'svg nil :scale 0.1)))))
+
+(map! :mnv "go" #'avy-goto-char)
+
+(use-package! counsel
+  :after selectrum
+  :config
+  ;; Redefine counsel-linux-app using completing-read
+  (defun consult-linux-app (&optional arg)
+    "Launch a Linux desktop application, similar to Alt-<F2>.
+When ARG is non-nil, ignore NoDisplay property in *.desktop files."
+    (interactive "P")
+    (let* ((apps (counsel-linux-apps-list))
+           (name (completing-read
+                  "Run application: "
+                  apps
+                  (unless arg (lambda (x) (get-text-property 0 'visible (car x)))))))
+      (counsel-linux-app-action-default (assoc name apps))
+      ))
+  )
+
+(use-package! org-caldav
+  :config
+  (setq org-caldav-url "https://dav.mailbox.org/caldav"
+        org-caldav-calendar-id "Y2FsOi8vMC8zMQ"
+        org-caldav-inbox "~/org/inbox.org"
+        org-caldav-files '("~/org/me.org" "~/org/todo.org")
+        org-icalendar-timezone "UTC"
+        org-icalendar-alarm-time 20))
+
+(after! org
+  (setq org-timer-countdown-timer-title "Timer finished"))
+
+(after! doom-modeline
+  (setq doom-modeline-buffer-file-name-style 'relative-to-project
+        doom-modeline-persp-name t
+        doom-modeline-buffer-state-icon nil
+        doom-modeline-height 22
+        doom-modeline-bar-width +snead/frame-border-width)
+  (doom-modeline-def-modeline 'main
+    '(bar modals matches buffer-info buffer-position)
+    '(misc-info input-method major-mode vcs lsp checker " "))
+  (doom-modeline-def-modeline 'project
+    '(bar buffer-default-directory)
+    '(misc-info irc mu4e github debug major-mode process " "))
+  (doom-modeline-def-modeline 'vcs
+    '(bar buffer-info-simple)
+    '(misc-info vcs " "))
+  (doom-modeline-def-modeline 'simple
+    '(bar " " buffer-info-simple)
+    '(misc-info major-mode " "))
+  (doom-modeline-def-modeline 'pdf
+    '(bar " " matches buffer-info-simple pdf-pages)
+    '(misc-info major-mode process vcs " "))
+  (doom-modeline-def-modeline 'dashboard
+    '(bar window-number buffer-default-directory-simple)
+    '(misc-info irc mu4e github debug minor-modes input-method major-mode process " "))
+  ;; (doom-modeline-set-modeline 'upper t)
+  ;; Add a mini-modeline with: git, workspace, time, battery, exwm tray
+  )
+
+(use-package! mini-modeline
+  :after doom-modeline
+  :hook (doom-modeline-mode . mini-modeline-mode)
+  :config
+  ;; Avoid putting time in global-mode-string, instead explicitly showing time.
+  (doom-modeline-def-segment time 'display-time-string)
+  ;; Make a custom doom-modeline to sit in the echo area.
+  (doom-modeline-def-modeline 'lower
+    '()
+    '(mu4e persp-name battery " " time))
+  (setq mini-modeline-r-format (doom-modeline 'lower)
+        ;; Make room for an external system tray on the right side.
+        mini-modeline-right-padding 12
+        ;; Don't apply extra faces.
+        mini-modeline-enhance-visual nil)
+  ;; Show battery life and current time in the mini-modeline.
+  (display-battery-mode)
+  (display-time-mode)
+  ;; Remove time from misc-info, so that can go into the header.
+  ;; Then, the time segment uses display-time-string directly.
+  (setq-default global-mode-string (remq 'display-time-string global-mode-string))
+  ;; Remove load from the time string, it was adding too much.
+  (setq display-time-string-forms (remove 'load display-time-string-forms))
+  ;; Specialized header lines instead of mode lines.
+  (defun doom-modeline-set-modeline (key &optional default)
+    "Set the modeline format. Does nothing if the modeline KEY doesn't exist.
+If DEFAULT is non-nil, set the default mode-line for all buffers.
+
+Redefined to change the header-line instead of the mode-line.
+If there's a local header-line-format, don't step on its feet!
+Move it to the mode-line."
+    (when-let ((modeline (doom-modeline key)))
+      (if default
+          (setf (default-value 'mode-line-format) (list "%e" modeline))
+        (progn
+          (when (and (local-variable-p 'header-line-format) (not (equal "%e" (car header-line-format))))
+            (setf (buffer-local-value 'mode-line-format (current-buffer)) header-line-format))
+          (setf (buffer-local-value 'header-line-format (current-buffer)) (list "%e" modeline))))
+      ))
+
+  (defun doom-modeline-unfocus ()
+    "Unfocus mode-line."
+    (setq doom-modeline-remap-face-cookie
+          (face-remap-add-relative 'header-line 'mode-line-inactive))))
+
+;; Add extra line spacing for some modes.
+;; Not in programming modes because indent guides look a bit funny spaced out.
+(setq-hook! '(markdown-mode-hook
+              org-mode-hook
+              mu4e-headers-mode-hook)
+  line-spacing 2)

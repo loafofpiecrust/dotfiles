@@ -8,7 +8,6 @@
 
 (use-package! exwm
   :if (getenv "EMACS_EXWM")
-  :hook (after-init . exwm-enable)
   :init
   (setq exwm-input-global-keys `(;;(,(kbd "s-SPC") . ,doom-leader-map)
                                  ;; TODO Launch programs in new window.
@@ -49,7 +48,7 @@
                                  ;; (,(kbd "s-,") . ivy-switch-buffer-same-type)
                                  ;; I don't want a big message just for muting
                                  ;; the volume. I have a bar to show me if it worked.
-                                 (,(kbd "<XF86AudioMute>") . ,(cmd! (shell-command-to-string desktop-environment-volume-toggle-command)))
+                                 (,(kbd "<XF86AudioMute>") . desktop-environment-toggle-mute)
                                  (,(kbd "<XF86AudioRaiseVolume>") . desktop-environment-volume-increment)
                                  (,(kbd "<XF86AudioLowerVolume>") . desktop-environment-volume-decrement)
                                  (,(kbd "<print>") . +wm/screenshot)
@@ -63,7 +62,9 @@
 
   ;; Pass all keys directly to windows.
   ;; TODO Leverage exwm line and char modes for evil keybindings.
-  ;; (setq exwm-manage-configurations '((t char-mode t)))
+  (setq exwm-manage-configurations '((t tiling-header-line (:eval (doom-modeline-format--simple))
+                                        tiling-mode-line nil
+                                        floating-mode-line nil)))
 
   ;; FIXME May not need this given the above.
   (setq exwm-input-prefix-keys (list ?\M-\  ?\M-x (aref (kbd "<Multi_key>") 0) (aref (kbd "s-SPC") 0) (aref (kbd "<f19>") 0)))
@@ -106,20 +107,21 @@
   (define-ibuffer-column exwm-class (:name "Class")
     (if (bound-and-true-p exwm-class-name)
         exwm-class-name
-      "")))
+      ""))
 
-;; Use emacs input methods in any application.
-(use-package! exwm-xim
-  :after exwm
-  :config
-  ;; These variables are required for X programs to pick up Emacs IM.
-  (setenv "XMODIFIERS" "@im=exwm-xim")
-  (setenv "GTK_IM_MODULE" "xim")
-  (setenv "QT_IM_MODULE" "xim")
-  (setenv "CLUTTER_IM_MODULE" "xim")
-  (setenv "QT_QPA_PLATFORM" "xcb")
-  (setenv "SDL_VIDEODRIVER" "x11")
-  (exwm-xim-enable))
+  ;; Use emacs input methods in any application.
+  (use-package! exwm-xim
+    :config
+    ;; These variables are required for X programs to pick up Emacs IM.
+    (setenv "XMODIFIERS" "@im=exwm-xim")
+    (setenv "GTK_IM_MODULE" "xim")
+    (setenv "QT_IM_MODULE" "xim")
+    (setenv "CLUTTER_IM_MODULE" "xim")
+    (setenv "QT_QPA_PLATFORM" "xcb")
+    (setenv "SDL_VIDEODRIVER" "x11")
+    (exwm-xim-enable))
+
+  (exwm-enable))
 
 ;; Automatically handle multiple monitors.
 ;; Each monitor corresponds to an Emacs frame, and each frame can focus on a
@@ -153,4 +155,14 @@
   :after exwm
   :config
   (setq desktop-environment-brightness-normal-decrement "5%-"
-        desktop-environment-brightness-normal-increment "5%+"))
+        desktop-environment-brightness-normal-increment "5%+")
+
+  ;; This implementation is much faster than the default, preventing Emacs from
+  ;; locking up.
+  (defun desktop-environment-volume-set (value)
+    "Set volume to VALUE."
+    (start-process "amixer" nil "amixer" "set" "Master" value))
+
+  (defun desktop-environment-toggle-mute ()
+    (interactive)
+    (desktop-environment-volume-set "toggle")))

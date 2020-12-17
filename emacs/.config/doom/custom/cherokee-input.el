@@ -1,6 +1,6 @@
 (quail-define-package
  "cherokee" "UTF-8" "Cherokee" t
- "Input method for Cherokee using d/t consonants."
+ "Cherokee input method for using d/t consonants, while supporting multiple forms of ts- and qu-."
  nil t nil nil nil nil nil nil nil nil t)
 
 (quail-define-rules
@@ -72,7 +72,7 @@
  ("tlo" "Ꮰ")
  ("tlu" "Ꮱ")
  ("tlv" "Ꮲ")
- ;; Provide both j- and ts- forms, as both are used.
+ ;; Support both j- and ts- forms, as both are used.
  ("ja" "Ꮳ") ("tsa" "Ꮳ")
  ("je" "Ꮴ") ("tse" "Ꮴ")
  ("ji" "Ꮵ") ("tsi" "Ꮵ")

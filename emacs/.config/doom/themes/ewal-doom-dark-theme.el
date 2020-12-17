@@ -1,8 +1,8 @@
 ;;; ewal-doom-dark-theme.el --- Dread the color of darkness -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019-2020 Uros Perisic
+;; Copyright (C) 2020 Taylor Snead
 
-;; Author: Uros Perisic
+;; Author: Taylor Snead
 ;; URL: https://gitlab.com/jjzmajic/ewal
 ;;
 ;; Version: 0.1
@@ -124,10 +124,11 @@ Can be an integer to determine the exact padding."
    (-modeline-bright ewal-doom-dark-brighter-modeline)
    (-modeline-pad
     (when ewal-doom-dark-padded-modeline
-      (if (integerp ewal-doom-dark-padded-modeline) ewal-doom-dark-padded-modeline 4)))
+      (if (integerp ewal-doom-dark-padded-modeline) ewal-doom-dark-padded-modeline 1)))
 
-   (modeline-fg     nil)
-   (modeline-fg-alt base5)
+   (modeline-fg     fg)
+   ;; (modeline-fg-alt fg-alt)
+   (modeline-fg-alt nil)
 
    (modeline-bg
     (if -modeline-bright
@@ -150,14 +151,28 @@ Can be an integer to determine the exact padding."
    ((lsp-face-highlight-read &override) :foreground base0 :distant-foreground base1)
    ((lsp-face-highlight-write &override) :foreground base0 :distant-foreground base1)
    ((lsp-ui-peek-highlight &override) :foreground fg)
-   ;; (cursor :background magenta)
+   (cursor :background magenta)
+   (mini-modeline-mode-line :background nil)
+   (doom-modeline-bar :background orange)
 
-   (show-paren-match :foreground bright-yellow :weight 'extra-bold)
+   (show-paren-match :background base9 :foreground bright-yellow :weight 'bold)
    ((hl-todo &override) :foreground orange)
+
+   (highlight :foreground blue :underline nil ;; :underline `(:style line :color ,blue)
+              )
+   ((link &override) :underline `(:style line :color ,blue) :weight 'bold)
+
+   ;; Turn all wavy underlines into straight ones for readability.
+
+   ((cfw:face-grid &override) :foreground base6)
+   ((cfw:face-toolbar-button-off &override) :foreground fg-alt)
+   ((cfw:face-sunday &override) :foreground red)
+
+   ;; ((minibuffer-prompt &override) :height 1.2)
 
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
-   ((line-number &override) :foreground comments)
+   ((line-number &override) :foreground comments :background region)
    ((line-number-current-line &override) :foreground fg)
 
    (font-lock-comment-face
@@ -173,13 +188,31 @@ Can be an integer to determine the exact padding."
     :slant 'italic)
 
    (mode-line
-    :background modeline-bg :foreground modeline-fg
-    :box (if -modeline-pad `(:line-width ,-modeline-pad :color ,modeline-bg)))
+    ;; :height 30
+    :background base6
+    :foreground modeline-fg
+    :weight 'bold
+    ;; :box (if -modeline-pad `(:line-width ,-modeline-pad :color ,modeline-bg))
+    )
    (mode-line-inactive
-    :background modeline-bg-inactive :foreground modeline-fg-alt
-    :box (if -modeline-pad `(:line-width ,-modeline-pad :color ,modeline-bg-inactive)))
+    ;; :height 30
+    :weight 'normal
+    :foreground modeline-fg
+    :inherit 'vertical-border
+    ;; :background modeline-bg-inactive :foreground modeline-fg-alt
+    ;; :box (if -modeline-pad `(:line-width ,-modeline-pad :color ,modeline-bg-inactive))
+    )
    (mode-line-emphasis
     :foreground (if -modeline-bright base8 highlight))
+   (doom-modeline-spc-face :inherit nil)
+
+   ((header-line &override) :extend t :weight 'bold ;; :background base6
+    :background base6
+    :box `(:line-width 7 :color ,bg)
+    ;; :underline `(:style line :color ,yellow)
+    )
+
+   ((message-header-subject &override) :height 1.1)
 
    (solaire-mode-line-face
     :inherit 'mode-line
@@ -198,8 +231,9 @@ Can be an integer to determine the exact padding."
 
    ;; ivy-mode
    (ivy-current-match :distant-foreground base0 :weight 'bold :inverse-video t)
+   (selectrum-current-candidate :weight 'bold :inverse-video t)
    (ivy-posframe :background base0 :foreground fg)
-   ;; (ivy-minibuffer-match-face-1 :background selection :foreground base4)
+   (ivy-minibuffer-match-face-1 :foreground selection :background base4)
 
    ;; ediff
    (ediff-fine-diff-A :background (doom-blend magenta bg 0.3) :weight 'bold)
@@ -212,9 +246,10 @@ Can be an integer to determine the exact padding."
    (evil-snipe-matches-face     :foreground green :underline t)
 
    ;; flycheck
-   (flycheck-error   :underline `(:style line :color ,red)    :background base3)
-   (flycheck-warning :underline `(:style line :color ,yellow) :background base3)
-   (flycheck-info    :underline `(:style line :color ,green)  :background base3)
+   (flycheck-error   :underline `(:style line :color ,red)   )
+   (flycheck-warning :underline `(:style line :color ,yellow))
+   (flycheck-info    :underline `(:style line :color ,green))
+   (spell-fu-incorrect-face :underline `(:style line :color ,red))
 
    ;; rainbow-delimiters
    (rainbow-delimiters-depth-1-face :foreground magenta)
@@ -239,14 +274,16 @@ Can be an integer to determine the exact padding."
    (markdown-list-face :foreground magenta)
    (markdown-pre-face  :foreground cyan)
    (markdown-link-face :inherit 'bold :foreground blue)
+   (markdown-bold-face :inherit 'bold)
+   (markdown-italic-face :inherit 'italic)
 
    (tooltip              :background base0 :foreground fg)
-   (company-tooltip-selection     :background base0)
+   (company-tooltip-selection     :inverse-video t)
    (vertical-border :foreground base6 :background base6)
    (internal-border :background green :foreground green)
    (whitespace-indentation :inherit 'default)
    (whitespace-big-indent :inherit 'default)
-   (hl-line :background base0)
+   (hl-line :background base9)
 
    ;; org-mode
    ((outline-1 &override) :foreground violet)
@@ -256,8 +293,17 @@ Can be an integer to determine the exact padding."
    ((outline-5 &override) :foreground cyan)
    ((outline-6 &override) :foreground magenta)
    ((outline-7 &override) :foreground blue)
-   (org-hide :foreground hidden)
+   (org-hide :foreground bg)
    (solaire-org-hide-face :foreground hidden)
+
+   ;; mu4e
+   (mu4e-title-face :inherit 'outline-2)
+   (mu4e-context-face :foreground green)
+   (mu4e-header-highlight-face :weight 'bold :inherit 'hl-line)
+
+   ((org-agenda-done &override) :strike-through t)
+   ((org-scheduled-today &override) :foreground fg)
+   (org-agenda-current-time :background base0 :inherit 'org-time-grid)
 
    ;; magit
    (magit-blame-culprit :foreground yellow)
@@ -283,11 +329,12 @@ Can be an integer to determine the exact padding."
    (magit-branch-remote :foreground orange :weight 'bold)
    (magit-diff-file-header :foreground yellow)
    (magit-diff-file-heading :weight 'normal)
-   (magit-diff-file-heading-highlight :weight 'bold)
+   (magit-diff-file-heading-highlight :weight 'bold :background base0)
    (magit-diff-file-heading-selection :weight 'bold)
    (magit-diff-hunk-heading :foreground yellow :weight 'normal)
-   (magit-diff-hunk-heading-highlight :foreground yellow :weight 'bold)
+   (magit-diff-hunk-heading-highlight :weight 'bold :background base0 :inherit 'magit-diff-hunk-heading)
    (magit-diff-hunk-heading-selection :inherit 'selection :weight 'bold)
+   (magit-diff-lines-heading :foreground bg :background orange :extend t)
    (magit-hash :foreground yellow)
    (magit-item-highlight :background grey)
    (magit-log-author :foreground yellow)
@@ -299,10 +346,12 @@ Can be an integer to determine the exact padding."
    (magit-log-sha1 :foreground green)
    (magit-process-ng :foreground orange :weight 'bold)
    (magit-process-ok :foreground yellow :weight 'bold)
-   (magit-section-heading :foreground red)
-   (magit-section-highlight :weight 'bold)
+   (magit-header-line :inherit 'outline-1)
+   (magit-section-heading :foreground red :inherit 'outline-1)
+   (magit-section-highlight :background base0)
    (section-heading-selection :foreground red :weight 'bold)
    (magit-section-title :background bg-alt :foreground red :weight 'bold)
+   (eldoc-highlight-function-argument :background bg-alt :weight 'bold)
    ;; (magit-cherry-equivalent :foreground magenta)
    ;; (magit-cherry-unmatched :foreground cyan)
    ;; (magit-reflog-checkout :foreground blue)
@@ -311,7 +360,9 @@ Can be an integer to determine the exact padding."
    ;; (magit-bisect-good :foreground green)
    ;; (magit-bisect-skip :foreground fg)
    ;; (magit-diff-conflict-heading :foreground fg)
-   (magit-dimmed :foreground base8)
+   (magit-dimmed :foreground fg-alt)
+   ((forge-topic-closed &override) :strike-through t :inherit 'magit-dimmed)
+   ((forge-topic-merged &override) :strike-through t :inherit 'magit-dimmed)
    ;; (magithub-ci-no-status :foreground grey)
    ;; (magithub-issue-number :foreground fg)
    ;; (magithub-notification-reason :foreground fg)

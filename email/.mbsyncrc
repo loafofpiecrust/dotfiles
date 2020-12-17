@@ -52,3 +52,31 @@ Create Both
 Expunge Both
 SyncState *
 CopyArrivalDate yes
+
+
+
+IMAPAccount personal
+Host imap.mailbox.org
+User taylor@snead.xyz
+PassCmd "get-password.sh mailbox.org taylor@snead.xyz"
+SSLType IMAPS
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+Timeout 40
+PipelineDepth 50
+
+IMAPStore personal-remote
+Account personal
+
+MaildirStore personal-local
+Subfolders Verbatim
+Path ~/.mail/personal/
+Inbox ~/.mail/personal/Inbox
+
+Channel personal
+Master :personal-remote:
+Slave :personal-local:
+Patterns *
+Create Both
+Expunge Both
+SyncState *
+CopyArrivalDate yes

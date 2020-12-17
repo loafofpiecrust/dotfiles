@@ -2,6 +2,7 @@
   environment.systemPackages = with pkgs; [
     # tools of the trade
     git
+    gitAndTools.gitFull
     git-lfs
     gcc
     gnumake
@@ -18,7 +19,7 @@
 
     # languages
     rustup
-    go
+    # go
     nodejs
     yarn
     kotlin
@@ -52,7 +53,6 @@
     emacsCustom
     zstd # compression for emacs session files
     pinentry_emacs
-    unstable.nyxt
   ];
 
   nixpkgs.overlays = [
@@ -77,11 +77,12 @@
   ];
 
   # Shared Emacs server for :zap: speedy-macs
-  services.emacs = {
-    enable = false;
-    defaultEditor = true;
-    package = pkgs.emacsCustom;
-  };
+  # services.emacs = {
+  #   enable = false;
+  #   # Sets environment variables to make emacsclient the default editor.
+  #   defaultEditor = true;
+  #   package = pkgs.emacsCustom;
+  # };
 
   # Android debugging.
   programs.adb.enable = true;

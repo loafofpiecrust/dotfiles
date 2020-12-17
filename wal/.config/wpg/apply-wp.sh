@@ -30,4 +30,4 @@ fi
 # pkill waybar && ~/bin/waybar.sh & disown
 
 # Reload theme in emacs!
-emacsclient -n -e "(progn (ewal-load-colors) (when (string-match \"ewal-\" (symbol-name doom-theme)) (doom/reload-theme)))"
+emacsclient -n -e "(progn (ewal-load-colors) (when (string-match \"ewal-\" (symbol-name doom-theme)) (load-theme doom-theme)))"
