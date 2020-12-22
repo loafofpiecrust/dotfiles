@@ -15,6 +15,7 @@ Intended to replicate the functionality of `exec' from i3 config."
     ;; Local endpoint for retrieving Outlook emails from behind OAuth
     (exec "davmail /home/snead/.config/davmail/.properties")
     ;; System tray over the right side of the echo area
+    (exec "stalonetray")
     (setq my-autostart-done t)))
 
 ;; Autostart stuff.

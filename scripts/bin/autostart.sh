@@ -32,7 +32,7 @@ xfsettingsd & disown
 # Prevent the screen going dark while watching videos.
 # caffeine &
 ~/.config/wpg/wp_init.sh &
-stalonetray & disown
+# stalonetray & disown
 # sleep 0.5 && polybar main & disown
 
 # Restore last wallpaper

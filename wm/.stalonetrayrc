@@ -7,7 +7,7 @@ background "#000000"
 kludges force_icons_size
 grow_gravity W
 icon_gravity SE
-icon_size 24
+icon_size 20
 sticky true
 window_type utility
 # window_layer top
