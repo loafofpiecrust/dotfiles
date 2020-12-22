@@ -87,9 +87,9 @@
     "Rename the current buffer to match its corresponding window title."
     (interactive)
     (exwm-workspace-rename-buffer
-     (concat ":" exwm-class-name ": "
-             (if (<= (length exwm-title) 50) exwm-title
-               (substring exwm-title 0 49)))))
+     (let* ((buf-name (concat ":" exwm-class-name ": " exwm-title)))
+       (if (<= (length buf-name) 80) buf-name
+         (substring buf-name 0 79)))))
 
   ;; Update each exwm buffer name to match the window class and title.
   (add-hook! '(exwm-update-class-hook exwm-update-title-hook)
