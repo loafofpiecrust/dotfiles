@@ -23,7 +23,7 @@
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
 (setq doom-font (font-spec :family "monospace" :size 15 :weight 'normal)
-      doom-variable-pitch-font (font-spec :family "sans" :size 17)
+      doom-variable-pitch-font (font-spec :family "sans" :size 18)
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
 
@@ -230,7 +230,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-default org-deadline-warning-days 10)
   ;; Change some org display properties.
   (setq-default org-link-descriptive t
-                org-indent-indentation-per-level 2
+                org-indent-indentation-per-level 1
                 org-use-property-inheritance t
                 org-list-allow-alphabetical t
                 org-catch-invisible-edits 'smart
@@ -293,7 +293,10 @@ If the vault is locked, prompt the user for their master email and password."
                (gethash "name" acc)
                (gethash "username" (gethash "login" acc)))))
 
-  (map! :leader "yp" #'counsel-bitwarden-getpass)
+  (map! :leader
+        "ap" #'counsel-bitwarden-getpass
+        "ae" #'bitwarden-edit
+        "ag" #'bitwarden-generate-password)
 
   (defun bitwarden-search (&optional search-str search-type)
     "Search for vault for items containing SEARCH-STR.
@@ -327,7 +330,18 @@ Returns a vector of hashtables of the results."
       (call-process bitwarden-bw-executable nil 0 nil
                     "edit" "item"
                     (gethash "id" acc)
-                    (bitwarden--encode acc))))
+                    (bitwarden--encode acc))
+      (message "Updated %s account for %s" (gethash "name" acc) username)))
+
+  (defun bitwarden-generate-password ()
+    (interactive)
+    (let ((len (read-number "[Bitwarden] Password length: " 24)))
+      (kill-new (shell-command-to-string
+                 (format "bw generate -ulns --length %d" len)))
+      (message "New password copied to the clipboard")))
+
+  ;; TODO Function to generate a password, then push it into the kill-ring so I
+  ;; can paste it into a web prompt, then when editing the account.
 
   (require 'auth-source-bitwarden)
   (auth-source-bitwarden-enable))
@@ -797,7 +811,7 @@ are ineffectual otherwise."
   (map! :map md-msg-edit-mode-map
         :n "gr" 'message-send-and-exit)
   ;; Make email nicer to read and write.
-  (add-hook! '(md-msg-view-mode-hook md-msg-edit-mode-hook) #'olivetti-mode))
+  (add-hook! '(md-msg-view-mode-hook md-msg-edit-mode-hook mu4e-view-mode-hook) #'olivetti-mode))
 
 (after! alert
   (setq alert-default-style 'libnotify))
@@ -1323,7 +1337,6 @@ Move it to the mode-line."
 
 ;; Add extra line spacing for some modes.
 ;; Not in programming modes because indent guides look a bit funny spaced out.
-(setq-hook! '(markdown-mode-hook
-              org-mode-hook
+(setq-hook! '(olivetti-mode-hook
               mu4e-headers-mode-hook)
   line-spacing 2)
