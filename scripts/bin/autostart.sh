@@ -27,7 +27,7 @@ xsetroot -cursor_name left_ptr
 xmodmap -e "keycode 133 = F19"
 xmodmap -e "clear Mod4"
 
-xfce4-power-manager & disown
+# xfce4-power-manager & disown
 xfsettingsd & disown
 # Prevent the screen going dark while watching videos.
 # caffeine &

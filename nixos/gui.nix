@@ -21,7 +21,6 @@
     caffeine-ng # prevent screen from sleeping sometimes
     gsettings-desktop-schemas
     farge # color picker
-    caffeine-ng
     scrot
 
     # gtk themes
@@ -141,7 +140,7 @@
     autoRepeatDelay = 250;
     autoRepeatInterval = 30; # ms between key repeats
     # I don't use caps lock enough, swap it with escape!
-    xkbOptions = "caps:swapescape, compose:ralt";
+    xkbOptions = "caps:swapescape, compose:ralt, terminate:ctrl_alt_bksp";
 
     # Only applies in X sessions, not wayland AFAICT.
     libinput = {

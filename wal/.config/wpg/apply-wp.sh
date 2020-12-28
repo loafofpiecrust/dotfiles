@@ -17,16 +17,25 @@
 # chmod 555 ~/.background-image
 
 # Restart dunst to apply theme
-# ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
 # mkdir ~/.config/mako
 # ln -sf ~/.cache/wal/mako.conf ~/.config/mako/config
 # mkdir ~/.config/alacritty
 # ln -sf ~/.cache/wal/alacritty.yml ~/.config/alacritty/alacritty.yml
 
+# Restart dunst to force it to read new colors.
+ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
 if pgrep dunst
 then
     pkill dunst && dunst & disown
 fi
+
+# Same with stalonetray!
+ln -sf ~/.cache/wal/stalonetrayrc ~/.stalonetrayrc
+if pgrep stalonetray
+then
+    pkill stalonetray && stalonetray & disown
+fi
+
 # pkill waybar && ~/bin/waybar.sh & disown
 
 # Reload theme in emacs!

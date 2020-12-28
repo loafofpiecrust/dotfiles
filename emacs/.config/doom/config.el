@@ -23,7 +23,7 @@
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
 (setq doom-font (font-spec :family "monospace" :size 15 :weight 'normal)
-      doom-variable-pitch-font (font-spec :family "sans" :size 18)
+      doom-variable-pitch-font (font-spec :family "sans" :size 18 :weight 'semi-bold)
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
 
@@ -46,7 +46,25 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 (after! hide-mode-line
   (setq-default hide-mode-line-format nil)
-  (setq-hook! 'hide-mode-line-mode-hook header-line-format nil))
+  ;; (setq-hook! 'hide-mode-line-mode-hook header-line-format nil)
+  )
+
+;; Remove the fringe from all windows, unless you're visiting a file.
+;; In that case, the fringe is very useful for git status and error information.
+(after! fringe
+  (set-fringe-mode 0)
+
+  (defvar +snead/fringe-free-modes '(pdf-view-mode))
+  (defun +snead/add-fringe ()
+    (setq left-fringe-width 4
+            right-fringe-width 4))
+  (defun +snead/set-fringe ()
+    "Add a fringe to windows carrying file-visiting buffers."
+    (when (and (buffer-file-name) (not (member major-mode +snead/fringe-free-modes)))
+      (+snead/add-fringe)))
+
+  (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
+  (add-hook! '(vterm-mode-hook) #'+snead/add-fringe))
 
 ;; Disable line highlighting by default, relying on mode-specific faces and
 ;; highlighting the current line number.
@@ -71,6 +89,10 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-hook! '(vterm-mode-hook eshell-mode-hook)
     truncate-lines nil)
 
+  (appendq! default-frame-alist '((internal-border-width . 10)
+                                  (left-fringe . 0)
+                                  (right-fringe . 0)))
+
   (setq custom-safe-themes t))
 
 (use-package! solar
@@ -84,8 +106,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (horizontal-scroll-bar-mode -1))
 
 (after! frame
-  (setq window-divider-default-right-width 4
-        window-divider-default-bottom-width 4))
+  (setq window-divider-default-right-width 6
+        window-divider-default-bottom-width 6))
 
 ;; Store various logins and things in a gpg file when necessary.
 (after! auth-source
@@ -275,7 +297,10 @@ If the vault is locked, prompt the user for their master email and password."
       (and acc (gethash "password" (gethash "login" acc)))))
 
   (defun bitwarden--read (prompt &optional search-str)
-    (let* ((items (mapcar (lambda (item) `(,(gethash "name" item) . ,item))
+    (let* ((items (mapcar (lambda (item) `(,(format "%s (%s)"
+                                               (gethash "name" item)
+                                               (gethash "username" (gethash "login" item)))
+                                      . ,item))
                           (bitwarden-search search-str)))
            (choice (completing-read (concat "[Bitwarden] " prompt)
                                     items)))
@@ -629,6 +654,9 @@ are ineffectual otherwise."
 
   (add-hook! 'mu4e-mark-execute-pre-hook #'+mu4e-gmail-fix-flags-h))
 
+(use-package! org-mu4e
+  :after mu4e)
+
 (setq mu4e-update-interval 300)
 (after! mu4e
   (map! :map (mu4e-headers-mode-map mu4e-view-mode-map)
@@ -821,7 +849,7 @@ are ineffectual otherwise."
   (defun +alert/compilation (buffer status)
     (alert (s-capitalize status)
            :title (buffer-name buffer)))
-  (add-to-list 'compilation-finish-functions #'+alert/compilation))
+  (add-hook 'compilation-finish-functions #'+alert/compilation))
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
@@ -829,6 +857,7 @@ are ineffectual otherwise."
   :config
   (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
+        mu4e-alert-email-count-title "Email"
         mu4e-alert-interesting-mail-query (format "date:7d..now and flag:unread and (%s)" my/show-all-inboxes))
   (mu4e-alert-enable-notifications)
   ;; FIXME Start mu4e in the background to retrieve new mail at boot.
@@ -1003,6 +1032,7 @@ are ineffectual otherwise."
     (interactive)
     (let* ((org-latex-default-packages-alist nil)
            (org-latex-packages-alist nil)
+           (org-latex-with-hyperref nil)
            (outfile (org-export-output-file-name ".tex" nil)))
       (org-export-to-file 'moderncv outfile
         nil nil nil nil nil
@@ -1266,8 +1296,9 @@ When ARG is non-nil, ignore NoDisplay property in *.desktop files."
   (setq doom-modeline-buffer-file-name-style 'relative-to-project
         doom-modeline-persp-name t
         doom-modeline-buffer-state-icon nil
-        doom-modeline-height 22
+        doom-modeline-height 26
         doom-modeline-bar-width +snead/frame-border-width)
+  (doom-modeline-def-segment exwm-title '(:eval (or exwm-title (doom-modeline-segment--buffer-info-simple))))
   (doom-modeline-def-modeline 'main
     '(bar modals matches buffer-info buffer-position)
     '(misc-info input-method major-mode vcs lsp checker " "))
@@ -1278,7 +1309,7 @@ When ARG is non-nil, ignore NoDisplay property in *.desktop files."
     '(bar buffer-info-simple)
     '(misc-info vcs " "))
   (doom-modeline-def-modeline 'simple
-    '(bar " " buffer-info-simple)
+    '(bar "  " exwm-title)
     '(misc-info major-mode " "))
   (doom-modeline-def-modeline 'pdf
     '(bar " " matches buffer-info-simple pdf-pages)
@@ -1288,23 +1319,48 @@ When ARG is non-nil, ignore NoDisplay property in *.desktop files."
     '(misc-info irc mu4e github debug minor-modes input-method major-mode process " "))
   ;; (doom-modeline-set-modeline 'upper t)
   ;; Add a mini-modeline with: git, workspace, time, battery, exwm tray
-  )
+
+  (defvar +snead/wifi-name nil)
+  (defun +snead/wifi-update ()
+    (let* ((network-name (string-trim (shell-command-to-string "iwctl station wlan0 show | rg Connected | cut -d' ' -f17-")))
+           (connected (not (string-empty-p network-name))))
+      (setq +snead/wifi-name
+            (concat (propertize "--"
+                                'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
+                                'help-echo (if connected network-name "Disconnected"))))))
+  (run-with-timer 1 3 #'+snead/wifi-update))
 
 (use-package! mini-modeline
   :after doom-modeline
   :hook (doom-modeline-mode . mini-modeline-mode)
   :config
   ;; Avoid putting time in global-mode-string, instead explicitly showing time.
-  (doom-modeline-def-segment time 'display-time-string)
+  ;; (doom-modeline-def-segment time 'display-time-string)
+  ;; (doom-modeline-def-segment wifi )
   ;; Make a custom doom-modeline to sit in the echo area.
-  (doom-modeline-def-modeline 'lower
-    '()
-    '(mu4e persp-name battery " " time))
-  (setq mini-modeline-r-format (doom-modeline 'lower)
-        ;; Make room for an external system tray on the right side.
-        mini-modeline-right-padding 12
-        ;; Don't apply extra faces.
-        mini-modeline-enhance-visual nil)
+  ;; (doom-modeline-def-modeline 'lower
+  ;;   '()
+  ;;   '(mu4e persp-name battery " " time))
+  (let ((half-space (propertize " " 'display '(space :width 0.5))))
+    (setq mini-modeline-r-format `((:eval (doom-modeline-segment--mu4e))
+                                   (:eval (propertize "--" 'display (svg-icon "material" "folder")))
+                                   ,half-space
+                                   (:eval (+workspace-current-name))
+                                   "  "
+                                   (:eval +snead/wifi-name)
+                                   "  "
+                                   (:eval (let ((status doom-modeline--battery-status))
+                                            (list (car status) (cdr status))))
+                                   "  "
+                                   (:eval (propertize "--" 'display (svg-icon "material" "clock-outline")))
+                                   ,half-space
+                                   display-time-string)
+          ;; Make room for an external system tray on the right side.
+          mini-modeline-right-padding 10
+          ;; Don't apply extra faces.
+          mini-modeline-enhance-visual nil
+          mini-modeline-update-interval 0.5)
+    )
   ;; Show battery life and current time in the mini-modeline.
   (display-battery-mode)
   (display-time-mode)
@@ -1340,3 +1396,74 @@ Move it to the mode-line."
 (setq-hook! '(olivetti-mode-hook
               mu4e-headers-mode-hook)
   line-spacing 2)
+
+(use-package! memoize)
+(use-package! svg-icon
+  :after all-the-icons doom-modeline
+  :config
+  (memoize 'svg-icon)
+  ;; Redefine battery icon display using svg-icon.
+  (defun doom-modeline-update-battery-status ()
+    "Update battery status."
+    (setq doom-modeline--battery-status
+          (when (bound-and-true-p display-battery-mode)
+            (let* ((data (and (bound-and-true-p battery-status-function)
+                              (funcall battery-status-function)))
+                   (charging? (string-equal "AC" (cdr (assoc ?L data))))
+                   (percentage (car (read-from-string (or (cdr (assq ?p data)) "ERR"))))
+                   (valid-percentage? (and (numberp percentage)
+                                           (>= percentage 0)
+                                           (<= percentage battery-mode-line-limit)))
+                   (face (if valid-percentage?
+                             (cond (charging? 'doom-modeline-battery-charging)
+                                   ((< percentage battery-load-critical) 'doom-modeline-battery-critical)
+                                   ((< percentage 25) 'doom-modeline-battery-warning)
+                                   ((< percentage 95) 'doom-modeline-battery-normal)
+                                   (t 'doom-modeline-battery-full))
+                           'doom-modeline-battery-error))
+                   (icon (if valid-percentage?
+                             (cond (charging?
+                                    (propertize "--" 'display (svg-icon "material" "battery-charging-100"))
+                                    ;; (doom-modeline-icon 'alltheicon "battery-charging" "🔋" "+"
+                                    ;;                     :face face :height 1.4 :v-adjust -0.1)
+                                    )
+                                   ((> percentage 95)
+                                    (propertize "--" 'display (svg-icon "material" "battery"))
+                                    ;; (doom-modeline-icon 'faicon "battery-full" "🔋" "-"
+                                    ;;                     :face face :v-adjust -0.0575)
+                                    )
+                                   ((> percentage 70)
+                                    (propertize "--" 'display (svg-icon "material" "battery-70"))
+                                    ;; (doom-modeline-icon 'faicon "battery-three-quarters" "🔋" "-"
+                                    ;;                     :face face :v-adjust -0.0575)
+                                    )
+                                   ((> percentage 40)
+                                    (propertize "--" 'display (svg-icon "material" "battery-40"))
+                                    ;; (doom-modeline-icon 'faicon "battery-half" "🔋" "-"
+                                    ;;                     :face face :v-adjust -0.0575)
+                                    )
+                                   ((> percentage battery-load-critical)
+                                    (propertize "--" 'display (svg-icon "material" "battery-10"))
+                                    ;; (doom-modeline-icon 'faicon "battery-quarter" "🔋" "-"
+                                    ;;                     :face face :v-adjust -0.0575)
+                                    )
+                                   (t ;; (doom-modeline-icon 'faicon "battery-empty" "🔋" "!"
+                                    ;;                     :face face :v-adjust -0.0575)
+                                    (propertize "--" 'display (svg-icon "material" "battery-alert"))
+                                    ))
+                           (propertize "--" 'display (svg-icon "material" "battery-unknown"));; (doom-modeline-icon 'faicon "battery-empty" "⚠" "N/A"
+                           ;;                     :face face :v-adjust -0.0575)
+                           ))
+                   (text (if valid-percentage? (format "%d%%%%" percentage) ""))
+                   (help-echo (if (and battery-echo-area-format data valid-percentage?)
+                                  (battery-format battery-echo-area-format data)
+                                "Battery status not available")))
+              (cons (propertize icon 'help-echo help-echo)
+                    (propertize text 'face face 'help-echo help-echo))))))
+  ;;(defun all-the-icons-material (icon-name &rest args)
+  ;;(propertize "--" 'display (svg-icon "material" icon-name)))
+  ;; (defun all-the-icons-faicon (icon-name &rest args)
+  ;;   (propertize "--" 'display (svg-icon "")))
+  )
+(map! :leader
+      "fa" (cmd! (projectile-find-file-in-directory "~")))

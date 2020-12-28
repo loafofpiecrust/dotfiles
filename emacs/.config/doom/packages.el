@@ -88,7 +88,7 @@
 (package! ivy-avy)
 
 (package! org-cv
-  :recipe (:host gitlab :repo "Titan-C/org-cv"))
+  :recipe (:host gitlab :repo "loafofpiecrust/org-cv" :branch "explicit-dates"))
 
 ;; I don't use fcitx at all.
 (package! fcitx :disable t)
@@ -140,6 +140,8 @@
 (package! mini-modeline
   :recipe (:local-repo "emacs-mini-modeline" :no-native-compile t :no-byte-compile t))
 
+(package! svg-icon
+  :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:
 ;; https://github.com/raxod502/straight.el#the-recipe-format

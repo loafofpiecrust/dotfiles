@@ -1007,6 +1007,8 @@ HTML emails."
 ;;   :innermodes '(poly-markdown-msg-content-innermode))
 
 (defun md-msg-view-quit-buffer ()
+
+(defun mu4e~view-quit-buffer ()
   "Quit the mu4e-view buffer.
 This is a rather complex function, to ensure we don't disturb
 other windows."
@@ -1014,7 +1016,7 @@ other windows."
   (if (eq mu4e-split-view 'single-window)
       (when (buffer-live-p (mu4e-get-view-buffer))
         (kill-buffer (mu4e-get-view-buffer)))
-    (unless (eq major-mode 'md-msg-view-mode)
+    (unless (or (eq major-mode 'md-msg-view-mode) (eq major-mode 'mu4e-view-mode))
       (mu4e-error "Must be in md-msg-view-mode (%S)" major-mode))
     (let ((curbuf (current-buffer))
           (curwin (selected-window))
@@ -1054,8 +1056,8 @@ other windows."
     (define-key map (kbd "<tab>") 'md-msg-tab)
     (define-key map (kbd "C-c C-s") 'message-goto-subject)
     (define-key map (kbd "C-c C-b") 'md-msg-goto-body)
-    (define-key map (kbd "q") 'md-msg-view-quit-buffer)
-    (evil-define-key 'normal map "q" 'md-msg-view-quit-buffer)
+    ;; (define-key map (kbd "q") 'md-msg-view-quit-buffer)
+    ;; (evil-define-key 'normal map "q" 'md-msg-view-quit-buffer)
     map)
   "Keymap for `md-msg-view-mode'.")
 

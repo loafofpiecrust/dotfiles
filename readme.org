@@ -1,10 +1,17 @@
 #+TITLE: dotfiles
 
-Hello! These are my personal dotfiles that I manage my laptop's linux environment with.
+Hello! These are my personal dotfiles that manage my laptop's linux environment.
 
-| Problem | Solution    |
-|---------+-------------|
-| OS      | NixOS 20.09 |
-| WM      | =exwm=      |
-| IM      | =exwm-xim=  |
-| Editor  | =emacs=     |
+| Problem          | Solution           |
+|------------------+--------------------|
+| Operating System | NixOS 20.09        |
+| Window Manager   | =exwm=             |
+| Input Method     | =emacs + exwm-xim= |
+| Editor           | =emacs=            |
+| Notifications    | =dunst=            |
+| Shell            | =fish=             |
+| Color Scheme     | =pywal + wpgtk=    |
+| Email            | =isync + mu4e=     |
+| Web Browser      | =firefox=          |
+| Networking       | =iwd=              |
+| System Tray      | =stalonetray=      |

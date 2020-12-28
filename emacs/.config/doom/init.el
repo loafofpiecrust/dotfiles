@@ -30,7 +30,8 @@
                                  "_IM_"
                                  "^EMACS_"
                                  "^SWAYSOCK"
-                                 "^BITWARDEN")))
+                                 "^BITWARDEN"
+                                 "^SSH_")))
 
 (doom! :input
        chinese

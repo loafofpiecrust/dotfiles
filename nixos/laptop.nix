@@ -89,6 +89,11 @@
   services.tlp.enable = true;
   powerManagement.powertop.enable = true;
   networking.networkmanager.wifi.powersave = true;
+  services.upower = { enable = true; };
+
+  # Only log out when the lid is closed with power.
+  services.logind.lidSwitchExternalPower = "ignore";
+  services.logind.killUserProcesses = true;
 
   virtualisation.podman = {
     enable = true;
@@ -158,8 +163,8 @@
   # Undervolt to hopefully fix thermal throttling and fan issues.
   services.undervolt = {
     enable = true;
-    coreOffset = -100;
-    gpuOffset = -100;
+    coreOffset = -110;
+    gpuOffset = -110;
   };
   services.throttled.enable = true;
 
@@ -168,6 +173,7 @@
   location.provider = "geoclue2";
 
   # Use newer intel graphics drivers.
+  hardware.cpu.intel.updateMicrocode = true;
   hardware.opengl = {
     enable = true;
     extraPackages = with pkgs; [
@@ -179,7 +185,4 @@
     ];
     # extraPackages32 = [ pkgs.linuxPackages.nvidia_x11.lib32 ];
   };
-
-  # Only log out when the lid is closed with power.
-  services.logind.lidSwitchExternalPower = "lock";
 }

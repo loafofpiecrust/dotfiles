@@ -67,7 +67,6 @@
           with epkgs; [
             vterm
             fuz
-            ivy-fuz
             undo-tree
             pdf-tools
             plantuml-mode

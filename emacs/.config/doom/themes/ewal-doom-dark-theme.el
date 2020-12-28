@@ -80,6 +80,7 @@ Can be an integer to determine the exact padding."
    (base9      (ewal-doom-themes-get-color 'background +3))
    (fg         (ewal-doom-themes-get-color 'brightwhite  0))
    (fg-alt     (ewal-doom-themes-get-color 'white 0))
+   (wallpaper (ewal-doom-themes-get-color 'brightred -3))
 
    (grey       base4)
    (red        (ewal-doom-themes-get-color 'red      0))
@@ -154,6 +155,7 @@ Can be an integer to determine the exact padding."
    (cursor :background magenta)
    (mini-modeline-mode-line :background nil)
    (doom-modeline-bar :background orange)
+   (doom-modeline-battery-normal :inherit nil)
 
    (show-paren-match :background base9 :foreground bright-yellow :weight 'bold)
    ((hl-todo &override) :foreground orange)
@@ -168,7 +170,9 @@ Can be an integer to determine the exact padding."
    ((cfw:face-toolbar-button-off &override) :foreground fg-alt)
    ((cfw:face-sunday &override) :foreground red)
 
-   ;; ((minibuffer-prompt &override) :height 1.2)
+   ;; Add padding to the minibuffer prompt, making it easier to read.
+   ;; This is especially helpful for single-line prompts like passwords.
+   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,base4))
 
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
@@ -206,11 +210,13 @@ Can be an integer to determine the exact padding."
     :foreground (if -modeline-bright base8 highlight))
    (doom-modeline-spc-face :inherit nil)
 
-   ((header-line &override) :extend t :weight 'bold ;; :background base6
+   ((header-line &override) :extend t :weight 'medium ;; :background base6
     :background base6
-    :box `(:line-width 7 :color ,bg)
+    ;; :box `(:line-width 7 :color ,bg)
     ;; :underline `(:style line :color ,yellow)
     )
+   ;; (mode-line-buffer-id :inherit 'variable-pitch)
+   ;; ((doom-modeline-buffer-path &override) :inherit 'variable-pitch)
 
    ((message-header-subject &override) :height 1.1)
 
@@ -280,10 +286,16 @@ Can be an integer to determine the exact padding."
    (tooltip              :background base0 :foreground fg)
    (company-tooltip-selection     :inverse-video t)
    (vertical-border :foreground base6 :background base6)
-   (internal-border :background green :foreground green)
+   ;; (internal-border :background green :foreground green)
+   (internal-border :background wallpaper :foreground wallpaper)
    (whitespace-indentation :inherit 'default)
    (whitespace-big-indent :inherit 'default)
    (hl-line :background base9)
+
+   ;; Gaps between windows
+   (window-divider :background wallpaper :foreground wallpaper)
+   ;; (window-divider-first-pixel :inherit 'vertical-border)
+   ;; (window-divider-last-pixel :inherit 'vertical-border)
 
    ;; org-mode
    ((outline-1 &override) :foreground violet)

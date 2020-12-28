@@ -49,10 +49,10 @@ in {
   # Allow other machines to ssh in.
   services.openssh.enable = true;
   # Remember ssh passwords for a few hours.
-  programs.ssh = {
-    startAgent = true;
-    agentTimeout = "2h";
-  };
+  # programs.ssh = {
+  #   startAgent = false;
+  #   agentTimeout = "2h";
+  # };
 
   # Allow easy discovery of network devices (like printers).
   services = {
@@ -71,6 +71,7 @@ in {
     java.enable = true;
     gnupg.agent = {
       enable = true;
+      enableSSHSupport = true;
       pinentryFlavor = "emacs";
     };
     # seahorse.enable = true; # GUI to manage keyring passwords.
