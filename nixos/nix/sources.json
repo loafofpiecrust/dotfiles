@@ -5,10 +5,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "emacs-overlay",
-        "rev": "32486e6e9e4300721b0c071fda5465cec2086eea",
-        "sha256": "1nls31ngrn15mm4b6k5qnfrb9d53p4q32f05j6hvyhg3awnkh50c",
+        "rev": "599dbaf1d7e8e1d61f5a2f547c8500e246fa4b4a",
+        "sha256": "02nlfjfrryp7pvzb4rsc13h756mf0mnrwp3jhl25qqgx3fhhndxw",
         "type": "tarball",
-        "url": "https://github.com/nix-community/emacs-overlay/archive/32486e6e9e4300721b0c071fda5465cec2086eea.tar.gz",
+        "url": "https://github.com/nix-community/emacs-overlay/archive/599dbaf1d7e8e1d61f5a2f547c8500e246fa4b4a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "emacs-pgtk-nativecomp-overlay": {
