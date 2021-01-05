@@ -65,7 +65,9 @@
 (package! mu4e-send-delay
   :recipe (:host github :repo "cacology/mu4e-send-delay"))
 
-(package! counsel)
+(package! app-launcher
+  :pin "71fb5a501a646703c81783395ff46cdd043e173a"
+  :recipe (:host github :repo "SebastienWae/app-launcher"))
 
 ;; Manage citations and references with ease in org-mode.
 (package! org-ref)
@@ -142,6 +144,8 @@
 
 (package! svg-icon
   :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
+
+
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:
 ;; https://github.com/raxod502/straight.el#the-recipe-format

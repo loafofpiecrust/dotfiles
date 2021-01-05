@@ -284,7 +284,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
         ;; my store password to unlock the BW pass.
         bitwarden-automatic-unlock (lambda () (read-passwd "[Bitwarden] Master password: ")))
 
-  (defun bitwarden-get-password (domain username)
+  (defun bitwarden-getpass-for-user (domain username)
     "Return the password for an account with the given USERNAME under the given DOMAIN.
 If the vault is locked, prompt the user for their master email and password."
     (interactive)
@@ -307,21 +307,22 @@ If the vault is locked, prompt the user for their master email and password."
       (cdr (assoc choice items))))
 
   ;; TODO Fix login, then unlock after sync.
-  (defun counsel-bitwarden-getpass (&optional arg)
+  (defun bitwarden-getpass (&optional account print-message)
     "Pick an account and copy the password for it to the kill-ring."
-    (interactive "P")
+    (interactive)
     ;; Ensure the vault is unlocked, prompting for login if not.
     (unless (bitwarden-unlocked-p) (bitwarden-unlock))
-    (let ((acc (bitwarden--read "Copy password: ")))
-      (kill-new (gethash "password" (gethash "login" acc)))
-      (message "Copied %s password for %s"
-               (gethash "name" acc)
-               (gethash "username" (gethash "login" acc)))))
-
-  (map! :leader
-        "ap" #'counsel-bitwarden-getpass
-        "ae" #'bitwarden-edit
-        "ag" #'bitwarden-generate-password)
+    (if (interactive-p)
+        ;; New interactive prompt for account or username.
+        (let ((acc (bitwarden--read "Copy password: ")))
+          (kill-new (gethash "password" (gethash "login" acc)))
+          (message "Copied %s password for %s"
+                   (gethash "name" acc)
+                   (gethash "username" (gethash "login" acc))))
+      ;; Copied over from original bitwarden-getpass
+      (bitwarden--handle-message
+       (bitwarden--auto-cmd (list "get" "password" account))
+       print-message)))
 
   (defun bitwarden-search (&optional search-str search-type)
     "Search for vault for items containing SEARCH-STR.
@@ -365,6 +366,12 @@ Returns a vector of hashtables of the results."
                  (format "bw generate -ulns --length %d" len)))
       (message "New password copied to the clipboard")))
 
+  ;; Bind my most used workflows under <leader> a (authentication)
+  (map! :leader
+        "ap" #'bitwarden-getpass
+        "ae" #'bitwarden-edit
+        "ag" #'bitwarden-generate-password)
+
   ;; TODO Function to generate a password, then push it into the kill-ring so I
   ;; can paste it into a web prompt, then when editing the account.
 
@@ -384,13 +391,9 @@ Returns a vector of hashtables of the results."
         ;; :i "C-S-Z" 'undo-tree-redo
         ))
 
+;; I like using <u> for undo and <U> for redo. It's symmetrical.
 (after! (evil evil-collection)
   (map! :n "U" 'evil-redo))
-
-(after! (counsel evil evil-collection)
-  (map! :leader
-        "tm" 'counsel-major
-        "sg" 'counsel-git-grep))
 
 (after! (evil evil-collection)
   ;; When Emacs is in server mode, we have to normalize C-i in a graphical window.
@@ -1145,7 +1148,6 @@ end of the workspace list."
     (exec "firefox"))
   (map! :leader
         "j" #'ace-window
-        "o o" #'consult-linux-app
         "o b" #'open-browser
         "o g" #'=calendar
         "w U" #'winner-redo
@@ -1263,22 +1265,11 @@ end of the workspace list."
 
 (map! :mnv "go" #'avy-goto-char)
 
-(use-package! counsel
-  :after selectrum
-  :config
-  ;; Redefine counsel-linux-app using completing-read
-  (defun consult-linux-app (&optional arg)
-    "Launch a Linux desktop application, similar to Alt-<F2>.
-When ARG is non-nil, ignore NoDisplay property in *.desktop files."
-    (interactive "P")
-    (let* ((apps (counsel-linux-apps-list))
-           (name (completing-read
-                  "Run application: "
-                  apps
-                  (unless arg (lambda (x) (get-text-property 0 'visible (car x)))))))
-      (counsel-linux-app-action-default (assoc name apps))
-      ))
-  )
+;; Launch programs directly from an Emacs prompt.
+(use-package! app-launcher
+  :commands app-launcher-run-app
+  :init
+  (map! :leader "o o" #'app-launcher-run-app))
 
 (use-package! org-caldav
   :config

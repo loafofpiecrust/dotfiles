@@ -53,11 +53,16 @@
     [remap apropos] #'consult-apropos
     [remap recentf-open-files] #'consult-recent-file)
   :config
+  (setq consult-project-root-function #'projectile-project-root
+        consult--fdfind-cmd '("fd" "--color=never" "--full-path"))
   (map! :n "?" #'consult-line)
   (map! :leader
         "sb" #'consult-line
         "se" #'consult-error
-        "iy" #'consult-yank-pop))
+        "iy" #'consult-yank-pop
+        "sp" #'consult-ripgrep
+        "/" #'consult-ripgrep
+        ">" #'consult-fdfind))
 
 (use-package! consult-selectrum
   :after consult selectrum)
@@ -87,29 +92,6 @@
                     ))))
     (find-file fn)))
 
-(defun consult-grep ()
-  (interactive)
-  (let* ((default-directory (or (projectile-project-root) default-directory))
-         (choice (projectile-completing-read
-                  "Search: "
-                  (lambda (input pred type)
-                    (process-lines-ignore-status
-                     "rg"
-                     "--line-number"
-                     "-S"
-                     "--hidden"
-                     "-g" "!**/.git/**"
-                     input))))
-         (parts (split-string choice ":"))
-         (fn (car parts))
-         (line-num (string-to-number (nth 1 parts))))
-    (find-file fn)
-    (goto-char (point-min))
-    (forward-line (- line-num 1))))
-
-(after! consult
-  (map! :leader "s p" #'consult-grep))
-
 (use-package! marginalia
   :init
   (marginalia-mode))
@@ -125,6 +107,27 @@
     (let (message-log-max)
       (message "\n%s" text))))
 
+;; Integrate a few consult commands as embark actions!
+;; Also, provide action descriptions until that's resolved upstream in embark.
+(map! :after (embark consult)
+      :map embark-file-map
+      :desc "Open externally" "x" #'consult-file-externally
+      :desc "Copy" "c" #'copy-file
+      :desc "Load" "l" #'load-file
+      :desc "Rename" "r" #'rename-file
+      :desc "Open in other window" "o" #'find-file-other-window
+      :desc "Delete" "d" #'delete-file
+      :desc "Open shell here" "e" #'embark-eshell-in-directory
+      :desc "Diff" "=" #'ediff-files
+      :desc "Make directory" "+" #'make-directory
+      :desc "Execute command" "!" #'shell-command
+      :desc "Execute command (async)" "&" #'async-shell-command
+      :desc "Delete directory" "D" #'delete-directory
+      :desc "Insert relative path" "I" #'embark-insert-relative-path
+      :desc "Copy relative path" "W" #'embark-save-relative-path
+      "b" nil
+      "B" nil)
+
 (use-package! embark
   ;; Replicate default ivy-occur keybinding.
   :bind (:map minibuffer-local-map
@@ -136,8 +139,8 @@
          ;; ESC should act the same as C-g in all minibuffer operations.
          ("<escape>" . #'ignore))
   :config
-  (setq embark-prompt-style 'default)
-  (setq embark-action-indicator
+  (setq embark-prompt-style 'default
+        embark-action-indicator
         (defun embark-which-key-setup ()
           (let ((which-key-show-transient-maps t)
                 (which-key-replacement-alist
@@ -154,8 +157,6 @@
     (helpful-symbol (intern (embark-target))))
 
   (set-popup-rule! "^\\*Embark Occur" :size 0.35 :ttl 0 :quit nil)
-  ;; (map! :map minibuffer-local-map
-  ;;       "ESC" #'abort-recursive-edit)
   (add-hook 'embark-pre-action-hook #'+selectrum-refresh)
 
   ;; Integrate embark with selectrum.
@@ -211,6 +212,8 @@ If DIR is not a project, it will be indexed (but not cached)."
              ;; THIS IS WHAT I CHANGED! projectile comes with a function for
              ;; this exact purpose!
              (projectile-find-file-in-directory default-directory)))
+          ((fboundp 'consult-fdfind)
+           (call-interactively #'consult-fdfind))
           ((fboundp 'counsel-file-jump) ; ivy only
            (call-interactively #'counsel-file-jump))
           ((project-current nil dir)
@@ -219,25 +222,21 @@ If DIR is not a project, it will be indexed (but not cached)."
            (call-interactively #'helm-find-files))
           ((call-interactively #'find-file)))))
 
+;; Reroute all minibuffer completion to a child frame, including all built-in
+;; completing-read, read-string, etc. functionality.
 (use-package! mini-frame
   :if (featurep! +childframe)
   :hook (doom-first-input . mini-frame-mode)
-  :custom
-  (mini-frame-create-lazy . nil)
-  :config
-  ;; (defun +mini-frame-focus ()
-  ;;   (when (and mini-frame-mode
-  ;;              mini-frame-frame
-  ;;              (frame-visible-p mini-frame-frame)
-  ;;              (not (eq mini-frame-selected-frame mini-frame-frame)))
-  ;;     (when (active-minibuffer-window)
-  ;;       (select-frame-set-input-focus (window-frame (active-minibuffer-window)))
-  ;;       (select-window (active-minibuffer-window)))))
-  ;; (add-hook 'doom-switch-window-hook #'+mini-frame-focus)
 
+  :custom
+  ;; Immediately instantiate the mini-frame so there's no waiting when we first
+  ;; want to use it.
+  (mini-frame-create-lazy . nil)
+
+  :config
   ;; Some modes use a pop-up window above the echo area to show contents,
-  ;; allowing input via the minibuffer. So we don't want to move those inputs
-  ;; into a mini-frame.
+  ;; allowing input via the minibuffer. We don't want to move those inputs
+  ;; into the mini-frame, because that would be jarring.
   (setq mini-frame-ignore-commands '(eval-expression
                                      ;; Debugging
                                      "edebug-eval-expression" debugger-eval-expression
@@ -247,6 +246,8 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      org-agenda-schedule
                                      ;; calc prompts
                                      calcDigit-start))
+
+  ;; Make it pretty and automatically resize based on the prompt.
   (setq mini-frame-show-parameters `((left . 0.5)
                                      (top . 38)
                                      (width . 0.55)
@@ -256,12 +257,11 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      (right-fringe . 10))
         mini-frame-resize 'grow-only)
 
-  ;; Workaround for EXWM compatibility.
-  (when (fboundp 'exwm-init)
+  ;; Workaround for EXWM compatibility to show the mini-frame on top of any X window.
+  (when (fboundp 'exwm--root)
     (appendq! mini-frame-show-parameters '((parent-frame . nil))))
 
   ;; Add padding to the minibuffer prompt, making it easier to read.
   ;; This is especially helpful for single-line prompts like passwords.
   (custom-set-faces!
-    `(minibuffer-prompt :box (:line-width 3 :color ,(funcall mini-frame-background-color-function))))
-  )
+    `(minibuffer-prompt :box (:line-width 3 :color ,(funcall mini-frame-background-color-function)))))

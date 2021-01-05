@@ -2,21 +2,21 @@
 ;;; completion/selectrum/packages.el
 
 (package! selectrum
-  :pin "de66b925655c40d6fe08e895b8a4f591e4a97dc6"
+  :pin "4106b216f9b3ccf8960abe89fb9863c570a6f376"
   :recipe (:branch "main"))
 (package! marginalia
-  :pin "56ad689886e618616f9ee282c3d8d57f8270450b"
+  :pin "51b6dbf61f0ed65689e0685da6ab0b59d0220b58"
   :recipe (:branch "main"))
 (package! embark
   :pin "f84e11aaa60ede27d562afa314e4a1ee0a1ab5df"
   :recipe (:host github :repo "oantolin/embark" :branch "main"))
 (package! consult
-  :pin "ccbe9a91a264f8e7517e6096212874d66cc8e070"
+  :pin "4fe41a5aea26ca98ef6e1861d88fe6c3a7a77d3b"
   :recipe (:branch "main"))
 (package! consult-selectrum
-  :pin "ccbe9a91a264f8e7517e6096212874d66cc8e070"
+  :pin "4fe41a5aea26ca98ef6e1861d88fe6c3a7a77d3b"
   :recipe (:branch "main"))
-(package! selectrum-prescient :pin "5d139e5b1fe03ccaddff8c250ab8e9d795071b95")
+(package! selectrum-prescient :pin "42adc802d3ba6c747bed7ea1f6e3ffbbdfc7192d")
 (package! ripgrep)
 
-(package! mini-frame)
+(package! mini-frame :pin "0912cf4f500403be32735bc50e331fd06910471f")
