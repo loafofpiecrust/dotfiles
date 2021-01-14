@@ -6,11 +6,12 @@
   (setq selectrum-extend-current-candidate-highlight t
         selectrum-fix-minibuffer-height t
         projectile-completion-system 'default)
+  (setq completion-styles '(substring partial-completion))
   (map! :leader
         "'" #'selectrum-repeat)
-  (map! :map selectrum-minibuffer-map
-        "C-j" #'selectrum-next-candidate
-        "C-k" #'selectrum-previous-candidate)
+  ;;(map! :map selectrum-minibuffer-map
+        ;;"C-j" #'selectrum-next-candidate
+        ;;"C-k" #'selectrum-previous-candidate)
   (autoload 'ffap-guesser "ffap")
   (setq minibuffer-default-add-function
         (defun minibuffer-default-add-function+ ()
@@ -53,8 +54,10 @@
     [remap apropos] #'consult-apropos
     [remap recentf-open-files] #'consult-recent-file)
   :config
+  (setq consult-preview-key nil)
   (setq consult-project-root-function #'projectile-project-root
-        consult--fdfind-cmd '("fd" "--color=never" "--full-path"))
+        consult-find-command '("fd" "--color=never" "--full-path")
+        consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "-S" "." "-e"))
   (map! :n "?" #'consult-line)
   (map! :leader
         "sb" #'consult-line
@@ -62,7 +65,7 @@
         "iy" #'consult-yank-pop
         "sp" #'consult-ripgrep
         "/" #'consult-ripgrep
-        ">" #'consult-fdfind))
+        ">" #'consult-find))
 
 (use-package! consult-selectrum
   :after consult selectrum)
@@ -132,8 +135,8 @@
   ;; Replicate default ivy-occur keybinding.
   :bind (:map minibuffer-local-map
          ("C-o" . #'embark-act)
-         ("C-e" . #'embark-occur)
-         :map embark-occur-mode-map
+         ("C-e" . #'embark-collect-snapshot)
+         :map embark-collect-mode-map
          ("C-o" . #'embark-act)
          :map embark-general-map
          ;; ESC should act the same as C-g in all minibuffer operations.
@@ -156,7 +159,7 @@
     (interactive)
     (helpful-symbol (intern (embark-target))))
 
-  (set-popup-rule! "^\\*Embark Occur" :size 0.35 :ttl 0 :quit nil)
+  (set-popup-rule! "^\\*Embark Collect" :size 0.35 :ttl 0 :quit nil)
   (add-hook 'embark-pre-action-hook #'+selectrum-refresh)
 
   ;; Integrate embark with selectrum.
@@ -187,40 +190,41 @@
                                            (+workspaces-set-project-action-fn)
                                            (+workspaces-switch-to-project-h))))
 
-(defun doom-project-find-file (dir)
-  "Jump to a file in DIR (searched recursively).
+(after! selectrum
+  (defun doom-project-find-file (dir)
+    "Jump to a file in DIR (searched recursively).
 
 If DIR is not a project, it will be indexed (but not cached)."
-  (unless (file-directory-p dir)
-    (error "Directory %S does not exist" dir))
-  (unless (file-readable-p dir)
-    (error "Directory %S isn't readable" dir))
-  (let* ((default-directory (file-truename dir))
-         (projectile-project-root (doom-project-root dir))
-         (projectile-enable-caching projectile-enable-caching))
-    (cond (projectile-project-root
-           (unless (doom-project-p default-directory)
-             ;; Disable caching if this is not a real project; caching
-             ;; non-projects easily has the potential to inflate the projectile
-             ;; cache beyond reason.
-             (setq projectile-enable-caching nil))
-           (if (doom-module-p :completion 'ivy)
-               ;; Intentionally avoid `helm-projectile-find-file', because it runs
-               ;; asynchronously, and thus doesn't see the lexical
-               ;; `default-directory'
-               (call-interactively #'counsel-projectile-find-file)
-             ;; THIS IS WHAT I CHANGED! projectile comes with a function for
-             ;; this exact purpose!
-             (projectile-find-file-in-directory default-directory)))
-          ((fboundp 'consult-fdfind)
-           (call-interactively #'consult-fdfind))
-          ((fboundp 'counsel-file-jump) ; ivy only
-           (call-interactively #'counsel-file-jump))
-          ((project-current nil dir)
-           (project-find-file-in nil nil dir))
-          ((fboundp 'helm-find-files)
-           (call-interactively #'helm-find-files))
-          ((call-interactively #'find-file)))))
+    (unless (file-directory-p dir)
+      (error "Directory %S does not exist" dir))
+    (unless (file-readable-p dir)
+      (error "Directory %S isn't readable" dir))
+    (let* ((default-directory (file-truename dir))
+           (projectile-project-root (doom-project-root dir))
+           (projectile-enable-caching projectile-enable-caching))
+      (cond (projectile-project-root
+             (unless (doom-project-p default-directory)
+               ;; Disable caching if this is not a real project; caching
+               ;; non-projects easily has the potential to inflate the projectile
+               ;; cache beyond reason.
+               (setq projectile-enable-caching nil))
+             (if (doom-module-p :completion 'ivy)
+                 ;; Intentionally avoid `helm-projectile-find-file', because it runs
+                 ;; asynchronously, and thus doesn't see the lexical
+                 ;; `default-directory'
+                 (call-interactively #'counsel-projectile-find-file)
+               ;; THIS IS WHAT I CHANGED! projectile comes with a function for
+               ;; this exact purpose!
+               (projectile-find-file-in-directory default-directory)))
+            ((fboundp 'consult-fdfind)
+             (call-interactively #'consult-fdfind))
+            ((fboundp 'counsel-file-jump) ; ivy only
+             (call-interactively #'counsel-file-jump))
+            ((project-current nil dir)
+             (project-find-file-in nil nil dir))
+            ((fboundp 'helm-find-files)
+             (call-interactively #'helm-find-files))
+            ((call-interactively #'find-file))))))
 
 ;; Reroute all minibuffer completion to a child frame, including all built-in
 ;; completing-read, read-string, etc. functionality.
@@ -247,6 +251,11 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      ;; calc prompts
                                      calcDigit-start))
 
+  ;; Keep the background color the same as normal frames.
+  (defun +mini-frame-header-bg (&optional frame)
+    (face-attribute 'mode-line :background frame))
+  (setq mini-frame-background-color-function #'+mini-frame-header-bg)
+
   ;; Make it pretty and automatically resize based on the prompt.
   (setq mini-frame-show-parameters `((left . 0.5)
                                      (top . 38)
@@ -254,14 +263,8 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      (height . 1)
                                      (internal-border-width . 0)
                                      (left-fringe . 10)
-                                     (right-fringe . 10))
-        mini-frame-resize 'grow-only)
+                                     (right-fringe . 10)))
 
   ;; Workaround for EXWM compatibility to show the mini-frame on top of any X window.
-  (when (fboundp 'exwm--root)
-    (appendq! mini-frame-show-parameters '((parent-frame . nil))))
-
-  ;; Add padding to the minibuffer prompt, making it easier to read.
-  ;; This is especially helpful for single-line prompts like passwords.
-  (custom-set-faces!
-    `(minibuffer-prompt :box (:line-width 3 :color ,(funcall mini-frame-background-color-function)))))
+  (when (featurep 'exwm)
+    (appendq! mini-frame-show-parameters '((parent-frame . nil)))))
