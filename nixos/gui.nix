@@ -66,7 +66,8 @@
     fira-code
     ibm-plex
     jetbrains-mono
-    hasklig
+    source-code-pro
+    mononoki
 
     # Add user fonts to ~/.local/share/fonts
   ];
@@ -74,7 +75,7 @@
   fonts.fontconfig = {
     defaultFonts = {
       monospace = [
-        "JetBrains Mono" # Main preference, changes often.
+        "SF Mono" # Main preference, changes often.
         "Hasklig" # Provides almost all of the IPA symbols.
         "Noto Sans Mono CJK SC"
         "Noto Emoji"

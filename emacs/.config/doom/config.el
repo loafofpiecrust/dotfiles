@@ -6,7 +6,10 @@
 ;; Let me load my custom packages.
 (add-load-path! "custom")
 
-;; Make shell commands run faster...
+;; Load custom themes from the "themes" folder here.
+(setq custom-theme-directory (expand-file-name "~/.config/doom/themes"))
+
+;; Make shell commands run faster using bash...
 (setq shell-file-name "/bin/bash")
 ;; ...But let me use fish for interactive sessions.
 (after! vterm
@@ -22,10 +25,14 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq doom-font (font-spec :family "monospace" :size 15 :weight 'normal)
+;; Symbol test: _ -> => , . `' "" O0l1*#
+(setq doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "sans" :size 18 :weight 'semi-bold)
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
+
+;; Give each line some room to breathe.
+(setq-default line-spacing 2)
 
 (defun +snead/increase-mem ()
   "Allow Emacs to use up to 1 GB of memory.
@@ -36,10 +43,9 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 ;; Increase garbage collection threshold while active.
 ;; This keeps emacs from being sluggish while typing.
 (after! lsp-mode (+snead/increase-mem))
-(after! gcmh (+snead/increase-mem))
-
 (after! gcmh
-  (setq-default gcmh-idle-delay 5))
+  (setq-default gcmh-idle-delay 5)
+  (+snead/increase-mem))
 
 (defvar +snead/frame-border-width 3)
 (defvar +snead/frame-fringe 8)
@@ -54,13 +60,13 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 (after! fringe
   (set-fringe-mode 0)
 
-  (defvar +snead/fringe-free-modes '(pdf-view-mode))
+  (defvar +snead/fringe-deny-modes '(pdf-view-mode))
   (defun +snead/add-fringe ()
-    (setq left-fringe-width 4
-            right-fringe-width 4))
+    (setq-local left-fringe-width 4
+                right-fringe-width 4))
   (defun +snead/set-fringe ()
     "Add a fringe to windows carrying file-visiting buffers."
-    (when (and (buffer-file-name) (not (member major-mode +snead/fringe-free-modes)))
+    (when (and (buffer-file-name) (not (member major-mode +snead/fringe-deny-modes)))
       (+snead/add-fringe)))
 
   (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
@@ -76,10 +82,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   :config
   (setq-default gc-cons-percentage 0.5)
 
-  ;; Some functionality uses this to identify you, e.g. GPG configuration, email
-  ;; clients, file templates and snippets.
   (setq user-full-name "Taylor Snead"
-        user-mail-address "taylorsnead@gmail.com")
+        user-mail-address "taylor@snead.xyz")
 
   (setq-default truncate-lines nil)
 
@@ -89,9 +93,11 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-hook! '(vterm-mode-hook eshell-mode-hook)
     truncate-lines nil)
 
-  (appendq! default-frame-alist '((internal-border-width . 10)
-                                  (left-fringe . 0)
-                                  (right-fringe . 0)))
+  (when (featurep 'exwm)
+    (appendq! default-frame-alist '((left-fringe . 0)
+                                    (right-fringe . 0)
+                                    (internal-border-width . 12)))
+    (set-fringe-mode 0))
 
   (setq custom-safe-themes t))
 
@@ -124,6 +130,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   ;; Automatically wrap comments in code
   (setq-default comment-auto-fill-only-comments t))
 
+;; Make calculator easy to access.
+(map! :leader "oc" 'calc)
 (after! calc
   (setq calc-symbolic-mode t))
 
@@ -237,6 +245,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq ewal-doom-vibrant-brighter-comments t))
 
 (use-package! theme-changer
+  :disabled
   :after doom-themes
   :config
   (change-theme doom-theme 'ewal-doom-dark))
@@ -298,9 +307,9 @@ If the vault is locked, prompt the user for their master email and password."
 
   (defun bitwarden--read (prompt &optional search-str)
     (let* ((items (mapcar (lambda (item) `(,(format "%s (%s)"
-                                               (gethash "name" item)
-                                               (gethash "username" (gethash "login" item)))
-                                      . ,item))
+                                                    (gethash "name" item)
+                                                    (gethash "username" (gethash "login" item)))
+                                           . ,item))
                           (bitwarden-search search-str)))
            (choice (completing-read (concat "[Bitwarden] " prompt)
                                     items)))
@@ -368,9 +377,10 @@ Returns a vector of hashtables of the results."
 
   ;; Bind my most used workflows under <leader> a (authentication)
   (map! :leader
-        "ap" #'bitwarden-getpass
-        "ae" #'bitwarden-edit
-        "ag" #'bitwarden-generate-password)
+        :prefix ("a" . "auth")
+        "p" #'bitwarden-getpass
+        "e" #'bitwarden-edit
+        "g" #'bitwarden-generate-password)
 
   ;; TODO Function to generate a password, then push it into the kill-ring so I
   ;; can paste it into a web prompt, then when editing the account.
@@ -477,7 +487,7 @@ Returns a vector of hashtables of the results."
   (map! :leader "os" 'eshell)
   (map! :nv "zw" 'count-words
         :n "zG" '+spell/remove-word)
-  (map! :leader "oc" 'calc))
+  )
 
 (use-package! org-ref
   :after org
@@ -543,8 +553,10 @@ Use `treemacs-select-window' command for old functionality."
   :defer t
   :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave))
 (use-package! poly-markdown
+  :disabled
   :mode (("\\.md\\'" . poly-markdown-mode)))
 (use-package! poly-org
+  :disabled
   :mode (("\\.org\\'" . poly-org-mode)))
 ;; TODO Limit docs shown for current function to the type signature (one line), only showing the rest upon using K.
 ;; TODO Rebind C-c C-c in with-editor-mode (magit commit messages) to "gr" or similar
@@ -555,11 +567,12 @@ Use `treemacs-select-window' command for old functionality."
    company-box-enable-icon nil
    company-box-doc-frame-parameters `((internal-border-width . ,+snead/frame-border-width)
                                       (left-fringe . ,+snead/frame-fringe)
-                                      (right-fringe . ,+snead/frame-fringe)
-                                      (parent-frame . nil))
+                                      (right-fringe . ,+snead/frame-fringe))
    company-idle-delay 0.25
    ;;company-box-doc-delay 2)
    )
+  (when (featurep 'exwm)
+    (appendq! company-box-doc-frame-parameters '((parent-frame . nil))))
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -1152,12 +1165,13 @@ end of the workspace list."
         "o g" #'=calendar
         "w U" #'winner-redo
         "w D" #'delete-other-windows
-        "<f19>" #'+ivy/projectile-find-file
+        ;; "<f19>" (general-key (format "%s %s" doom-leader-key doom-leader-key))
         "TAB" #'+workspace/switch-to-other
         "\\" #'set-input-method
         ";" #'toggle-input-method
         "w s" (cmd! (evil-window-vsplit) (other-window 1))
         "w v" (cmd! (evil-window-split) (other-window 1))
+        :desc "media" "m" nil
         "m c" #'playerctl-play-pause
         "m n" #'playerctl-next
         "m p" #'playerctl-previous
@@ -1167,8 +1181,12 @@ end of the workspace list."
 
 ;; Show window hints big and above X windows.
 (after! ace-window
-  (setq aw-display-style 'posframe
-        aw-posframe-parameters '((parent-frame . nil))))
+  (setq aw-display-style nil
+        aw-posframe-parameters '())
+  (when (featurep 'exwm)
+    (setq aw-posframe-parameters '((parent-frame . nil))))
+  ;; Show the window key in the header line.
+  (ace-window-display-mode))
 
 ;; Allow easy NPM commands in most programming buffers.
 (use-package! npm-mode
@@ -1286,27 +1304,34 @@ end of the workspace list."
 (after! doom-modeline
   (setq doom-modeline-buffer-file-name-style 'relative-to-project
         doom-modeline-persp-name t
+        doom-modeline-icon t
         doom-modeline-buffer-state-icon nil
+        doom-modeline-modal-icon nil
         doom-modeline-height 26
         doom-modeline-bar-width +snead/frame-border-width)
   (doom-modeline-def-segment exwm-title '(:eval (or exwm-title (doom-modeline-segment--buffer-info-simple))))
+  (doom-modeline-def-segment major-mode 'mode-name)
+  (doom-modeline-def-segment buffer-position '(" " mode-line-percent-position))
+  (doom-modeline-def-segment ace-window '(:eval (propertize (concat " " (window-parameter (selected-window) 'ace-window-path) " ")
+                                                            'face
+                                                            (and (doom-modeline--active) 'doom-modeline-bar))))
   (doom-modeline-def-modeline 'main
-    '(bar modals matches buffer-info buffer-position)
+    '(bar ace-window modals matches buffer-info buffer-position)
     '(misc-info input-method major-mode vcs lsp checker " "))
   (doom-modeline-def-modeline 'project
-    '(bar buffer-default-directory)
+    '(bar ace-window buffer-default-directory)
     '(misc-info irc mu4e github debug major-mode process " "))
   (doom-modeline-def-modeline 'vcs
-    '(bar buffer-info-simple)
+    '(bar ace-window buffer-info-simple)
     '(misc-info vcs " "))
   (doom-modeline-def-modeline 'simple
-    '(bar "  " exwm-title)
+    '(bar ace-window "  " exwm-title)
     '(misc-info major-mode " "))
   (doom-modeline-def-modeline 'pdf
-    '(bar " " matches buffer-info-simple pdf-pages)
+    '(bar ace-window " " matches buffer-info-simple pdf-pages)
     '(misc-info major-mode process vcs " "))
   (doom-modeline-def-modeline 'dashboard
-    '(bar window-number buffer-default-directory-simple)
+    '(bar ace-window window-number buffer-default-directory-simple)
     '(misc-info irc mu4e github debug minor-modes input-method major-mode process " "))
   ;; (doom-modeline-set-modeline 'upper t)
   ;; Add a mini-modeline with: git, workspace, time, battery, exwm tray
@@ -1316,10 +1341,20 @@ end of the workspace list."
     (let* ((network-name (string-trim (shell-command-to-string "iwctl station wlan0 show | rg Connected | cut -d' ' -f17-")))
            (connected (not (string-empty-p network-name))))
       (setq +snead/wifi-name
-            (concat (propertize "--"
-                                'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
-                                'help-echo (if connected network-name "Disconnected"))))))
-  (run-with-timer 1 3 #'+snead/wifi-update))
+            (propertize "--"
+                        'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
+                        'help-echo (if connected network-name "Disconnected")))))
+  (run-with-timer 1 3 #'+snead/wifi-update)
+
+  )
+
+(defvar +snead/volume nil)
+(after! desktop-environment
+(defun +snead/volume-update ()
+    (setq +snead/volume (list (propertize "--" 'display (svg-icon "material" "volume-high"))
+                              (concat (desktop-environment-volume-get) "%"))))
+  (run-with-timer 1 2 #'+snead/volume-update)
+  )
 
 (use-package! mini-modeline
   :after doom-modeline
@@ -1339,6 +1374,8 @@ end of the workspace list."
                                    (:eval (+workspace-current-name))
                                    "  "
                                    (:eval +snead/wifi-name)
+                                   "  "
+                                   (:eval +snead/volume)
                                    "  "
                                    (:eval (let ((status doom-modeline--battery-status))
                                             (list (car status) (cdr status))))
@@ -1384,9 +1421,9 @@ Move it to the mode-line."
 
 ;; Add extra line spacing for some modes.
 ;; Not in programming modes because indent guides look a bit funny spaced out.
-(setq-hook! '(olivetti-mode-hook
-              mu4e-headers-mode-hook)
-  line-spacing 2)
+;; (setq-hook! '(olivetti-mode-hook
+;;               mu4e-headers-mode-hook)
+;;   line-spacing 2)
 
 (use-package! memoize)
 (use-package! svg-icon
@@ -1458,3 +1495,38 @@ Move it to the mode-line."
   )
 (map! :leader
       "fa" (cmd! (projectile-find-file-in-directory "~")))
+
+(map! :leader "oe" #'proced)
+(after! proced
+  (map! :map proced-mode-map
+        :n "gr" #'proced-update))
+
+(after! which-key
+  (setq which-key-idle-delay 0.5
+        which-key-show-prefix nil))
+
+;; Make which-key prettier with groups and command descriptions.
+(use-package! pretty-which-key
+  :after which-key)
+
+(use-package! hercules
+  :after pretty-which-key
+  :config
+  ;; (hercules-def
+  ;;  :toggle-funs #'+mu4e-show-help
+  ;;  :keymap 'mu4e-headers-mode-map
+  ;;  :transient t)
+  )
+
+(after! mu4e
+  (defun +mu4e-show-map ()
+    (interactive)
+    ;; TODO Filter the keymap to show only categorized bindings.
+    (which-key--show-keymap 'mu4e-headers-mode-map (evil-get-auxiliary-keymap mu4e-headers-mode-map 'normal) nil nil t))
+  (map! :map mu4e-headers-mode-map
+        :n "?" #'+mu4e-show-map))
+
+;; (hercules-def
+;;  :show-funs #'windresize
+;;  :hide-funs '(windresize-exit windresize-cancel-and-quit)
+;;  :keymap 'windresize-map)

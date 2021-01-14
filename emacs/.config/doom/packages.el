@@ -106,10 +106,9 @@
 ;; TODO vterm is slightly messed up, I'm not quite sure why.
 ;; (package! vterm :recipe (:no-native-compile t))
 (package! treemacs :recipe (:no-native-compile t))
-(unpin! treemacs)
 (package! vterm :built-in 'prefer)
-(package! undo-tree :built-in 'prefer)
-(package! plantuml-mode :built-in 'prefer)
+(package! undo-tree :disable t)
+(package! plantuml-mode :disable t)
 
 (package! highlight-numbers :disable t)
 
@@ -118,7 +117,7 @@
 (package! dired-show-readme
   :recipe (:host gitlab :repo "kisaragi-hiu/dired-show-readme"))
 
-(package! pdf-tools :built-in 'prefer)
+(package! pdf-tools :disable t)
 (package! pdf-continuous-scroll-mode
   :recipe (:host github :repo "dalanicolai/pdf-continuous-scroll-mode.el"))
 
@@ -130,7 +129,7 @@
 
 (package! ace-window
   :pin "57977baeba15b92c987eb7bf824629a9c746a3c8"
-  :recipe (:host github :repo "loafofpiecrust/ace-window" :branch "posframe"))
+  :recipe (:host github :repo "loafofpiecrust/ace-window" :branch "main"))
 
 (package! doom-modeline)
 
@@ -142,8 +141,14 @@
 (package! mini-modeline
   :recipe (:local-repo "emacs-mini-modeline" :no-native-compile t :no-byte-compile t))
 
+(package! evil-collection
+  :recipe (:local-repo "~/pie/evil-collection" :no-native-compile t :no-byte-compile t))
+
 (package! svg-icon
   :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
+
+(package! hercules
+  :recipe (:host gitlab :repo "jjzmajic/hercules.el"))
 
 
 ;; To install a package directly from a remote git repo, you must specify a

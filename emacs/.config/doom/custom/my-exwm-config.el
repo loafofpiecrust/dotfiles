@@ -105,10 +105,11 @@ Intended to replicate the functionality of `exec' from i3 config."
 
 (after! (evil evil-collection)
   (map! :leader
-        "ri" #'counsel-iwd-connect
-        "rv" #'+snead/vpn-connect
-        "rw" #'+snead/random-wallpaper
-        "qo" #'+snead/logout))
+        :prefix ("r" . "system")
+        :desc "Connect to Network" "i" #'counsel-iwd-connect
+        :desc "Connect to VPN" "v" #'+snead/vpn-connect
+        "w" #'+snead/random-wallpaper
+        :desc "Log out" "o" #'+snead/logout))
 
 
 ;; Place ivy frames above X windows.
@@ -208,5 +209,8 @@ Intended to replicate the functionality of `exec' from i3 config."
       (apply orig-fn args)))
   ;; (advice-add #'insert :around #'exwm-insert)
   )
+
+(after! exwm
+  (setenv "SUDO_ASKPASS" "emacsclient -e '(read-passwd \"sudo password: \")' | xargs"))
 
 (provide 'my-exwm-config)
