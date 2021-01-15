@@ -17,7 +17,8 @@
 ;;; For larger keymaps, like a leader key, you can assign groups to each command
 ;;; separately from the bindings themselves.
 ;;; Reassigning an existing binding can then happen in any vanilla Emacs
-;;; context using =define-key=:
+;;; context using =define-key= (if =which-key-enable-extended-define-key= is =t=
+;;;before loading which-key):
 ;;;
 ;;;     (define-key doom-leader-map (kbd ".") '("Jump to///file" . find-file))
 ;;;
@@ -113,30 +114,6 @@ Adds an entry of the form '((DESCRIPTION . GROUP) . COMMAND) for each key."
                 (cdr group)))
         groups))
 
-(pretty-which-key-add-command-groups
- doom-leader-map
- '(("Jump to" . ((consult-buffer . "buffer")
-                 (persp-switch-to-buffer . "workspace buffer")
-                 (ace-window . "window")
-                 (consult-ripgrep . "search in project")
-                 (find-file . "file")
-                 (projectile-find-file . "file in project")
-                 (bookmark-jump . "bookmark")
-                 (evil-switch-to-windows-last-buffer . "last buffer")
-                 (doom/open-scratch-buffer . "scratch buffer")
-                 (+default/search-project-for-symbol-at-point . "symbol in project")
-                 (consult-find . "some file")))
-   ("Workspace" . ((+workspace/switch-to-other . "Switch")
-                   (+workspace/delete . "Delete")))
-   ("Input" . (set-input-method
-               toggle-input-method
-               selectrum-repeat))
-   ("Actions" . (org-capture
-                 execute-extended-command
-                 +popup/toggle
-                 universal-argument))))
-
-
 ;; Add plain descriptions to evil commands!
 ;; This makes checking out the g- and z- prefixes easier.
 (with-eval-after-load 'evil
@@ -149,7 +126,28 @@ Adds an entry of the form '((DESCRIPTION . GROUP) . COMMAND) for each key."
     "[" "previous"
     "]" "next")
 
-
+  (pretty-which-key-add-command-groups
+   doom-leader-map
+   '(("Jump to" . ((consult-buffer . "buffer")
+                   (persp-switch-to-buffer . "workspace buffer")
+                   (ace-window . "window")
+                   (consult-ripgrep . "search in project")
+                   (find-file . "file")
+                   (projectile-find-file . "file in project")
+                   (bookmark-jump . "bookmark")
+                   (evil-switch-to-windows-last-buffer . "last buffer")
+                   (doom/open-scratch-buffer . "scratch buffer")
+                   (+default/search-project-for-symbol-at-point . "symbol in project")
+                   (consult-find . "some file")))
+     ("Workspace" . ((+workspace/switch-to-other . "Switch")
+                     (+workspace/delete . "Delete")))
+     ("Input" . (set-input-method
+                 toggle-input-method
+                 selectrum-repeat))
+     ("Actions" . (org-capture
+                   execute-extended-command
+                   +popup/toggle
+                   universal-argument))))
 
   ;; TODO Integrate this into DOOM's map! so that one can provide groups directly
   ;; while mapping.
@@ -357,7 +355,7 @@ Adds an entry of the form '((DESCRIPTION . GROUP) . COMMAND) for each key."
                           magit-jump-to-todos)))))
 
 (with-eval-after-load 'mu4e
-(which-key-add-keymap-based-replacements
+  (which-key-add-keymap-based-replacements
     mu4e-headers-mode-map
     "c" "compose")
   (pretty-which-key-add-command-groups
@@ -538,15 +536,5 @@ alists. Returns a list (key separator description)."
            new-list))))
     (nreverse new-list)))
 
-
-;; (which-key--get-current-bindings (kbd "SPC"))
-
-;; (which-key--create-pages (which-key--get-bindings nil proced-mode-map))
-;; (pretty-which-key--build-groups (which-key--get-bindings nil proced-mode-map))
-;; (which-key--partition-list 8 (which-key--get-bindings nil proced-mode-map))
-;; (mapcar #'which-key--pad-column (which-key--partition-list 8 (which-key--get-bindings nil proced-mode-map)))
-;; (mapcar #'which-key--pad-column (pretty-which-key--partition-list 8 (pretty-which-key--build-groups (which-key--get-bindings nil proced-mode-map))))
-;; (mapcar (lambda (x) (which-key--partition-list 8 (cdr x))) (pretty-which-key--build-groups (which-key--get-bindings nil proced-mode-map)))
-;;
 
 (provide 'pretty-which-key)
