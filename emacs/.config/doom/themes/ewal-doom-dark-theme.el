@@ -154,7 +154,9 @@ Can be an integer to determine the exact padding."
    ((lsp-ui-peek-highlight &override) :foreground fg)
    (cursor :background magenta)
    (mini-modeline-mode-line :background nil)
-   (doom-modeline-bar :background orange)
+   (doom-modeline-bar :background orange :foreground fg :height 1.1)
+   (doom-modeline-bar-inactive :height 1.1)
+   (aw-mode-line-face :foreground red)
    (doom-modeline-battery-normal :inherit nil)
 
    (show-paren-match :background base9 :foreground bright-yellow :weight 'bold)
@@ -172,7 +174,7 @@ Can be an integer to determine the exact padding."
 
    ;; Add padding to the minibuffer prompt, making it easier to read.
    ;; This is especially helpful for single-line prompts like passwords.
-   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,base4))
+   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,base6))
 
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
@@ -309,7 +311,7 @@ Can be an integer to determine the exact padding."
    (solaire-org-hide-face :foreground hidden)
 
    ;; mu4e
-   (mu4e-title-face :inherit 'outline-2)
+   ;; (mu4e-title-face :inherit 'outline-2)
    (mu4e-context-face :foreground green)
    (mu4e-header-highlight-face :weight 'bold :inherit 'hl-line)
 

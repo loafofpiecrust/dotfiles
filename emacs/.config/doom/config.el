@@ -57,18 +57,18 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 ;; Remove the fringe from all windows, unless you're visiting a file.
 ;; In that case, the fringe is very useful for git status and error information.
+(defun +snead/add-fringe ()
+  (setq-local left-fringe-width 4
+              right-fringe-width 4))
+
+(defvar +snead/fringe-deny-modes '(pdf-view-mode))
+(defun +snead/set-fringe ()
+  "Add a fringe to windows carrying file-visiting buffers."
+  (when (and (buffer-file-name) (not (member major-mode +snead/fringe-deny-modes)))
+    (+snead/add-fringe)))
+
 (after! fringe
   (set-fringe-mode 0)
-
-  (defvar +snead/fringe-deny-modes '(pdf-view-mode))
-  (defun +snead/add-fringe ()
-    (setq-local left-fringe-width 4
-                right-fringe-width 4))
-  (defun +snead/set-fringe ()
-    "Add a fringe to windows carrying file-visiting buffers."
-    (when (and (buffer-file-name) (not (member major-mode +snead/fringe-deny-modes)))
-      (+snead/add-fringe)))
-
   (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
   (add-hook! '(vterm-mode-hook) #'+snead/add-fringe))
 
@@ -228,16 +228,15 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
                                                   "Noto Sans CJK TC")
                                                 my/private-use-fonts)))
 
-;; (after! doom-themes
-;;   (setq doom-themes-padded-modeline t))
-
 ;;;; Themes and color management
 (use-package! ewal
   :after doom-themes
   :config (ewal-load-colors)
   :init
   ;; Use all 16 colors from our palette, not just the primary 8.
-  (setq ewal-ansi-color-name-symbols '(black red green yellow blue magenta cyan white brightblack brightred brightgreen brightyellow brightblue brightmagenta brightcyan brightwhite)))
+  (setq ewal-ansi-color-name-symbols '(black red green yellow blue magenta cyan white
+                                             brightblack brightred brightgreen brightyellow
+                                             brightblue brightmagenta brightcyan brightwhite)))
 
 (use-package! ewal-doom-themes
   :after ewal
@@ -281,7 +280,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
         org-superstar-prettify-item-bullets t
         org-superstar-item-bullet-alist '((?* . ?◆)
                                           (?- . ?●)
-                                          (?+ . ?⭘))))
+                                          (?+ . ?○))))
 
 ;;;; Password Management!
 (use-package! bitwarden
@@ -949,26 +948,26 @@ are ineffectual otherwise."
 
 (after! org
   (set-ligatures! 'org-mode
-    :title "#+TITLE:"
-    :title "#+title:"
-    :quote "#+BEGIN_QUOTE"
-    :quote_end "#+END_QUOTE"
-    :quote "#+begin_quote"
-    :quote_end "#+end_quote"
-    :begin_export "#+BEGIN_EXPORT"
-    :end_export "#+END_EXPORT"
-    :begin_export "#+begin_export"
-    :end_export "#+end_export"
-    :begin_quote "#+BEGIN_VERSE"
-    :end_quote "#+END_VERSE"
-    :begin_quote "#+begin_verse"
-    :end_quote "#+end_verse"
-    :section ":PROPERTIES:"
-    :end ":END:"))
+                  :title "#+TITLE:"
+                  :title "#+title:"
+                  :quote "#+BEGIN_QUOTE"
+                  :quote_end "#+END_QUOTE"
+                  :quote "#+begin_quote"
+                  :quote_end "#+end_quote"
+                  :begin_export "#+BEGIN_EXPORT"
+                  :end_export "#+END_EXPORT"
+                  :begin_export "#+begin_export"
+                  :end_export "#+end_export"
+                  :begin_quote "#+BEGIN_VERSE"
+                  :end_quote "#+END_VERSE"
+                  :begin_quote "#+begin_verse"
+                  :end_quote "#+end_verse"
+                  :section ":PROPERTIES:"
+                  :end ":END:"))
 
 (after! markdown-mode
   (set-ligatures! 'markdown-mode
-    :src_block "```"))
+                  :src_block "```"))
 
 ;; (after! magit
 ;;   (set-ligatures! 'magit-log-mode
@@ -985,19 +984,19 @@ are ineffectual otherwise."
 ;; TODO maybe there's a better machanism for replacing these that works more consistently?
 (after! md-msg
   (set-ligatures! 'md-msg-view-mode
-    :exclamation "\\!"
-    :dash "\\-"
-    :endash "\\--"
-    :asterisk "\\*"
-    :lt "\\<"
-    ;; :nothing "\n\\\n"
-    ;; :nothing "\n\n\n"
-    ;; :nothing "\\"
-    :at_symbol "\\@"
-    :pound "\\#"
-    :arrow "-\\>"
-    :pipe "\\|"
-    :turnstile "\\|-"))
+                  :exclamation "\\!"
+                  :dash "\\-"
+                  :endash "\\--"
+                  :asterisk "\\*"
+                  :lt "\\<"
+                  ;; :nothing "\n\\\n"
+                  ;; :nothing "\n\n\n"
+                  ;; :nothing "\\"
+                  :at_symbol "\\@"
+                  :pound "\\#"
+                  :arrow "-\\>"
+                  :pipe "\\|"
+                  :turnstile "\\|-"))
 
 
 
@@ -1304,7 +1303,7 @@ end of the workspace list."
 (after! doom-modeline
   (setq doom-modeline-buffer-file-name-style 'relative-to-project
         doom-modeline-persp-name t
-        doom-modeline-icon t
+        doom-modeline-icon nil
         doom-modeline-buffer-state-icon nil
         doom-modeline-modal-icon nil
         doom-modeline-height 26
@@ -1350,7 +1349,7 @@ end of the workspace list."
 
 (defvar +snead/volume nil)
 (after! desktop-environment
-(defun +snead/volume-update ()
+  (defun +snead/volume-update ()
     (setq +snead/volume (list (propertize "--" 'display (svg-icon "material" "volume-high"))
                               (concat (desktop-environment-volume-get) "%"))))
   (run-with-timer 1 2 #'+snead/volume-update)
