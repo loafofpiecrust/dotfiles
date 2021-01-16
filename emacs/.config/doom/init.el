@@ -49,7 +49,7 @@
        ;; (helm +childframe)              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
        ;;(ivy +prescient +icons)               ; a search engine for love and life
-       (selectrum +prescient +childframe)
+       (selectrum +prescient)
 
        :ui
        ;;deft              ; notational velocity for Emacs

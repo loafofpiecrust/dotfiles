@@ -87,6 +87,9 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
   (setq-default truncate-lines nil)
 
+  ;; Inhibit auto-save messages because they're mostly distracting.
+  (setq-default auto-save-no-message t)
+
   (setq delete-by-moving-to-trash t
         x-stretch-cursor t)
 
@@ -570,8 +573,8 @@ Use `treemacs-select-window' command for old functionality."
    company-idle-delay 0.25
    ;;company-box-doc-delay 2)
    )
-  (when (featurep 'exwm)
-    (appendq! company-box-doc-frame-parameters '((parent-frame . nil))))
+  ;; (when (featurep 'exwm)
+  ;;   (appendq! company-box-doc-frame-parameters '((parent-frame . nil))))
   ;; TODO Fix this so we can indent instead of completing all the time!
   (map! :map company-active-map
         "<tab>" 'company-complete-selection
@@ -1348,12 +1351,12 @@ end of the workspace list."
   )
 
 (defvar +snead/volume nil)
+(defun +snead/volume-update ()
+  (setq +snead/volume (list (+svg-icon-string "material" "volume-high")
+                            (propertize " " 'display '(space :width 0.5))
+                            (concat (desktop-environment-volume-get) "%"))))
 (after! desktop-environment
-  (defun +snead/volume-update ()
-    (setq +snead/volume (list (propertize "--" 'display (svg-icon "material" "volume-high"))
-                              (concat (desktop-environment-volume-get) "%"))))
-  (run-with-timer 1 2 #'+snead/volume-update)
-  )
+  (run-with-timer 1 2 #'+snead/volume-update))
 
 (use-package! mini-modeline
   :after doom-modeline
@@ -1368,7 +1371,7 @@ end of the workspace list."
   ;;   '(mu4e persp-name battery " " time))
   (let ((half-space (propertize " " 'display '(space :width 0.5))))
     (setq mini-modeline-r-format `((:eval (doom-modeline-segment--mu4e))
-                                   (:eval (propertize "--" 'display (svg-icon "material" "folder")))
+                                   (:eval (+svg-icon-string "material" "folder"))
                                    ,half-space
                                    (:eval (+workspace-current-name))
                                    "  "
@@ -1379,7 +1382,7 @@ end of the workspace list."
                                    (:eval (let ((status doom-modeline--battery-status))
                                             (list (car status) (cdr status))))
                                    "  "
-                                   (:eval (propertize "--" 'display (svg-icon "material" "clock-outline")))
+                                   (:eval (+svg-icon-string "material" "clock-outline"))
                                    ,half-space
                                    display-time-string)
           ;; Make room for an external system tray on the right side.
@@ -1428,7 +1431,9 @@ Move it to the mode-line."
 (use-package! svg-icon
   :after all-the-icons doom-modeline
   :config
-  (memoize 'svg-icon)
+  (defun +svg-icon-string (collection name)
+    (propertize "--" 'display (svg-icon collection name)))
+  (memoize '+svg-icon-string)
   ;; Redefine battery icon display using svg-icon.
   (defun doom-modeline-update-battery-status ()
     "Update battery status."
@@ -1450,35 +1455,35 @@ Move it to the mode-line."
                            'doom-modeline-battery-error))
                    (icon (if valid-percentage?
                              (cond (charging?
-                                    (propertize "--" 'display (svg-icon "material" "battery-charging-100"))
+                                    (+svg-icon-string "material" "battery-charging-100")
                                     ;; (doom-modeline-icon 'alltheicon "battery-charging" "🔋" "+"
                                     ;;                     :face face :height 1.4 :v-adjust -0.1)
                                     )
                                    ((> percentage 95)
-                                    (propertize "--" 'display (svg-icon "material" "battery"))
+                                    (+svg-icon-string "material" "battery")
                                     ;; (doom-modeline-icon 'faicon "battery-full" "🔋" "-"
                                     ;;                     :face face :v-adjust -0.0575)
                                     )
                                    ((> percentage 70)
-                                    (propertize "--" 'display (svg-icon "material" "battery-70"))
+                                    (+svg-icon-string "material" "battery-70")
                                     ;; (doom-modeline-icon 'faicon "battery-three-quarters" "🔋" "-"
                                     ;;                     :face face :v-adjust -0.0575)
                                     )
                                    ((> percentage 40)
-                                    (propertize "--" 'display (svg-icon "material" "battery-40"))
+                                    (+svg-icon-string "material" "battery-40")
                                     ;; (doom-modeline-icon 'faicon "battery-half" "🔋" "-"
                                     ;;                     :face face :v-adjust -0.0575)
                                     )
                                    ((> percentage battery-load-critical)
-                                    (propertize "--" 'display (svg-icon "material" "battery-10"))
+                                    (+svg-icon-string "material" "battery-10")
                                     ;; (doom-modeline-icon 'faicon "battery-quarter" "🔋" "-"
                                     ;;                     :face face :v-adjust -0.0575)
                                     )
                                    (t ;; (doom-modeline-icon 'faicon "battery-empty" "🔋" "!"
                                     ;;                     :face face :v-adjust -0.0575)
-                                    (propertize "--" 'display (svg-icon "material" "battery-alert"))
+                                    (+svg-icon-string "material" "battery-alert")
                                     ))
-                           (propertize "--" 'display (svg-icon "material" "battery-unknown"));; (doom-modeline-icon 'faicon "battery-empty" "⚠" "N/A"
+                           (+svg-icon-string "material" "battery-unknown");; (doom-modeline-icon 'faicon "battery-empty" "⚠" "N/A"
                            ;;                     :face face :v-adjust -0.0575)
                            ))
                    (text (if valid-percentage? (format "%d%%%%" percentage) ""))
@@ -1493,7 +1498,7 @@ Move it to the mode-line."
   ;;   (propertize "--" 'display (svg-icon "")))
   )
 (map! :leader
-      "fa" (cmd! (projectile-find-file-in-directory "~")))
+      "fa" (cmd! (consult-find "~")))
 
 (map! :leader "oe" #'proced)
 (after! proced
@@ -1506,9 +1511,13 @@ Move it to the mode-line."
 
 ;; Make which-key prettier with groups and command descriptions.
 (use-package! pretty-which-key
-  :after which-key)
+  :after which-key
+  :config
+  ;; Add groups and command descriptions to several modes.
+  (require 'pretty-which-key-modes))
 
 (use-package! hercules
+  :disabled
   :after pretty-which-key
   :config
   ;; (hercules-def
@@ -1525,7 +1534,7 @@ Move it to the mode-line."
   (map! :map mu4e-headers-mode-map
         :n "?" #'+mu4e-show-map))
 
-;; (hercules-def
-;;  :show-funs #'windresize
-;;  :hide-funs '(windresize-exit windresize-cancel-and-quit)
-;;  :keymap 'windresize-map)
+;; Center the minibuffer to make it easier to read quickly.
+(defun +snead/center-minibuffer ()
+  (unless mini-frame-mode (set-window-margins nil 42 42)))
+(add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
