@@ -72,7 +72,7 @@ in {
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
-      pinentryFlavor = "emacs";
+      pinentryFlavor = "gnome3";
     };
     # seahorse.enable = true; # GUI to manage keyring passwords.
   };

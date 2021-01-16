@@ -174,7 +174,8 @@ Can be an integer to determine the exact padding."
 
    ;; Add padding to the minibuffer prompt, making it easier to read.
    ;; This is especially helpful for single-line prompts like passwords.
-   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,base6))
+   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,bg;; base6
+                                         ))
 
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
