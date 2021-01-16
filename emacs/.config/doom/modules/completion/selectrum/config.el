@@ -5,13 +5,18 @@
   :config
   (setq selectrum-extend-current-candidate-highlight t
         selectrum-fix-minibuffer-height t
-        projectile-completion-system 'default)
+        projectile-completion-system 'default
+        selectrum-count-style 'current/matches)
+
   (setq completion-styles '(substring partial-completion))
-  (map! :leader
-        "'" #'selectrum-repeat)
-  ;;(map! :map selectrum-minibuffer-map
-        ;;"C-j" #'selectrum-next-candidate
-        ;;"C-k" #'selectrum-previous-candidate)
+
+  (map! :leader "'" #'selectrum-repeat)
+
+  ;; For those used to evil bindings.
+  (map! :map selectrum-minibuffer-map
+        "C-j" #'selectrum-next-candidate
+        "C-k" #'selectrum-previous-candidate)
+
   (autoload 'ffap-guesser "ffap")
   (setq minibuffer-default-add-function
         (defun minibuffer-default-add-function+ ()
@@ -21,20 +26,18 @@
                    (list (thing-at-point 'symbol)
                          (thing-at-point 'list)
                          (ffap-guesser)
-                         (thing-at-point-url-at-point)))))))
+                         (thing-at-point-url-at-point))))))))
 
+(defun +selectrum-refresh ()
+  "Refresh the candidate list in the current selectrum buffer."
+  (setq selectrum--previous-input-string nil))
 
-  ;; If an action changes the results, refresh the candidate list.
-  (defun +selectrum-refresh ()
-    (setq selectrum--previous-input-string nil))
-
-  )
-
-;; There are a few things that helm is picked up for.
-;; Automatically replace them with default completion.
+;; There are a few things that helm is loaded for.
+;; Automatically replace them with built-in completion functions.
 (after! helm
   (fset 'helm-find-files #'find-file))
 
+;; Sorts and filters results, remembering the most selected results between sessions.
 (use-package! selectrum-prescient
   :if (featurep! +prescient)
   :after selectrum
@@ -42,6 +45,7 @@
   (selectrum-prescient-mode)
   (prescient-persist-mode))
 
+;; Add more useful completion commands and provide nicer UX for some built-in ones.
 (use-package! consult
   :after selectrum
   :init
@@ -53,12 +57,15 @@
     [remap imenu] #'consult-imenu
     [remap apropos] #'consult-apropos
     [remap recentf-open-files] #'consult-recent-file)
+
   :config
+  ;; Previews are too heavy and don't work the best in EXWM, so disable them.
   (setq consult-preview-key nil)
+
   (setq consult-project-root-function #'projectile-project-root
         consult-find-command '("fd" "--color=never" "--full-path")
         consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "-S" "." "-e"))
-  (map! :n "?" #'consult-line)
+
   (map! :leader
         "sb" #'consult-line
         "se" #'consult-error
@@ -67,34 +74,12 @@
         "/" #'consult-ripgrep
         ">" #'consult-find))
 
+;; Integrate some commands slightly better with selectrum, especially ones with
+;; dynamic collections, like consult-find.
 (use-package! consult-selectrum
   :after consult selectrum)
 
-(defun consult-more-chars (input minimum)
-  (unless (>= (length input) minimum)
-    (list (format "Type at least %d characters..." minimum))))
-
-(defvar consult-locate--results '())
-(defun consult-locate ()
-  (interactive)
-  (let* ((default-directory "~")
-         (choice (completing-read
-                  "Find File "
-                  (lambda (input pred type)
-                    (async-start-process "consult-locate"
-                                         "fd"
-                                         (lambda (proc)
-                                           (with-current-buffer (process-buffer proc)
-                                             (setq consult-locate--results (s-lines (buffer-substring-no-properties (point-min) (point-max))))
-                                             )
-                                           (+selectrum-refresh)
-                                           )
-                                         input
-                                         "~")
-                    (or consult-locate--results '(input))
-                    ))))
-    (find-file fn)))
-
+;; Provide categories for each type of completion.
 (use-package! marginalia
   :init
   (marginalia-mode))
@@ -105,10 +90,11 @@
 
   ;; We only use which-key in minibuffer mode for embark actions, where we need
   ;; a line break at the start to see the first row of bindings.
-  (defun which-key--echo (text)
+  (defun +which-key--echo (orig-fun text)
     "Echo TEXT to minibuffer without logging."
     (let (message-log-max)
-      (message "\n%s" text))))
+      (message "\n%s" text)))
+  (advice-add 'which-key--echo :around #'+which-key--echo))
 
 ;; Integrate a few consult commands as embark actions!
 ;; Also, provide action descriptions until that's resolved upstream in embark.
@@ -132,7 +118,6 @@
       "B" nil)
 
 (use-package! embark
-  ;; Replicate default ivy-occur keybinding.
   :bind (:map minibuffer-local-map
          ("C-o" . #'embark-act)
          ("C-e" . #'embark-collect-snapshot)
@@ -143,46 +128,24 @@
          ("<escape>" . #'ignore))
   :config
   (setq embark-prompt-style 'default
-        embark-action-indicator
-        (defun embark-which-key-setup ()
-          (let ((which-key-show-transient-maps t)
-                (which-key-replacement-alist
-                 (cons '(("^C-h\\|ESC\\|SPC\\|<escape>$" . nil) . ignore)
-                       which-key-replacement-alist)))
-            (setq-local which-key-popup-type 'minibuffer
-                        which-key-show-prefix nil)
-            (which-key--update)))
+        embark-action-indicator (defun +embark-which-key (map)
+                                  "Show key hints in the same minibuffer as actions."
+                                  (setq-local which-key-popup-type 'minibuffer
+                                              which-key-show-prefix nil
+                                              which-key-replacement-alist
+                                              (cons '(("^C-h\\|SPC$" . nil) . ignore)
+                                                    which-key-replacement-alist))
+                                  (which-key--show-keymap "Embark" map nil nil 'no-paging)
+                                  #'which-key--hide-popup-ignore-command)
         embark-become-indicator embark-action-indicator)
 
   ;; Integrate with helpful.
-  (defun embark-describe-symbol ()
-    (interactive)
-    (helpful-symbol (intern (embark-target))))
+  ;; (defun embark-describe-symbol ()
+  ;;   (interactive)
+  ;;   (helpful-symbol (intern (embark-target))))
 
   (set-popup-rule! "^\\*Embark Collect" :size 0.35 :ttl 0 :quit nil)
-  (add-hook 'embark-pre-action-hook #'+selectrum-refresh)
-
-  ;; Integrate embark with selectrum.
-  (add-hook 'embark-target-finders 'selectrum-get-current-candidate)
-
-  (add-hook 'embark-candidate-collectors
-            (defun embark-selectrum-candidates+ ()
-              (when selectrum-active-p
-                (selectrum-get-current-candidates
-                 ;; Pass relative file names for dired.
-                 minibuffer-completing-file-name))))
-
-  ;; No unnecessary computation delay after injection.
-  (add-hook 'embark-setup-hook 'selectrum-set-selected-candidate)
-
-  (add-hook 'embark-input-getters
-            (defun embark-selectrum-input-getter+ ()
-              (when selectrum-active-p
-                (let ((input (selectrum-get-current-input)))
-                  (if minibuffer-completing-file-name
-                      ;; Only get the input used for matching.
-                      (file-name-nondirectory input)
-                    input))))))
+  (add-hook 'embark-pre-action-hook #'+selectrum-refresh))
 
 (after! projectile
   ;; FIXME Why is this broken when ivy is disabled?

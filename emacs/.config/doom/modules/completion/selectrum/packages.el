@@ -11,7 +11,7 @@
   :pin "296ad8077092ff839029c0bdb53c279e921e5354"
   :recipe (:host github :repo "oantolin/embark" :branch "main"))
 (package! consult
-  :pin "93edfff"
+  :pin "a3436a4"
   :recipe (:branch "main"))
 (package! selectrum-prescient :pin "42adc802d3ba6c747bed7ea1f6e3ffbbdfc7192d")
 
