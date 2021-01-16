@@ -64,7 +64,7 @@
 
   (setq consult-project-root-function #'projectile-project-root
         consult-find-command '("fd" "--color=never" "--full-path")
-        consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "-S" "." "-e"))
+        consult-ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "--hidden" "-g!.git" "-S" "." "-e"))
 
   (map! :leader
         "sb" #'consult-line
