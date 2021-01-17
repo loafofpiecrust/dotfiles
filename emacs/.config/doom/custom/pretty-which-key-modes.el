@@ -6,7 +6,7 @@
 ;; This makes checking out the g- and z- prefixes easier.
 (with-eval-after-load 'evil
   ;; Give names to the most common evil prefixes that will almost definitely not change.
-  (pretty-which-key--add-keymap-replacements
+  (which-key-add-keymap-based-replacements
     evil-normal-state-map
     "z" "display"
     "g" "goto"
@@ -14,7 +14,7 @@
     "[" "previous"
     "]" "next")
 
-  (pretty-which-key--add-keymap-replacements
+  (which-key-add-keymap-based-replacements
    doom-leader-map
    "p" "Project..."
    "m" "Media..."

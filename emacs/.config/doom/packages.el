@@ -144,6 +144,9 @@
 (package! evil-collection
   :recipe (:local-repo "~/pie/evil-collection" :no-native-compile t :no-byte-compile t))
 
+(package! which-key
+  :recipe (:local-repo "~/pie/emacs-which-key" :no-native-compile t :no-byte-compile t))
+
 (package! svg-icon
   :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
 
