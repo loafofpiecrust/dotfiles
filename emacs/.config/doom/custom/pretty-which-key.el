@@ -86,16 +86,14 @@ which may include a group name at the beginning that will be dropped."
 (defun pretty-which-key--add-keymap-replacements (keymap key replacement &rest more)
   (while key
     (let* ((needs-desc (s-suffix-p pretty-which-key--group-separator replacement))
-           (pseudo (which-key--pseudo-key key))
            ;; Keep current command description if none provided and there's an
            ;; existing one in the keymap.
-           (existing-binding (and needs-desc (lookup-key keymap pseudo)))
-           (desc (if (and existing-binding (consp existing-binding))
-                     (concat replacement (pretty-which-key--last-part (caadr existing-binding)))
-                   replacement))
-           (command nil))
-      (define-key keymap pseudo
-        (list 'which-key (cons desc command))))
+           (existing-binding (lookup-key keymap key))
+           (desc (if needs-desc
+                     (concat replacement (symbol-name existing-binding))
+                   replacement)))
+      (define-key keymap key
+        (cons desc existing-binding)))
     (setq key (pop more)
           replacement (pop more))))
 
@@ -280,16 +278,17 @@ alists. Returns a list (key separator description)."
              ;; This is of the form '(KEY . DESCRIPTION)
              ;; Maybe we change DESCRIPTION to get '(KEY . (DESC . CATEGORY)) and
              ;; be compatible with define-key still.
-             (key-binding-pseudo (pretty-which-key--maybe-replace-pseudo (cons keys orig-desc) prefix))
+             (key-binding-pseudo (or key-binding (pretty-which-key--maybe-replace-pseudo (cons keys orig-desc) prefix)))
              ;; This var is of the form '(GROUP DESC) or just DESC
              (key-binding-parts (pretty-which-key--split-desc (cdr-safe key-binding-pseudo)))
              (binding-group (nth 1 key-binding-parts))
+             (binding-name-so-far (or (car-safe key-binding-parts) orig-desc))
              ;; If there's only a group name in the pseudo-binding, then allow
              ;; further replacements to fill in the command description.
-             (key-binding (if (first key-binding-parts)
-                              key-binding-pseudo
-                            (pretty-which-key--maybe-replace-regex (cons keys orig-desc) prefix)))
-             (key-binding-desc (or (first key-binding-parts) (cdr-safe key-binding) orig-desc))
+             ;; The regex replacement stack is the largest bottleneck in
+             ;; which-key display.
+             (key-binding (pretty-which-key--maybe-replace-regex (cons keys binding-name-so-far) prefix))
+             (key-binding-desc (cdr-safe key-binding))
              (final-desc (which-key--propertize-description
                           key-binding-desc group local hl-face orig-desc)))
         (when final-desc
@@ -313,5 +312,77 @@ alists. Returns a list (key separator description)."
            new-list))))
     (nreverse new-list)))
 
+(defun pretty-which-key--get-current-bindings (orig-fn &optional prefix)
+  (let* ((key-desc (concat (key-description prefix) " "))
+         (keys-list (listify-key-sequence prefix))
+         (thing-1 (lambda (map)
+                    (pretty-which-key--get-keymap-bindings map nil nil keys-list)))
+         (thing-2 (lambda (binding) (and (cdr-safe binding)
+                                         (s-prefix? key-desc (car-safe binding) t)
+                                         (not (s-contains? " " (s-chop-prefix key-desc (car-safe binding)))))))
+         (comparator (lambda (a b) (or (equal (car-safe a) (car-safe b)) (equal a b)))))
+    (mapcar (lambda (x) (cons (s-chop-prefix key-desc (car x)) (cdr x)))
+            (cl-remove-duplicates (seq-filter thing-2
+                                              (mapcan thing-1
+                                                      (current-active-maps t)))
+                                  :test comparator))))
+
+(advice-add 'which-key--get-current-bindings :around #'pretty-which-key--get-current-bindings)
+
+(defun pretty-which-key--get-keymap-bindings (keymap &optional all prefix only-prefix)
+  "Retrieve top-level bindings from KEYMAP.
+If ALL is non-nil, get all bindings, not just the top-level
+ones. PREFIX is for internal use and should not be used."
+  (let (bindings
+        (prefix-key-to-check (car-safe only-prefix)))
+    (map-keymap
+     (lambda (ev def)
+       (let* ((key (append prefix (list ev)))
+              (key-desc (key-description key)))
+         (cond ((or (and prefix-key-to-check (not (equal ev prefix-key-to-check)))
+                    (null def)
+                    (eq ev 'menu-bar)
+                    (string-match-p
+                     which-key--ignore-non-evil-keys-regexp key-desc))
+                nil)
+               ;; extract evil keys corresponding to current state
+               ((and (keymapp def)
+                     (boundp 'evil-state)
+                     (bound-and-true-p evil-local-mode)
+                     (string-match-p (format "<%s-state>$" evil-state) key-desc))
+                (setq bindings
+                      ;; this function keeps the latter of the two duplicates
+                      ;; which will be the evil binding
+                      (append bindings
+                              (pretty-which-key--get-keymap-bindings def all prefix only-prefix))
+                      ))
+               ((and (keymapp def)
+                     (string-match-p which-key--evil-keys-regexp key-desc)))
+               ((and (keymapp def)
+                     (or all
+                         (and prefix-key-to-check (equal ev prefix-key-to-check))
+                         ;; event 27 is escape, so this will pick up meta
+                         ;; bindings and hopefully not too much more
+                         (and (numberp ev) (= ev 27))))
+                (setq bindings
+                      (append bindings
+                              (pretty-which-key--get-keymap-bindings def all key (cdr-safe only-prefix)))))
+               (t
+                (when def
+                  (cl-pushnew
+                   (cons key-desc
+                         (cond
+                          ((keymapp def) "Prefix Command")
+                          ((symbolp def) (copy-sequence (symbol-name def)))
+                          ((eq 'lambda (car-safe def)) "lambda")
+                          ((eq 'menu-item (car-safe def)) "menu-item")
+                          ((stringp def) def)
+                          ((vectorp def) (key-description def))
+                          ;; Support for simple menu items!
+                          ((consp def) (car-safe def))
+                          (t "unknown")))
+                   bindings :test (lambda (a b) (string= (car a) (car b)))))))))
+     keymap)
+    bindings))
 
 (provide 'pretty-which-key)

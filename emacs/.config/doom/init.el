@@ -20,8 +20,6 @@
       doom-leader-alt-key "<f19>"
       doom-localleader-key "\\")
 
-(setq which-key-enable-extended-define-key t)
-
 (when noninteractive
   (appendq! doom-env-blacklist '("^XDG_SESSION_"
                                  "^DESKTOP_SESSION"
