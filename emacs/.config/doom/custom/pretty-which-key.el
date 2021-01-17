@@ -89,11 +89,11 @@ which may include a group name at the beginning that will be dropped."
            ;; Keep current command description if none provided and there's an
            ;; existing one in the keymap.
            (existing-binding (lookup-key keymap key))
-           (desc (if needs-desc
+           (desc (if (and needs-desc (symbolp existing-binding))
                      (concat replacement (symbol-name existing-binding))
                    replacement)))
       (define-key keymap key
-        (cons desc existing-binding)))
+        `(,desc . ,existing-binding)))
     (setq key (pop more)
           replacement (pop more))))
 
@@ -278,17 +278,16 @@ alists. Returns a list (key separator description)."
              ;; This is of the form '(KEY . DESCRIPTION)
              ;; Maybe we change DESCRIPTION to get '(KEY . (DESC . CATEGORY)) and
              ;; be compatible with define-key still.
-             (key-binding-pseudo (or key-binding (pretty-which-key--maybe-replace-pseudo (cons keys orig-desc) prefix)))
              ;; This var is of the form '(GROUP DESC) or just DESC
-             (key-binding-parts (pretty-which-key--split-desc (cdr-safe key-binding-pseudo)))
+             (key-binding-parts (pretty-which-key--split-desc orig-desc))
              (binding-group (nth 1 key-binding-parts))
-             (binding-name-so-far (or (car-safe key-binding-parts) orig-desc))
+             (binding-name-so-far (or (car key-binding-parts) orig-desc))
              ;; If there's only a group name in the pseudo-binding, then allow
              ;; further replacements to fill in the command description.
              ;; The regex replacement stack is the largest bottleneck in
              ;; which-key display.
              (key-binding (pretty-which-key--maybe-replace-regex (cons keys binding-name-so-far) prefix))
-             (key-binding-desc (cdr-safe key-binding))
+             (key-binding-desc (cdr key-binding))
              (final-desc (which-key--propertize-description
                           key-binding-desc group local hl-face orig-desc)))
         (when final-desc
