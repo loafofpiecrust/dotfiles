@@ -551,15 +551,16 @@ Use `treemacs-select-window' command for old functionality."
         ;; ispell-extra-args '("--camel-case" "--sug-mode=ultra" "--run-together")
         ))
 
-(use-package! polymode
-  :defer t
-  :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave))
-(use-package! poly-markdown
-  :disabled
-  :mode (("\\.md\\'" . poly-markdown-mode)))
-(use-package! poly-org
-  :disabled
-  :mode (("\\.org\\'" . poly-org-mode)))
+;; (use-package! polymode
+;;   :disabled
+;;   :defer t
+;;   :defer-incrementally (polymode-core polymode-classes polymode-methods polymode-base polymode-export polymode-weave))
+;; (use-package! poly-markdown
+;;   :disabled
+;;   :mode (("\\.md\\'" . poly-markdown-mode)))
+;; (use-package! poly-org
+;;   :disabled
+;;   :mode (("\\.org\\'" . poly-org-mode)))
 ;; TODO Limit docs shown for current function to the type signature (one line), only showing the rest upon using K.
 ;; TODO Rebind C-c C-c in with-editor-mode (magit commit messages) to "gr" or similar
 
