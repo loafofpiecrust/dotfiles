@@ -39,12 +39,7 @@ in {
 
   # Enable networking. Use connman instead of networkmanager because it has
   # working iwd support. Saves battery and more reliable.
-  # networking.wireless.iwd.enable = true;
-  services.connman = {
-    enable = true;
-    wifi.backend = "iwd";
-    enableVPN = false;
-  };
+  networking.wireless.iwd.enable = true;
 
   # Allow other machines to ssh in.
   services.openssh.enable = true;
@@ -103,6 +98,7 @@ in {
     fd
     htop
     gksu
+    zip
     unzip
     # ranger
     xfce.gvfs

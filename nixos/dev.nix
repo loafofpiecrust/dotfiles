@@ -20,12 +20,18 @@
     # languages
     rustup
     # go
-    nodejs
+    unstable.nodejs
     yarn
     kotlin
     python3
     terraform # infrastructure as code
     jq # transforms json documents
+
+    # ocaml for compilers class
+    ocaml
+    opam # OCaml package manager
+    ocamlformat
+    ocamlPackages.ocp-indent
 
     # Spellcheck
     (aspellWithDicts (dicts: with dicts; [ en en-computers en-science ]))
@@ -66,10 +72,13 @@
         extraEmacsPackages = epkgs:
           with epkgs; [
             vterm
-            fuz
             undo-tree
             pdf-tools
+            org-pdftools
             plantuml-mode
+            posframe
+            # exwm
+            # magit
           ];
       });
     })
