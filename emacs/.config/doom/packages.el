@@ -71,14 +71,10 @@
 ;; System stuff!
 (package! anzu :pin "7b8688c84d6032300d0c415182c7c1ad6cb7f819")
 (package! evil-anzu :pin "d3f6ed4773b48767bd5f4708c7f083336a8a8a86")
-(package! posframe)
-(package! all-the-icons-ivy
-  :pin "937ca700c6e9ad4cd957480b12e480cbd5c44175"
-  :recipe (:branch "overwrite-args"))
+(package! posframe :built-in 'prefer)
 (package! mount-mode
   :disable t
   :recipe (:host github :repo "zellerin/mount-mode"))
-(package! ivy-avy)
 
 (package! org-cv
   :recipe (:host gitlab :repo "loafofpiecrust/org-cv" :branch "explicit-dates"))
@@ -98,17 +94,19 @@
 ;; (package! vterm :recipe (:no-native-compile t))
 (package! treemacs :recipe (:no-native-compile t))
 (package! vterm :built-in 'prefer)
-(package! undo-tree :disable t)
-(package! plantuml-mode :disable t)
+(package! undo-tree :disable t :built-in 'prefer)
+(package! plantuml-mode :built-in 'prefer)
 
 (package! highlight-numbers :disable t)
 
 (package! emms)
 
+(package! magit :built-in 'prefer)
+
 (package! dired-show-readme
   :recipe (:host gitlab :repo "kisaragi-hiu/dired-show-readme"))
 
-(package! pdf-tools :disable t)
+(package! pdf-tools :built-in 'prefer)
 (package! pdf-continuous-scroll-mode
   :recipe (:host github :repo "dalanicolai/pdf-continuous-scroll-mode.el"))
 
@@ -122,7 +120,7 @@
   :pin "57977baeba15b92c987eb7bf824629a9c746a3c8"
   :recipe (:host github :repo "loafofpiecrust/ace-window" :branch "main"))
 
-(package! doom-modeline)
+(package! doom-modeline :built-in 'prefer)
 
 (package! emacs-webkit
   :recipe (:local-repo "emacs-webkit"))
@@ -137,6 +135,9 @@
 
 (package! which-key
   :recipe (:local-repo "~/pie/emacs-which-key" :no-native-compile t :no-byte-compile t))
+
+(package! general
+  :recipe (:local-repo "~/pie/general.el" :no-native-compile t :no-byte-compile t))
 
 (package! svg-icon
   :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
