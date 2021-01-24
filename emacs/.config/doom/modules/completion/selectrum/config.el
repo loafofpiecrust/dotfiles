@@ -71,8 +71,8 @@
         "se" #'consult-error
         "iy" #'consult-yank-pop
         "sp" #'consult-ripgrep
-        "/" #'consult-ripgrep
-        ">" #'consult-find))
+        :desc "Search in project" "/" #'consult-ripgrep
+        :desc "Find some file" ">" #'consult-find))
 
 ;; Integrate some commands slightly better with selectrum, especially ones with
 ;; dynamic collections, like consult-find.
@@ -130,8 +130,7 @@
   (setq embark-prompt-style 'default
         embark-action-indicator (defun +embark-which-key (map)
                                   "Show key hints in the same minibuffer as actions."
-                                  (setq-local which-key-popup-type 'minibuffer
-                                              which-key-show-prefix nil
+                                  (setq-local which-key-show-prefix nil
                                               which-key-replacement-alist
                                               (cons '(("^C-h\\|SPC$" . nil) . ignore)
                                                     which-key-replacement-alist))

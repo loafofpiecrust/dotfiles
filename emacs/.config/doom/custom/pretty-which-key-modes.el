@@ -8,46 +8,58 @@
   ;; Give names to the most common evil prefixes that will almost definitely not change.
   (which-key-add-keymap-based-replacements
     evil-normal-state-map
-    "z" "display"
-    "g" "goto"
-    "c" "change"
-    "[" "previous"
-    "]" "next")
+    "z" "+display"
+    "g" "+goto"
+    "c" "+change"
+    "[" "+previous"
+    "]" "+next")
 
-  (which-key-add-keymap-based-replacements
-   doom-leader-map
-   "p" "Project..."
-   "m" "Media..."
-   "a" "Authentication...")
+  ;; (which-key-add-keymap-based-replacements
+  ;;   doom-leader-map
+  ;;   "+" "Search project!")
 
   (pretty-which-key-add-command-groups
    doom-leader-map
-   '(("Jump to" . ((consult-buffer . "buffer")
-                   (persp-switch-to-buffer . "workspace buffer")
-                   (ace-window . "window")
-                   (consult-ripgrep . "search in project")
-                   (find-file . "file")
-                   (projectile-find-file . "file in project")
-                   (bookmark-jump . "bookmark")
-                   (evil-switch-to-windows-last-buffer . "last buffer")
-                   (doom/open-scratch-buffer . "scratch buffer")
-                   (+default/search-project-for-symbol-at-point . "symbol in project")
-                   (consult-find . "some file")))
+   '(("Jump to..." . ((consult-buffer . "buffer")
+                      (persp-switch-to-buffer . "workspace buffer")
+                      (ace-window . "window")
+                      (consult-ripgrep . "string in project")
+                      (find-file . "file")
+                      (projectile-find-file . "file in project")
+                      (bookmark-jump . "bookmark")
+                      (evil-switch-to-windows-last-buffer . "last buffer")
+                      (doom/open-scratch-buffer . "scratch buffer")
+                      (+default/search-project-for-symbol-at-point . "symbol in project")
+                      (consult-find . "some file")))
      ("Workspace" . ((+workspace/switch-to-other . "Switch")
                      (+workspace/delete . "Delete")))
      ("Input" . (set-input-method
                  toggle-input-method
                  (selectrum-repeat . "Resume search")
                  (execute-extended-command . "Execute command")
-                 "i"))
+                 ("i" . "input")))
      ("Actions" . (org-capture
                    (+popup/toggle . "Toggle last popup")
                    universal-argument
-                   "p" "s" "o" "g" "f" "w" "t" "b" "c"))
-     ("System" . ("a" "m" "r" "q" "h" "n"))))
+                   "p"
+                   ("s" . "search in")
+                   "o"
+                   "g"
+                   "f"
+                   "w"
+                   ("t" . "toggle setting")
+                   "b"
+                   "c"))
+     ("System" . (("a" . "authentication")
+                  ("m" . "media")
+                  ("r" . "network")
+                  ("q" . "quit & session")
+                  ("h" . "help")
+                  ("n" . "notes")))))
 
+  ;; Define prefixes.
   (pretty-which-key-add-command-groups
-   doom-leader-map
+   (lookup-key doom-leader-map "m")
    '(("Media Player" . ((playerctl-next . "Next")
                         (playerctl-previous . "Previous")
                         (playerctl-play-pause . "Toggle pause")))
@@ -258,5 +270,85 @@
                    mu4e-headers-toggle-skip-duplicates
                    (mu4e-headers-change-sorting . "Sort order")
                    (mu4e-context-switch . "Switch account"))))))
+
+(with-eval-after-load 'ranger
+  (pretty-which-key-add-command-groups
+   ranger-mode-map
+   '(("Mark items" . (dired-mark dired-toggle-marks dired-unmark dired-unmark-all-marks
+                                 dired-flag-backup-files
+                                 ranger-mark
+                                 ranger-create-mark
+                                 ranger-toggle-mark
+                                 ranger-remove-mark
+                                 dired-mark-files-regexp
+                                 ("u" . "Unmark...")))
+     ("Actions on Marked" . (dired-do-flagged-delete
+                             dired-do-compress
+                             dired-do-shell-command
+                             dired-copy-filename-as-kill
+                             dired-do-touch
+                             dired-do-symlink
+                             dired-do-rename
+                             dired-do-chmod
+                             dired-do-chown
+                             dired-do-print
+                             dired-do-find-regexp-and-replace
+                             dired-do-find-regexp
+                             dired-do-load
+                             dired-do-byte-compile
+                             dired-do-copy
+                             dired-do-delete
+                             dired-do-hardlink
+                             dired-do-symlink
+dired-diff dired-find-file ("w" . "Open...") ranger-insert-subdir
+                             ("y" . "copy")
+                             ("%" . "regex actions")))
+     ;; ("Actions on current file" . ())
+     ("Actions" . (dired-create-directory
+                   dired-clean-directory
+                   dired-maybe-insert-subdir
+                   ("p" . "Paste...")
+                   ranger-close
+                   ranger-pop-eshell
+                   ranger-search
+                   mkdir
+                   (";" . "dired command")
+                   ))
+     ("Basic Movement" . (dired-next-line
+                          dired-previous-line
+                          dired-goto-file
+                          ranger-up-directory
+                          ranger-next-file
+                          ranger-prev-file
+                          ranger-find-file
+                          ))
+     ("Paging" . (ranger-page-down
+                  ranger-page-up
+                  ranger-half-page-down
+                  ranger-half-page-up
+                  ranger-goto-bottom))
+     ("Navigate to..." . (ranger-search-next
+                          ranger-search-previous
+                          ranger-goto-mark
+                          dired-up-directory
+                          dired-prev-dirline
+                          dired-next-dirline
+                          dired-find-alternate-file
+                          ranger-prev-parent
+                          ranger-next-parent
+                          ranger-next-history
+                          ranger-prev-history
+                          ))
+     ("Settings" . (dired-toggle-read-only
+                    dired-sort-toggle-or-edit
+                    dired-hide-details-mode
+                    dired-git-info-mode
+                    ranger-preview-toggle
+                    ranger-sort-criteria
+                    ranger-toggle-dotfiles
+                    (+which-key-show-evil-major . "Toggle help")
+                    ("z" . "Display...")
+                    ("Z" . "Ranger...")))))
+  )
 
 (provide 'pretty-which-key-modes)

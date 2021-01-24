@@ -65,9 +65,8 @@
 
 ;; TODO Option to hide uncategorized bindings in a particular map.
 ;; TODO Combine duplicate entries for the same function with comma separation.
-;; TODO Add prefix keys to certain groups.
 
-(defconst pretty-which-key--group-separator "///")
+(defconst pretty-which-key--group-separator "//")
 
 (defun pretty-which-key--last-part (binding-desc)
   "Extract the command description part of BINDING-DESC,
@@ -84,23 +83,25 @@ which may include a group name at the beginning that will be dropped."
   (string-pad "" (string-width which-key-separator)))
 
 (defun pretty-which-key--add-keymap-replacements (keymap key replacement &rest more)
-  (while key
-    (let* ((needs-desc (string-suffix-p pretty-which-key--group-separator replacement))
-           ;; Keep current command description if none provided and there's an
-           ;; existing one in the keymap.
-           (existing-binding (lookup-key keymap key))
-           (desc (cond
-                  ((and needs-desc (symbolp existing-binding))
-                   (concat replacement (symbol-name existing-binding)))
-                  ((and needs-desc (keymapp existing-binding))
-                   (concat replacement "Prefix Command"))
-                  (t replacement))))
-      ;; Don't bother with keys bound to nil.
-      (when (and existing-binding (not (numberp existing-binding)))
-        (define-key keymap key
-          `(,desc . ,existing-binding))))
-    (setq key (pop more)
-          replacement (pop more))))
+  (let ((current-bindings (which-key--get-keymap-bindings keymap t)))
+    (while key
+      (let* ((needs-desc (string-suffix-p pretty-which-key--group-separator replacement))
+             ;; Keep current command description if none provided and there's an
+             ;; existing one in the keymap.
+             (command (lookup-key keymap key))
+             (existing-binding (cdr-safe (assoc (key-description key) current-bindings)))
+             (existing-has-group (and existing-binding (s-contains-p pretty-which-key--group-separator existing-binding)))
+             (desc (cond ((and needs-desc existing-has-group)
+                          (concat replacement (car (pretty-which-key--split-desc existing-binding))))
+                         ((and needs-desc existing-binding)
+                          (concat replacement existing-binding))
+                         (t replacement))))
+        ;; Don't bother with unbound keys.
+        (when existing-binding
+          (define-key keymap key
+            `(,desc . ,command))))
+      (setq key (pop more)
+            replacement (pop more)))))
 
 (defun pretty-which-key-add-command-replacements (keymap replacements)
   (mapc (lambda (replacement)
@@ -131,24 +132,26 @@ Adds an entry of the form '((DESCRIPTION . GROUP) . COMMAND) for each key."
                 (cdr group)))
         groups))
 
-(defvar pretty-which-key-prefixes '("proced-"
-                                    "evil-"
-                                    "+evil/"
-                                    "+evil:"
-                                    "projectile-"
-                                    "npm-mode-"
-                                    "consult-"
-                                    "counsel-"
-                                    "doom/"
-                                    "doom-"
-                                    "which-key-"
-                                    "desktop-environment-"
-                                    "magit-"
-                                    "mu4e-headers-"
-                                    "mu4e-"
-                                    "mu4e~"
-                                    "+mu4e/"
-                                    "org-"))
+(setq pretty-which-key-prefixes '("proced-"
+                                  "dired-"
+                                  "ranger-"
+                                  "evil-"
+                                  "+evil/"
+                                  "+evil:"
+                                  "projectile-"
+                                  "npm-mode-"
+                                  "consult-"
+                                  "counsel-"
+                                  "doom/"
+                                  "doom-"
+                                  "which-key-"
+                                  "desktop-environment-"
+                                  "magit-"
+                                  "mu4e-headers-"
+                                  "mu4e-"
+                                  "mu4e~"
+                                  "+mu4e/"
+                                  "org-"))
 
 
 (defun pretty-which-key-strip-prefix (command-name)
@@ -182,13 +185,22 @@ Adds an entry of the form '((DESCRIPTION . GROUP) . COMMAND) for each key."
 (defun pretty-which-key--build-groups (keys)
   "Take a list of key bindings KEYS and return a list of groups
 based on group definitions added by pretty-which-key-add-command-groups"
-  (seq-sort-by #'car
-               #'string<
-               (seq-group-by (lambda (kb)
-                               (let* ((command (last kb))
-                                      (str (if (consp command) (car command) command)))
-                                 (get-text-property 0 'pretty-which-key-group str)))
-                             keys)))
+  (cl-sort (seq-group-by (lambda (kb)
+                           (let* ((command (last kb))
+                                  (str (if (consp command) (car command) command)))
+                             (get-text-property 0 'pretty-which-key-group str)))
+                         (cl-reduce (lambda (a b) (let ((matching-bind (cl-find-if (lambda (x) (equal (cdr x) (cdr b)))
+                                                                                   a)))
+                                                    (cond
+                                                     ((equal (car-safe matching-bind) (car b)))
+                                                     (matching-bind
+                                                      (setf (car matching-bind) (format "%s, %s" (car matching-bind) (car b)))
+                                                      a)
+                                                     (t (cons b a)))))
+                                    keys
+                                    :initial-value nil))
+           #'string<
+           :key #'car))
 
 (defun pretty-which-key--partition-list (orig-fun n list)
   "Partition LIST into N-sized sublists."
@@ -201,18 +213,17 @@ based on group definitions added by pretty-which-key-add-command-groups"
 
       ;; Otherwise, if there are any explicit categories then show those as title
       ;; headings. Uncategorized bindings are in the last section.
-      (let ((content-n (- n 1)))
-        (apply #'seq-concatenate
-               'list
-               (mapcar (lambda (x)
-                         ;; Ensure that each sublist is the max length.
-                         (let ((sublists (mapcar (lambda (sublist) (cons `("" ,blank-sep "") (if (length< sublist content-n)
-                                                                                                 (seq-concatenate 'list sublist (make-list (- content-n (length sublist)) `("" ,blank-sep "")))
-                                                                                               sublist)))
-                                                 (apply orig-fun (list content-n (cdr-safe x))))))
-                           (setf (caar sublists) `("" ,blank-sep ,(or (car-safe x) "Other")))
-                           sublists))
-                       grouped-keys))))))
+      (let* ((content-n (- n 1))
+             (inner-mapper (lambda (sublist) (cons `("" ,blank-sep "") (if (length< sublist content-n)
+                                                                           (append sublist (make-list (- content-n (length sublist)) `("" ,blank-sep "")))
+                                                                         sublist)))))
+        (mapcan (lambda (x)
+                  ;; Ensure that each sublist is the max length.
+                  (let ((sublists (mapcar inner-mapper
+                                          (apply orig-fun (list content-n (cdr-safe x))))))
+                    (setf (caar sublists) `("" ,blank-sep ,(or (car-safe x) "Other")))
+                    sublists))
+                grouped-keys)))))
 
 (advice-add 'which-key--partition-list :around #'pretty-which-key--partition-list)
 
@@ -227,7 +238,7 @@ key replacements bound by pretty-which-key functions."
    ((and binding-desc (s-contains-p pretty-which-key--group-separator
                                     binding-desc))
     (reverse (mapcar (lambda (x) (and (not (string-empty-p x)) x))
-                     (split-string binding-desc pretty-which-key--group-separator))))
+                     (split-string (s-chop-prefix "group:" binding-desc) pretty-which-key--group-separator))))
    ;; Otherwise, it must be a plain description with no group.
    ;; In that case, just return the binding as-is.
    (binding-desc (list binding-desc))
@@ -246,6 +257,8 @@ alists. Returns a list (key separator description)."
     (dolist (key-binding unformatted)
       (let* ((key (car key-binding))
              (orig-desc (cdr key-binding))
+             (group (and (stringp orig-desc)
+                         (which-key--group-p orig-desc)))
              ;; Split the description into '(name group)
              (key-binding-parts (and (stringp orig-desc) (pretty-which-key--split-desc orig-desc)))
              (binding-group (and key-binding-parts (nth 1 key-binding-parts)))
@@ -253,8 +266,6 @@ alists. Returns a list (key separator description)."
              ;; Check whether the description is a prefix or plain command name.
              (orig-desc-sym (and (stringp ungrouped-desc)
                                  (intern ungrouped-desc)))
-             (group (and (stringp ungrouped-desc)
-                         (which-key--group-p ungrouped-desc)))
              (is-command-name (and orig-desc-sym (fboundp orig-desc-sym)))
              ;; At top-level prefix is nil
              (keys (if prefix
@@ -294,5 +305,7 @@ alists. Returns a list (key separator description)."
     (nreverse new-list)))
 
 (advice-add 'which-key--format-and-replace :around #'pretty-which-key--format-and-replace)
+
+;; (which-key--get-current-bindings (kbd "SPC"))
 
 (provide 'pretty-which-key)
