@@ -630,7 +630,7 @@ user_pref("media.memory_cache_max_size", 65536);
  * extra session data contains contents of forms, scrollbar positions, cookies and POST data
  * define on which sites to save extra session data:
  * 0=everywhere, 1=unencrypted sites, 2=nowhere ***/
-user_pref("browser.sessionstore.privacy_level", 2);
+user_pref("browser.sessionstore.privacy_level", 1);
 /* 1022: disable resuming session from crash ***/
 // user_pref("browser.sessionstore.resume_from_crash", false);
 /* 1023: set the minimum interval between session save operations
@@ -1147,7 +1147,8 @@ user_pref("media.navigator.enabled", false);
 // user_pref("layers.acceleration.disabled", true);
 /* 2510: disable Web Audio API [FF51+]
  * [1] https://bugzilla.mozilla.org/1288359 ***/
-user_pref("dom.webaudio.enabled", false);
+// CHANGED, roundware uses this.
+user_pref("dom.webaudio.enabled", true);
 /* 2517: disable Media Capabilities API [FF63+]
  * [WARNING] This *may* affect media performance if disabled, no one is sure
  * [1] https://github.com/WICG/media-capabilities
@@ -1322,7 +1323,7 @@ user_pref("browser.contentblocking.category", "custom");
    [NOTE] .sessionOnly overrides .nonsecureSessionOnly except when .sessionOnly=false and
    .nonsecureSessionOnly=true. This allows you to keep HTTPS cookies, but session-only HTTP ones
  * [1] https://feeding.cloud.geek.nz/posts/tweaking-cookies-for-privacy-in-firefox/ ***/
-user_pref("network.cookie.thirdparty.sessionOnly", true);
+user_pref("network.cookie.thirdparty.sessionOnly", false);
 user_pref("network.cookie.thirdparty.nonsecureSessionOnly", true); // [FF58+]
 /* 2703: delete cookies and site data on close
  * 0=keep until they expire (default), 2=keep until you close Firefox
@@ -1376,7 +1377,7 @@ user_pref("privacy.sanitize.sanitizeOnShutdown", true);
  * prefs when set from there, and the sanitize code may change at any time
  * [SETTING] Privacy & Security>History>Custom Settings>Clear history when Firefox closes>Settings ***/
 user_pref("privacy.clearOnShutdown.cache", true);
-user_pref("privacy.clearOnShutdown.cookies", true);
+user_pref("privacy.clearOnShutdown.cookies", false);
 user_pref("privacy.clearOnShutdown.downloads", true); // see note above
 user_pref("privacy.clearOnShutdown.formdata", true); // Form & Search History
 user_pref("privacy.clearOnShutdown.history", false); // Browsing & Download History
