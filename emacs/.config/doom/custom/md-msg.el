@@ -127,7 +127,6 @@
 (require 'markdown-mode)
 (require 'url-parse)
 (require 'xml)
-(require 'polymode)
 (require 'mu4e)
 
 (defgroup md-msg nil
@@ -694,7 +693,7 @@ With the prefix argument ARG set, it calls
   "Convert the current markdownMsg buffer into `mml' content.
 This function is a hook for `message-send-hook'."
   (save-window-excursion
-    (when (eq major-mode 'mu4e-compose-mode)
+    (when (or (eq major-mode 'md-msg-edit-mode) (eq major-mode 'mu4e-compose-mode))
       (let ((mail (md-msg-build)))
         ;; (when md-msg-text-plain-alternative
         ;;   (setq md-msg-text-plain (md-msg-markdown-to-text-plain)))
@@ -786,7 +785,8 @@ a html mime part, it returns t, nil otherwise."
 If the current `message' buffer is a reply, the
 `md-msg-separator' string is inserted at the end of the editing
 area."
-  (unless md-msg-edit-mode
+  (unless (eq major-mode 'md-msg-edit-mode)
+    (md-msg-edit-mode)
     (message-goto-body)
     (let ((new (not (md-msg-message-fetch-field "subject")))
           (with-original (not (= (point) (point-max))))
@@ -815,7 +815,7 @@ area."
               ))
           ;; (when md-msg-signature
           ;;   (insert md-msg-signature))
-          (md-msg-edit-mode))
+          )
         (set-buffer-modified-p nil))
       (if (md-msg-message-fetch-field "to")
           (md-msg-goto-body)
@@ -902,6 +902,21 @@ function is called.  `org-cycle' is called otherwise."
       (remove-hook 'mu4e-view-mode-hook 'md-msg-view-mode)
       (remove-hook 'mu4e-compose-mode-hook 'md-msg-post-setup))))
 
+(defun md-msg-select-other-view (&optional orig-fn)
+  "When the headers view is selected, select the message view (if
+that has a live window), and vice versa."
+  (interactive)
+  (let* ((other-buf
+          (cond
+           ((eq major-mode 'mu4e-headers-mode)
+            (mu4e-get-view-buffer))
+           ((or (eq major-mode 'mu4e-view-mode) (eq major-mode 'md-msg-view-mode))
+            (mu4e-get-headers-buffer))))
+         (other-win (and other-buf (get-buffer-window other-buf))))
+    (if (window-live-p other-win)
+        (select-window other-win)
+      (mu4e-message "No window to switch to"))))
+
 ;;;###autoload
 (define-minor-mode md-msg-mode
   "Toggle MdMsg mode.
@@ -922,6 +937,8 @@ HTML emails."
         (add-hook 'message-send-hook #'md-msg-prepare-to-send)
         ;; Revert to the original message after sending.
         (add-hook 'message-sent-hook #'undo)
+        (advice-add 'mu4e~view-quit-buffer :around 'md-msg-view-quit-buffer)
+        (advice-add 'mu4e-select-other-view :around 'md-msg-select-other-view)
         ;; FIXME
         ;; (add-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
         (add-to-list 'message-syntax-checks '(invisible-text . disabled))
@@ -935,6 +952,8 @@ HTML emails."
     (remove-hook 'message-send-hook #'md-msg-prepare-to-send)
     (remove-hook 'message-sent-hook #'undo)
     (remove-hook 'message-mode-hook #'md-msg-post-setup)
+    (advice-remove 'mu4e~view-quit-buffer 'md-msg-view-quit-buffer)
+    (advice-remove 'mu4e-select-other-view 'md-msg-select-other-view)
     ;; (remove-hook 'org-ctrl-c-ctrl-c-final-hook 'md-msg-ctrl-c-ctrl-c)
     (setq message-syntax-checks (delete '(invisible-text . disabled)
                                         message-syntax-checks))
@@ -975,19 +994,19 @@ HTML emails."
 ;; Composing messages in Markdown requires the header to remain in mu4e-compose-mode
 ;; for address completion, adding attachments, etc.
 ;; Then, the body can simply switch to markdown-mode, giving its full editing power.
-(define-hostmode poly-mu4e-compose-hostmode
-  :mode 'mu4e-compose-mode)
+;; (define-hostmode poly-mu4e-compose-hostmode
+;;   :mode 'mu4e-compose-mode)
 
-(define-innermode poly-markdown-msg-headers-innermode
-  :mode 'markdown-mode
-  :head-matcher "^--text follows this line--\n"
-  :tail-matcher "\\'"
-  :head-mode 'host
-  :tail-mode 'host)
+;; (define-innermode poly-markdown-msg-headers-innermode
+;;   :mode 'markdown-mode
+;;   :head-matcher "^--text follows this line--\n"
+;;   :tail-matcher "\\'"
+;;   :head-mode 'host
+;;   :tail-mode 'host)
 
-(define-polymode md-msg-edit-mode
-  :hostmode 'poly-mu4e-compose-hostmode
-  :innermodes '(poly-markdown-msg-headers-innermode))
+;; (define-polymode md-msg-edit-mode
+;;   :hostmode 'poly-mu4e-compose-hostmode
+;;   :innermodes '(poly-markdown-msg-headers-innermode))
 
 
 ;; md-msg-view-mode
@@ -995,20 +1014,18 @@ HTML emails."
 ;;   :mode 'mu4e-view-mode)
 
 ;; (define-innermode poly-markdown-msg-content-innermode
-;;   :mode 'markdown-view-mode
+;;   :mode 'md-msg-view-mode
 ;;   ;; Message headers never contain two newlines, as that indicates the start of content.
 ;;   :head-matcher "^$"
 ;;   :tail-matcher "\\'"
 ;;   :head-mode 'host
 ;;   :tail-mode 'host)
 
-;; (define-polymode md-msg-view-mode
+;; (define-polymode md-msg-view-polymode
 ;;   :hostmode 'poly-mu4e-view-hostmode
 ;;   :innermodes '(poly-markdown-msg-content-innermode))
 
-(defun md-msg-view-quit-buffer ()
-
-(defun mu4e~view-quit-buffer ()
+(defun md-msg-view-quit-buffer (&optional orig-fn)
   "Quit the mu4e-view buffer.
 This is a rather complex function, to ensure we don't disturb
 other windows."
@@ -1050,6 +1067,7 @@ other windows."
           (when (buffer-live-p (mu4e-get-headers-buffer))
             (switch-to-buffer (mu4e-get-headers-buffer))))))))
 
+
 (defvar md-msg-view-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map mu4e-view-mode-map)
@@ -1062,7 +1080,7 @@ other windows."
   "Keymap for `md-msg-view-mode'.")
 
 (define-derived-mode md-msg-view-mode markdown-view-mode "mdmsg:view"
-  "Major mode to read email using Org mode.
+  "Major mode to read email using Markdown highlighting.
 
 \\{md-msg-view-mode-map}"
   (use-local-map md-msg-view-mode-map)
@@ -1070,7 +1088,6 @@ other windows."
   (setq-local markdown-mode-font-lock-keywords
               (append markdown-mode-font-lock-keywords message-font-lock-keywords
                       md-msg-font-lock-keywords))
-
   ;; TODO Figure out how to hide a particular message header.
   ;; If we can, then hide the subject line to put it only in the header-line.
 
@@ -1087,6 +1104,90 @@ other windows."
   ;; Display images embedded in the email, but remote ones take too long.
   (setq-local markdown-display-remote-images nil)
   (markdown-display-inline-images))
+
+(defun md-msg-edit-mode-mu4e ()
+  "Setup mu4e faces, addresses completion and run mu4e."
+  (mu4e~compose-remap-faces)
+  (mu4e~start)
+  (when mu4e-compose-complete-addresses
+    (mu4e~compose-setup-completion))
+  ;; the following code is verbatim from mu4e-compse.el, mu4e-compose-mode
+  ;; this will setup fcc (saving sent messages) and handle flags
+  ;; (e.g. replied to)
+  (add-hook 'message-send-hook
+            (lambda () ;; mu4e~compose-save-before-sending
+              ;; when in-reply-to was removed, remove references as well.
+              (when (eq mu4e-compose-type 'reply)
+                (mu4e~remove-refs-maybe))
+              (when use-hard-newlines
+                (mu4e-send-harden-newlines))
+              ;; for safety, always save the draft before sending
+              (set-buffer-modified-p t)
+              (save-buffer)
+              (mu4e~compose-setup-fcc-maybe)
+              (widen)) nil t)
+  ;; when the message has been sent.
+  (add-hook 'message-sent-hook
+            (lambda () ;;  mu4e~compose-mark-after-sending
+              (setq mu4e-sent-func 'mu4e-sent-handler)
+              (mu4e~proc-sent (buffer-file-name))) nil t)
+  (define-key md-msg-edit-mode-map (kbd "C-c C-k") 'mu4e-message-kill-buffer))
+
+(defalias 'md-msg-edit-kill-buffer-gnus 'message-kill-buffer)
+(defalias 'md-msg-edit-kill-buffer-notmuch 'message-kill-buffer)
+(defalias 'md-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
+
+(defun md-msg-edit-kill-buffer ()
+  (interactive)
+  (md-msg-mua-call 'edit-kill-buffer))
+
+(defvar md-msg-edit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map markdown-mode-map)
+    (define-key map (kbd "<tab>") 'md-msg-tab)
+    (define-key map (kbd "TAB") 'md-msg-tab)
+    (define-key map [remap markdown-preview] 'md-msg-preview)
+    (define-key map (kbd "C-c C-k") 'md-msg-edit-kill-buffer)
+    ;; (define-key map (kbd "C-c C-s") 'message-goto-subject)
+    ;; (define-key map (kbd "C-c C-b") 'md-msg-goto-body)
+    (define-key map [remap org-attach] 'md-msg-attach)
+    map)
+  "Keymap for `md-msg-edit-mode'.")
+
+(define-derived-mode md-msg-edit-mode markdown-mode "mdmsg:compose"
+  "Major mode to compose email using Org mode.
+Like Org Mode but with these additional/changed commands:
+Type \\[org-ctrl-c-ctrl-c] to send the message if the cursor is
+  not a C-c C-c Org mode controlled region (Org babel for
+  example).
+Type \\[md-msg-preview] to preview the final email with
+  `browse-url'.
+Type \\[message-kill-buffer] to kill the current OrgMsg buffer.
+Type \\[message-goto-subject] to move the point to the Subject
+  header.
+Type \\[md-msg-goto-body] to move the point to the beginning of
+  the message body.
+Type \\[md-msg-attach] to call the dispatcher for attachment
+  commands.
+
+\\{md-msg-edit-mode-map}"
+  (use-local-map md-msg-edit-mode-map)
+  (set (make-local-variable 'message-sent-message-via) nil)
+  (set (make-local-variable 'message-signature) mu4e-compose-signature)
+  (set (make-local-variable 'message-send-mail-real-function) nil)
+  (make-local-variable 'message-default-charset)
+  (set (make-variable-buffer-local 'comment-use-syntax) nil)
+  (setq default-directory (mu4e~get-attachment-dir))
+
+  (add-hook 'completion-at-point-functions 'message-completion-function nil t)
+  (setq markdown-mode-font-lock-keywords
+	(append markdown-mode-font-lock-keywords message-font-lock-keywords
+		md-msg-font-lock-keywords))
+  (toggle-truncate-lines)
+  (md-msg-mua-call 'edit-mode)
+  (setq-local kill-buffer-hook 'md-msg-kill-buffer)
+  (unless (= (md-msg-end) (point-max))
+    (add-text-properties (1- (md-msg-end)) (point-max) '(read-only t))))
 
 (provide 'md-msg)
 
