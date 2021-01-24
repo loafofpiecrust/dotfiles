@@ -40,7 +40,6 @@
 
        :desktop
        window-manager
-       ;; polybar
 
        :completion
        (company +childframe)           ; the ultimate code completion backend

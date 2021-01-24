@@ -37,11 +37,22 @@
                      (+workspace/delete . "Delete")))
      ("Input" . (set-input-method
                  toggle-input-method
-                 (selectrum-repeat . "Resume search")))
+                 (selectrum-repeat . "Resume search")
+                 (execute-extended-command . "Execute command")
+                 "i"))
      ("Actions" . (org-capture
-                   execute-extended-command
                    (+popup/toggle . "Toggle last popup")
-                   universal-argument))))
+                   universal-argument
+                   "p" "s" "o" "g" "f" "w" "t" "b" "c"))
+     ("System" . ("a" "m" "r" "q" "h" "n"))))
+
+  (pretty-which-key-add-command-groups
+   doom-leader-map
+   '(("Media Player" . ((playerctl-next . "Next")
+                        (playerctl-previous . "Previous")
+                        (playerctl-play-pause . "Toggle pause")))
+     ("Screen capture" . ((+wm/screenshot . "Take screenshot")
+                          (desktop-environment-screenshot-part . "Take partial screenshot")))))
 
   ;; TODO Integrate this into DOOM's map! so that one can provide groups directly
   ;; while mapping.
@@ -224,6 +235,7 @@
                    mu4e-headers-mark-pattern
                    mu4e-headers-action
                    (mu4e-mark-execute-all . "Execute marks")
+                   ("x" . "Execute marks")
                    mu4e-mark-unmark-all))
      ("Compose" . (mu4e-compose-reply
                    mu4e-compose-new

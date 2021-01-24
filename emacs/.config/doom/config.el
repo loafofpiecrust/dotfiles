@@ -444,9 +444,8 @@ Returns a vector of hashtables of the results."
   :config
   (require 'tree-sitter-langs)
   ;; TODO Fix JSX support.
-  (appendq! tree-sitter-major-mode-language-alist
-            '((typescript-tsx-mode . typescript)))
-  (add-hook! 'tree-sitter-mode-hook #'tree-sitter-hl-mode))
+  (push '(typescript-tsx-mode . typescript) tree-sitter-major-mode-language-alist)
+  (add-hook! 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
 
 ;; Make spell-fu compatible with tree-sitter.
 (after! (spell-fu tree-sitter)
@@ -1536,6 +1535,8 @@ Move it to the mode-line."
         :n "?" #'+mu4e-show-map))
 
 ;; Center the minibuffer to make it easier to read quickly.
+(defvar +snead/max-minibuffer-width 120)
 (defun +snead/center-minibuffer ()
-  (unless mini-frame-mode (set-window-margins nil 42 42)))
+  (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
+    (unless mini-frame-mode (set-window-margins nil margin margin))))
 (add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)

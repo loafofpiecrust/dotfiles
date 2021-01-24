@@ -4,22 +4,13 @@
 ;; To install a package with Doom you must declare them here and run 'doom sync'
 ;; on the command line, then restart Emacs for the changes to take effect -- or
 ;; use 'M-x doom/reload'.
-(add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
-
-(package! tsc
-  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
-  :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
-           :files ("core/*.el")))
+;; (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
 (package! tree-sitter
-  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
-  :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
-           :files ("lisp/*.el" "src" "Cargo.toml" "Cargo.lock")))
+  :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
 
 (package! tree-sitter-langs
-  :pin "dc9094b5066ec3c4ad583ed285c282f5811323b5"
-  :recipe (:host github :repo "ubolonton/emacs-tree-sitter"
-           :files ("langs/*.el" "langs/queries")))
+  :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
 
 ;; Highlight markdown comments in certain modes.
 (package! theme-changer :pin "61945695a30d678e6a5d47cbe7c8aff59a8c30ea")
