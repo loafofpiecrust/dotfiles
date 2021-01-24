@@ -15,6 +15,8 @@
 (after! vterm
   (setq vterm-shell "/run/current-system/sw/bin/fish"))
 
+(use-package! memoize)
+
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
 ;;
@@ -287,6 +289,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 ;;;; Password Management!
 (use-package! bitwarden
+  :after auth-source
   :config
   ;; I use my main email address for bitwarden, so don't prompt me for it.
   (setq bitwarden-user user-mail-address
@@ -295,6 +298,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
         ;; my store password to unlock the BW pass.
         bitwarden-automatic-unlock (lambda () (read-passwd "[Bitwarden] Master password: ")))
 
+  ;; (memoize #'bitwarden-search "1 hour")
+
   (defun bitwarden-getpass-for-user (domain username)
     "Return the password for an account with the given USERNAME under the given DOMAIN.
 If the vault is locked, prompt the user for their master email and password."
@@ -302,16 +307,16 @@ If the vault is locked, prompt the user for their master email and password."
     ;; Ensure the vault is unlocked, prompting for login if not.
     (unless (bitwarden-unlocked-p) (bitwarden-unlock))
     ;; Look for the matching account under the given domain.
-    (let ((acc (seq-find (lambda (acc)
-                           (string= username (gethash "username" (gethash "login" acc))))
-                         (bitwarden-search domain))))
+    (let ((acc (cl-find-if (lambda (acc)
+                             (string= username (gethash "username" (gethash "login" acc))))
+                           (bitwarden-search domain))))
       (and acc (gethash "password" (gethash "login" acc)))))
 
   (defun bitwarden--read (prompt &optional search-str)
-    (let* ((items (mapcar (lambda (item) `(,(format "%s (%s)"
-                                                    (gethash "name" item)
-                                                    (gethash "username" (gethash "login" item)))
-                                           . ,item))
+    (let* ((items (mapcar (lambda (item) (cons (format "%s (%s)"
+                                                       (gethash "name" item)
+                                                       (gethash "username" (gethash "login" item)))
+                                               item))
                           (bitwarden-search search-str)))
            (choice (completing-read (concat "[Bitwarden] " prompt)
                                     items)))
@@ -346,27 +351,30 @@ Returns a vector of hashtables of the results."
       (when result
         (let* ((json-object-type 'hash-table)
                (json-key-type 'string)
-               (json (json-read-from-string result)))
+               (json (json-parse-string result)))
           json))))
 
   (defun bitwarden--encode (obj)
-    (shell-command-to-string (format "echo '%s' | bw encode" (json-encode obj))))
+    (let ((json-object-type 'hash-table)
+          (json-key-type 'string))
+      (shell-command-to-string (format "echo '%s' | bw encode" (json-serialize obj)))))
 
   (defun bitwarden-edit (&optional existing-account)
     (interactive)
     (unless (bitwarden-unlocked-p) (bitwarden-unlock))
-    (let* ((acc (or existing-account (bitwarden--read "Edit account: ")))
+    (let* ((acc (or nil (bitwarden--read "Edit account: ")))
            (login (gethash "login" acc))
            (username (read-string "Username: " (gethash "username" login)))
-           (password (read-string "Password: " (gethash "password" login))))
+           (password (read-string "Password: " (gethash "password" login)))
+           (acc-id (gethash "id" acc)))
       ;; Replace the existing username and password.
-      (puthash 'username username login)
-      (puthash 'password password login)
-      (puthash 'login login acc)
+      (puthash "username" username login)
+      (puthash "password" password login)
+      (puthash "login" login acc)
       ;; Push the updated entry to the vault.
       (call-process bitwarden-bw-executable nil 0 nil
                     "edit" "item"
-                    (gethash "id" acc)
+                    acc-id
                     (bitwarden--encode acc))
       (message "Updated %s account for %s" (gethash "name" acc) username)))
 
@@ -376,6 +384,12 @@ Returns a vector of hashtables of the results."
       (kill-new (shell-command-to-string
                  (format "bw generate -ulns --length %d" len)))
       (message "New password copied to the clipboard")))
+
+  (defun bitwarden-logged-in-p ()
+    "Check if `bitwarden-user' is logged in.
+Returns nil if not logged in."
+    (not (string-blank-p (shell-command-to-string (format "cat '%s' | jq .__PROTECTED__key --raw-output"
+                                                          bitwarden-data-file)))))
 
   ;; Bind my most used workflows under <leader> a (authentication)
   (map! :leader
@@ -461,6 +475,8 @@ Returns a vector of hashtables of the results."
   (setq lsp-eldoc-render-all nil
         lsp-signature-render-documentation nil
         lsp-symbol-highlighting-skip-current t
+        ;; Always prompt for actions so I know what I'm doing.
+        lsp-auto-execute-action nil
         ;; Don't show flycheck stuff in the sideline.
         lsp-ui-sideline-enable nil
         lsp-ui-sideline-update-mode 'line))
@@ -583,17 +599,15 @@ Use `treemacs-select-window' command for old functionality."
         [return] nil))
 
 (use-package! evil-owl
-  :after evil
+  :hook (doom-first-file . evil-owl-mode)
   :config
   (setq evil-owl-display-method 'posframe
         evil-owl-extra-posframe-args `(:internal-border-width ,+snead/frame-border-width
                                        :left-fringe ,+snead/frame-fringe
                                        :right-fringe ,+snead/frame-fringe)
-        evil-owl-idle-delay 0.5)
-  (evil-owl-mode))
+        evil-owl-idle-delay 0.5))
 
 (use-package! flycheck-inline
-  :after flycheck
   :hook (flycheck-mode . flycheck-inline-mode))
 
 (use-package! cherokee-input)
@@ -871,7 +885,7 @@ are ineffectual otherwise."
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
-  :defer 10
+  :defer 5
   :config
   (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
@@ -896,11 +910,11 @@ are ineffectual otherwise."
 
 (use-package! olivetti
   :hook ((org-mode markdown-mode magit-status-mode forge-topic-mode) . olivetti-mode)
-  :init (map! :leader "to" #'olivetti-mode)
+  :bind (:map doom-leader-map
+         ("to" . olivetti-mode))
   :config
   (add-hook 'olivetti-mode-hook #'disable-line-numbers)
-  (setq-default olivetti-body-width 85))
-
+  (setq-default olivetti-body-width 90))
 
 (setq +ligatures-extra-symbols
       '(:name "»"
@@ -971,12 +985,6 @@ are ineffectual otherwise."
 (after! markdown-mode
   (set-ligatures! 'markdown-mode
                   :src_block "```"))
-
-;; (after! magit
-;;   (set-ligatures! 'magit-log-mode
-;;     :merge-right "|\\"
-;;     :split-right "|/"
-;;     :vertical "|"))
 
 (after! web-mode
   (setq web-mode-prettify-symbols-alist nil))
@@ -1081,6 +1089,7 @@ are ineffectual otherwise."
 
 ;; Notify me when a deadline is fast approaching.
 (use-package! org-notify
+  :defer 5
   :config
   (org-notify-add 'default
                   ;; If we're more than an hour past the deadline, don't notify at all.
@@ -1162,7 +1171,6 @@ end of the workspace list."
     (interactive)
     (exec "firefox"))
   (map! :leader
-        "j" #'ace-window
         "o b" #'open-browser
         "o g" #'=calendar
         "w U" #'winner-redo
@@ -1182,8 +1190,9 @@ end of the workspace list."
         "DEL" #'+workspace/delete))
 
 ;; Show window hints big and above X windows.
+(map! :leader "j" #'ace-window)
 (after! ace-window
-  (setq aw-display-style nil
+  (setq aw-display-style 'overlay
         aw-posframe-parameters '())
   (when (featurep 'exwm)
     (setq aw-posframe-parameters '((parent-frame . nil))))
@@ -1287,9 +1296,8 @@ end of the workspace list."
 
 ;; Launch programs directly from an Emacs prompt.
 (use-package! app-launcher
-  :commands app-launcher-run-app
-  :init
-  (map! :leader "o o" #'app-launcher-run-app))
+  :bind (:map doom-leader-map
+         ("o o" . app-launcher-run-app)))
 
 (use-package! org-caldav
   :config
@@ -1317,6 +1325,8 @@ end of the workspace list."
   (doom-modeline-def-segment ace-window '(:eval (propertize (concat " " (window-parameter (selected-window) 'ace-window-path) " ")
                                                             'face
                                                             (and (doom-modeline--active) 'doom-modeline-bar))))
+  (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
+
   (doom-modeline-def-modeline 'main
     '(bar ace-window modals matches buffer-info buffer-position)
     '(misc-info input-method major-mode vcs lsp checker " "))
@@ -1335,6 +1345,13 @@ end of the workspace list."
   (doom-modeline-def-modeline 'dashboard
     '(bar ace-window window-number buffer-default-directory-simple)
     '(misc-info irc mu4e github debug minor-modes input-method major-mode process " "))
+  (doom-modeline-def-modeline 'ranger
+    '(bar ace-window " " ranger)
+    '())
+  (add-hook! '(ranger-mode-hook ranger-override-dired-mode-hook)
+    (defun doom-modeline-set-ranger-modeline ()
+      (setq-local mode-line-format nil
+                  header-line-format (doom-modeline 'ranger))))
   ;; (doom-modeline-set-modeline 'upper t)
   ;; Add a mini-modeline with: git, workspace, time, battery, exwm tray
 
@@ -1412,8 +1429,8 @@ Move it to the mode-line."
           (setf (default-value 'mode-line-format) (list "%e" modeline))
         (progn
           (when (and (local-variable-p 'header-line-format) (not (equal "%e" (car header-line-format))))
-            (setf (buffer-local-value 'mode-line-format (current-buffer)) header-line-format))
-          (setf (buffer-local-value 'header-line-format (current-buffer)) (list "%e" modeline))))
+            (setq-local mode-line-format header-line-format))
+          (setq-local header-line-format (list "%e" modeline))))
       ))
 
   (defun doom-modeline-unfocus ()
@@ -1427,7 +1444,6 @@ Move it to the mode-line."
 ;;               mu4e-headers-mode-hook)
 ;;   line-spacing 2)
 
-(use-package! memoize)
 (use-package! svg-icon
   :after all-the-icons doom-modeline
   :config
@@ -1526,13 +1542,40 @@ Move it to the mode-line."
   ;;  :transient t)
   )
 
+(defun +which-key-show-evil-major (&optional all mode)
+  (interactive "P")
+  (if (which-key--popup-showing-p)
+      ;; Hide the existing popup.
+      (progn ;; (setq-local which-key-persistent-popup nil)
+        (which-key--hide-popup))
+    ;; Show the popup!
+    (let* ((map-sym (intern (format "%s-map" (or mode major-mode))))
+           (value (and (boundp map-sym) (symbol-value map-sym))))
+      (if (and value (keymapp value))
+          (progn (which-key--show-keymap
+                  "Major-mode bindings"
+                  value
+                  (or (evil-get-auxiliary-keymap value evil-state)
+                      (apply-partially #'which-key--map-binding-p value))
+                  all
+                  t)
+                 ;; (setq-local which-key-persistent-popup t)
+                 )
+        (message "which-key: No map named %s" map-sym)))))
+
+;; Show help menus in evil-bound modes.
 (after! mu4e
   (defun +mu4e-show-map ()
     (interactive)
-    ;; TODO Filter the keymap to show only categorized bindings.
     (which-key--show-keymap 'mu4e-headers-mode-map (evil-get-auxiliary-keymap mu4e-headers-mode-map 'normal) nil nil t))
   (map! :map mu4e-headers-mode-map
-        :n "?" #'+mu4e-show-map))
+        :mn "?" #'+which-key-show-evil-major))
+
+(after! ranger
+  (map! :leader
+        "o -" #'deer)
+  (map! :map ranger-mode-map
+        :mn "?" #'+which-key-show-evil-major))
 
 ;; Center the minibuffer to make it easier to read quickly.
 (defvar +snead/max-minibuffer-width 120)
