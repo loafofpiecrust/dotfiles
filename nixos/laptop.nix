@@ -34,9 +34,13 @@
   # FIXME: Open just the ports needed for chromecast.
   networking.firewall.enable = false;
 
+  # printing and scanning
+  hardware.sane.enable = true;
+  hardware.sane.extraBackends = [ pkgs.hplipWithPlugin ];
+
   users.users.snead = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "docker" "adbusers" ];
+    extraGroups = [ "wheel" "docker" "adbusers" "scanner" "lp" ];
     shell = pkgs.fish;
     hashedPassword =
       "$6$PFZjyXdf7W2cu3$55Iw6UjpcdB29fb4RIPcaYFY5Ehtuc9MFZaJBa9wlRbgYxRrDAP0tlApOiIsQY7hoeO9XG7xxiIcsjGYc9QXu1";
