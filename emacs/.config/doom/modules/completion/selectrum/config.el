@@ -4,11 +4,11 @@
   :hook (doom-first-input . selectrum-mode)
   :config
   (setq selectrum-extend-current-candidate-highlight t
-        selectrum-fix-minibuffer-height t
+        selectrum-fix-vertical-window-height t
         projectile-completion-system 'default
         selectrum-count-style 'current/matches)
 
-  (setq completion-styles '(substring partial-completion))
+  ;; (setq completion-styles '(substring partial-completion))
 
   (map! :leader "'" #'selectrum-repeat)
 
@@ -63,14 +63,15 @@
   (setq consult-preview-key nil)
 
   (setq consult-project-root-function #'projectile-project-root
-        consult-find-command '("fd" "--color=never" "--full-path")
-        consult-ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "--hidden" "-g!.git" "-S" "." "-e"))
+        consult-find-command "fd --color=never --full-path *ARG* OPTS"
+        consult-ripgrep-command "rg --null --line-buffered --color=always --max-columns=500 --no-heading --line-number --hidden -g!.git -S . -e ARG OPTS")
 
   (map! :leader
         "sb" #'consult-line
         "se" #'consult-error
         "iy" #'consult-yank-pop
         "sp" #'consult-ripgrep
+        "iu" #'insert-char
         :desc "Search in project" "/" #'consult-ripgrep
         :desc "Find some file" ">" #'consult-find))
 
