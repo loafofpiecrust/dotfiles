@@ -101,8 +101,6 @@
 
 (package! emms)
 
-(package! magit :built-in 'prefer)
-
 (package! dired-show-readme
   :recipe (:host gitlab :repo "kisaragi-hiu/dired-show-readme"))
 
@@ -144,6 +142,16 @@
 
 (package! hercules
   :recipe (:host gitlab :repo "jjzmajic/hercules.el"))
+
+(package! org-pandoc-import
+  :recipe (:host github
+           :repo "tecosaur/org-pandoc-import"
+           :files ("*.el" "filters" "preprocessors")))
+
+(package! ct
+  :recipe (:host github
+           :repo "neeasade/ct.el"
+           :branch "master"))
 
 
 ;; To install a package directly from a remote git repo, you must specify a
