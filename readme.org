@@ -15,3 +15,42 @@ Hello! These are my personal dotfiles that manage my laptop's linux environment.
 | Web Browser      | =firefox=          |
 | Networking       | =iwd=              |
 | System Tray      | =stalonetray=      |
+
+* Emacs as Desktop Environment
+** Key DE Features
+Compilation of features that are core to other desktop environments that I might be inspired by.
+Programs that I have tried and like certain pieces of:
+- GNOME 3
+- KDE
+- MacOS
+- i3 / bspwm / classic tiling window managers
+
+*** Networking
+- List of available networks, automatically updating
+- Connect to a network manually
+- Automatically connect to remembered network
+*** UI
+- MacOS: Global menu bar
+- Wallpaper
+- Application launcher with icons
+*** Launching
+- MacOS Spotlight: search all files (and applications) by both name and content.
+*** Status
+- Current CPU load
+- Current memory load
+
+** Emacs Solutions
+- [ ] Command to change iwd autoconnect for each network.
+- [ ] Command to disconnect from current network.
+- [ ] Global binding for show current keymap to act as keyboard equivalent of menu bar.
+- [ ] CPU and memory indicators
+- [ ] exwm outer gaps package
+
+* Setting up a new project
+I'm working on reducing this to as few steps as possible, but setting up a new project with Nix ready for ci/cd and local development with Emacs takes a few steps:
+
+1. Create a `shell.nix` file in project root.
+2. Fill `shell.nix` with the necessary environment for development and builds.
+3. Create an empty `.envrc` file in project root.
+4. Run `direnv allow .` in the same folder, or `M-x envrc-allow` in emacs.
+5. Profit.

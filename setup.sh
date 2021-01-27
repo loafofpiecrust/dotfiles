@@ -1,5 +1,6 @@
 #!/bin/bash
 
+stow env
 stow aspell
 stow emacs
 stow email

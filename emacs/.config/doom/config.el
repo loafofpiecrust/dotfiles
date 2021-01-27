@@ -1583,3 +1583,5 @@ Move it to the mode-line."
   (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
     (unless mini-frame-mode (set-window-margins nil margin margin))))
 (add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
+(map! :after envrc
+      :leader "e" envrc-command-map)

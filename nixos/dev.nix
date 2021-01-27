@@ -30,8 +30,11 @@
     # ocaml for compilers class
     ocaml
     opam # OCaml package manager
-    ocamlformat
-    ocamlPackages.ocp-indent
+    ocamlformat # formatter
+    ocamlPackages.ocp-indent # backup formatter
+    ocamlPackages.ocaml-lsp
+    ocamlPackages.merlin
+    ocamlPackages.utop # REPL
 
     # Spellcheck
     (aspellWithDicts (dicts: with dicts; [ en en-computers en-science ]))
@@ -77,7 +80,7 @@
             org-pdftools
             plantuml-mode
             posframe
-            # exwm
+            exwm
             # magit
           ];
       });
