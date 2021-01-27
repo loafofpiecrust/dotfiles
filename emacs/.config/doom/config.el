@@ -29,7 +29,7 @@
 ;; font string. You generally only need these two:
 ;; Symbol test: _ -> => , . `' "" O0l1*#
 (setq doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
-      doom-variable-pitch-font (font-spec :family "sans" :size 18 :weight 'semi-bold)
+      doom-variable-pitch-font (font-spec :family "Overpass" :size 18 :weight 'semi-bold)
       ;; These fonts were fucking up display of math symbols! Remove them!
       doom-unicode-extra-fonts nil)
 
@@ -66,7 +66,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 (defvar +snead/fringe-deny-modes '(pdf-view-mode))
 (defun +snead/set-fringe ()
   "Add a fringe to windows carrying file-visiting buffers."
-  (when (and (buffer-file-name) (not (member major-mode +snead/fringe-deny-modes)))
+  (when (and (buffer-file-name) (not (memq major-mode +snead/fringe-deny-modes)))
     (+snead/add-fringe)))
 
 (after! fringe
@@ -98,11 +98,10 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-hook! '(vterm-mode-hook eshell-mode-hook)
     truncate-lines nil)
 
-  (when (featurep 'exwm)
-    (appendq! default-frame-alist '((left-fringe . 0)
-                                    (right-fringe . 0)
-                                    (internal-border-width . 12)))
-    (set-fringe-mode 0))
+  ;; (when (featurep 'exwm)
+  (appendq! initial-frame-alist '((left-fringe . 0)
+                                  (right-fringe . 0)))
+  (set-fringe-mode 0);; )
 
   (setq custom-safe-themes t))
 
@@ -194,7 +193,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 ;; Pull exwm config from separate file.
 (use-package! my-exwm-config
-  :if (getenv "EMACS_EXWM"))
+  :if (equal "t" (getenv "EMACS_EXWM")))
 
 (after! unicode-fonts
   ;; Replace all instances of Symbola with a monospacified Symbola.
@@ -255,12 +254,10 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (change-theme doom-theme 'ewal-doom-dark))
 
 ;;;; org-mode adjustments
-(use-package! org
-  :no-require t
+(setq org-directory "~/org/")
+(after! org
   ;; If you use `org' and don't want your org files in the default location below,
   ;; change `org-directory'. It must be set before org loads!
-  :init (setq org-directory "~/org/")
-  :config
   ;; Agenda settings
   (setq-default org-deadline-warning-days 10)
   ;; Change some org display properties.
@@ -289,7 +286,10 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 ;;;; Password Management!
 (use-package! bitwarden
-  :after auth-source
+  :commands (bitwarden-getpass
+             bitwarden-edit
+             bitwarden-generate-password
+             bitwarden-getpass-for-user)
   :config
   ;; I use my main email address for bitwarden, so don't prompt me for it.
   (setq bitwarden-user user-mail-address
@@ -507,7 +507,7 @@ Returns nil if not logged in."
   )
 
 (use-package! org-ref
-  :after org
+  :after-call org-mode
   :config
   (setq org-ref-completion-library 'org-ref-ivy-cite)
   (map! :map org-mode-map
@@ -686,8 +686,8 @@ are ineffectual otherwise."
 
   (add-hook! 'mu4e-mark-execute-pre-hook #'+mu4e-gmail-fix-flags-h))
 
-(use-package! org-mu4e
-  :after mu4e)
+;; (use-package! org-mu4e
+;;   :after mu4e)
 
 (setq mu4e-update-interval 300)
 (after! mu4e
@@ -885,6 +885,7 @@ are ineffectual otherwise."
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
+  :if (equal "t" (getenv "EMACS_EXWM"))
   :defer 5
   :config
   (mu4e-alert-set-default-style 'libnotify)
@@ -906,7 +907,10 @@ are ineffectual otherwise."
   (add-to-list 'web-mode-engines-alist '("django" . "\\.tera\\.(xml|html)\\'")))
 
 (defun disable-line-numbers ()
+  (interactive)
   (display-line-numbers-mode -1))
+
+(add-hook 'pdf-outline-buffer-mode-hook #'disable-line-numbers)
 
 (use-package! olivetti
   :hook ((org-mode markdown-mode magit-status-mode forge-topic-mode) . olivetti-mode)
@@ -1052,7 +1056,7 @@ are ineffectual otherwise."
 ;;   (map! :nv "C-/" 'comment-dwim))
 
 (use-package! ox-moderncv
-  :after org
+  :after-call org-mode
   :config
   (defun org-cv-export-to-pdf ()
     (interactive)
@@ -1194,8 +1198,8 @@ end of the workspace list."
 (after! ace-window
   (setq aw-display-style 'overlay
         aw-posframe-parameters '())
-  (when (featurep 'exwm)
-    (setq aw-posframe-parameters '((parent-frame . nil))))
+  ;; (when (featurep 'exwm)
+  ;;   (setq aw-posframe-parameters '((parent-frame . nil))))
   ;; Show the window key in the header line.
   (ace-window-display-mode))
 
@@ -1299,17 +1303,45 @@ end of the workspace list."
   :bind (:map doom-leader-map
          ("o o" . app-launcher-run-app)))
 
+;; Sync my org agenda entries to my calendar, so I can see these entries on my
+;; phone and get reminders there.
 (use-package! org-caldav
+  :defer 5
   :config
   (setq org-caldav-url "https://dav.mailbox.org/caldav"
         org-caldav-calendar-id "Y2FsOi8vMC8zMQ"
         org-caldav-inbox "~/org/inbox.org"
-        org-caldav-files '("~/org/me.org" "~/org/todo.org")
+        org-caldav-files '("~/org/me.org" "~/org/todo.org" "~/org/spring-2021.org")
+        org-caldav-delete-calendar-entries 'always
+        org-caldav-sync-direction 'twoway
+        org-caldav-resume-aborted 'never
         org-icalendar-timezone "UTC"
-        org-icalendar-alarm-time 20))
+        ;; Alert me 20 minutes before events on my phone.
+        org-icalendar-alarm-time 20)
+
+  ;; Don't interrupt me when syncing calendars!
+  (defun +org-caldav-sync-quiet ()
+    "Sync calendars without showing the results."
+    (let ((org-caldav-show-sync-results nil))
+      (org-caldav-sync)))
+
+  ;; Sync my calendars every hour or so.
+  ;;(run-with-timer 5 3600 #'+org-caldav-sync-quiet)
+  )
 
 (after! org
   (setq org-timer-countdown-timer-title "Timer finished"))
+
+;; Give full state names to make learning the names easier.
+(after! evil
+  (setq evil-normal-state-tag " NORMAL "
+        evil-insert-state-tag " INSERT "
+        evil-visual-state-tag " VISUAL "
+        evil-visual-line-tag " VLINE "
+        evil-visual-block-tag " VBLOCK "
+        evil-emacs-state-tag " EMACS "
+        evil-operator-state-tag " OPERATOR "
+        evil-replace-state-tag " REPLACE "))
 
 (after! doom-modeline
   (setq doom-modeline-buffer-file-name-style 'relative-to-project
@@ -1322,9 +1354,10 @@ end of the workspace list."
   (doom-modeline-def-segment exwm-title '(:eval (or exwm-title (doom-modeline-segment--buffer-info-simple))))
   (doom-modeline-def-segment major-mode 'mode-name)
   (doom-modeline-def-segment buffer-position '(" " mode-line-percent-position))
-  (doom-modeline-def-segment ace-window '(:eval (propertize (concat " " (window-parameter (selected-window) 'ace-window-path) " ")
-                                                            'face
-                                                            (and (doom-modeline--active) 'doom-modeline-bar))))
+  (doom-modeline-def-segment ace-window '(:eval (and (featurep ace-window)
+                                                     (propertize (concat " " (upcase  (window-parameter (selected-window) 'ace-window-path)) " ")
+                                                                 'face
+                                                                 (and (doom-modeline--active) 'doom-modeline-bar)))))
   (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
 
   (doom-modeline-def-modeline 'main
@@ -1348,24 +1381,17 @@ end of the workspace list."
   (doom-modeline-def-modeline 'ranger
     '(bar ace-window " " ranger)
     '())
-  (add-hook! '(ranger-mode-hook ranger-override-dired-mode-hook)
+  (add-hook! '(ranger-mode-hook)
     (defun doom-modeline-set-ranger-modeline ()
       (setq-local mode-line-format nil
                   header-line-format (doom-modeline 'ranger))))
   ;; (doom-modeline-set-modeline 'upper t)
   ;; Add a mini-modeline with: git, workspace, time, battery, exwm tray
 
-  (defvar +snead/wifi-name nil)
-  (defun +snead/wifi-update ()
-    (let* ((network-name (string-trim (shell-command-to-string "iwctl station wlan0 show | rg Connected | cut -d' ' -f17-")))
-           (connected (not (string-empty-p network-name))))
-      (setq +snead/wifi-name
-            (propertize "--"
-                        'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
-                        'help-echo (if connected network-name "Disconnected")))))
-  (run-with-timer 1 3 #'+snead/wifi-update)
-
   )
+
+(after! evil-escape
+  (setq evil-escape-delay 0.04))
 
 (defvar +snead/volume nil)
 (defun +snead/volume-update ()
@@ -1376,6 +1402,7 @@ end of the workspace list."
   (run-with-timer 1 2 #'+snead/volume-update))
 
 (use-package! mini-modeline
+  :if (equal "t" (getenv "EMACS_EXWM"))
   :after doom-modeline
   :hook (doom-modeline-mode . mini-modeline-mode)
   :config
@@ -1386,6 +1413,17 @@ end of the workspace list."
   ;; (doom-modeline-def-modeline 'lower
   ;;   '()
   ;;   '(mu4e persp-name battery " " time))
+
+  (defvar +snead/wifi-name nil)
+  (defun +snead/wifi-update ()
+    (let* ((network-name (string-trim (shell-command-to-string "iwctl station wlan0 show | rg Connected | cut -d' ' -f17-")))
+           (connected (not (string-empty-p network-name))))
+      (setq +snead/wifi-name
+            (propertize "--"
+                        'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
+                        'help-echo (if connected network-name "Disconnected")))))
+  (run-with-timer 1 5 #'+snead/wifi-update)
+
   (let ((half-space (propertize " " 'display '(space :width 0.5))))
     (setq mini-modeline-r-format `((:eval (doom-modeline-segment--mu4e))
                                    (:eval (+svg-icon-string "material" "folder"))
@@ -1550,13 +1588,15 @@ Move it to the mode-line."
         (which-key--hide-popup))
     ;; Show the popup!
     (let* ((map-sym (intern (format "%s-map" (or mode major-mode))))
-           (value (and (boundp map-sym) (symbol-value map-sym))))
+           (value (and (boundp map-sym) (symbol-value map-sym)))
+           (evil-value (or (evil-get-auxiliary-keymap value evil-state)
+                           (evil-get-auxiliary-keymap value 'normal)
+                           value)))
       (if (and value (keymapp value))
           (progn (which-key--show-keymap
                   "Major-mode bindings"
-                  value
-                  (or (evil-get-auxiliary-keymap value evil-state)
-                      (apply-partially #'which-key--map-binding-p value))
+                  evil-value
+                  (apply-partially #'which-key--map-binding-p evil-value)
                   all
                   t)
                  ;; (setq-local which-key-persistent-popup t)
@@ -1577,11 +1617,16 @@ Move it to the mode-line."
   (map! :map ranger-mode-map
         :mn "?" #'+which-key-show-evil-major))
 
+(after! pdf-view
+  (map! :map pdf-view-mode-map
+        :mn "?" #'+which-key-show-evil-major))
+
 ;; Center the minibuffer to make it easier to read quickly.
-(defvar +snead/max-minibuffer-width 120)
+(defvar +snead/max-minibuffer-width 130)
 (defun +snead/center-minibuffer ()
   (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
     (unless mini-frame-mode (set-window-margins nil margin margin))))
 (add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
+
 (map! :after envrc
       :leader "e" envrc-command-map)

@@ -20,6 +20,8 @@
       doom-leader-alt-key "<f19>"
       doom-localleader-key "\\")
 
+;; (setq comp-deferred-compilation t)
+
 (when noninteractive
   (appendq! doom-env-blacklist '("^XDG_SESSION_"
                                  "^DESKTOP_SESSION"

@@ -7,7 +7,7 @@
   (message "Screenshot saved to %s" desktop-environment-screenshot-directory))
 
 (use-package! exwm
-  :if (getenv "EMACS_EXWM")
+  :if (equal "t" (getenv "EMACS_EXWM"))
   :init
   (setq exwm-input-global-keys `(;;(,(kbd "s-SPC") . ,doom-leader-map)
                                  ;; TODO Launch programs in new window.
@@ -121,35 +121,19 @@
     (setenv "SDL_VIDEODRIVER" "x11")
     (exwm-xim-enable))
 
+  ;; Automatically handle multiple monitors.
+  ;; Each monitor corresponds to an Emacs frame, and each frame can focus on a
+  ;; different workspace. Workspaces are always shared between all frames.
+  (use-package! exwm-randr
+    :config
+    (setq exwm-randr-workspace-monitor-plist '(0 "eDP1"
+                                                 1 "HDMI1"))
+    (add-hook 'exwm-randr-screen-change-hook
+              (lambda () (exec "xrandr --output HDMI1 --right-of eDP1 --auto")))
+    (exwm-randr-enable))
+
   (exwm-enable))
 
-;; Automatically handle multiple monitors.
-;; Each monitor corresponds to an Emacs frame, and each frame can focus on a
-;; different workspace. Workspaces are always shared between all frames.
-(use-package! exwm-randr
-  :after exwm
-  :config
-  (setq exwm-randr-workspace-monitor-plist '(0 "eDP1"
-                                               1 "HDMI1"))
-  (add-hook 'exwm-randr-screen-change-hook
-            (lambda () (exec "xrandr --output HDMI1 --right-of eDP1 --auto")))
-  (exwm-randr-enable))
-
-(after! (exwm ivy)
-  (defun ivy-switch-buffer-prefiltered (prompt predicate)
-    (ivy-read (or prompt "Switch to buffer: ") #'internal-complete-buffer
-              :keymap ivy-switch-buffer-map
-              :predicate predicate
-              :preselect (buffer-name (other-buffer (current-buffer)))
-              :action #'ivy--switch-buffer-action
-              :matcher #'ivy--switch-buffer-matcher
-              :caller 'ivy-switch-buffer-prefiltered))
-
-  (defun ivy-switch-buffer-same-type ()
-    (interactive)
-    (ivy-switch-buffer-prefiltered
-     (format "Switch to %s buffer: " exwm-class-name)
-     (lambda (b) (equal (buffer-local-value 'exwm-class-name (cdr b)) exwm-class-name)))))
 
 (use-package! desktop-environment
   :after exwm
@@ -166,3 +150,10 @@
   (defun desktop-environment-toggle-mute ()
     (interactive)
     (desktop-environment-volume-set "toggle")))
+
+;; Add outer gaps!
+(use-package exwm-outer-gaps
+  :defer 5
+  :config
+  (setq exwm-outer-gaps-width [12 12 12 12])
+  (exwm-outer-gaps-mode 1))

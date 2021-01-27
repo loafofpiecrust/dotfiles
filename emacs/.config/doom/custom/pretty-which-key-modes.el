@@ -142,13 +142,7 @@
                     (kill-current-buffer . "Close buffer")
                     ))))
 
-  (pretty-which-key-add-command-groups
-   outline-mode-map
-   '(("Outline" . ((outline-hide-body . "Hide body")
-                   (outline-show-entry . "Show entry")
-                   (outline-show-branches . "Show branches")
-                   (outline-hide-other . "Hide other")
-                   (outline-up-heading . "Up heading")))))
+
 
   (pretty-which-key-add-command-groups
    evil-motion-state-map
@@ -201,7 +195,14 @@
                     (+evil:c-string-encode . "Encode C string")
                     )))))
 
-
+(with-eval-after-load 'outline
+  (pretty-which-key-add-command-groups
+   outline-mode-map
+   '(("Outline" . ((outline-hide-body . "Hide body")
+                   (outline-show-entry . "Show entry")
+                   (outline-show-branches . "Show branches")
+                   (outline-hide-other . "Hide other")
+                   (outline-up-heading . "Up heading"))))))
 
 ;; Describe commands for mode-specific bindings.
 (with-eval-after-load 'proced
