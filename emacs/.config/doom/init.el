@@ -94,7 +94,7 @@
        (dired +icons +ranger)             ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
        ;;ibuffer         ; interactive buffer management
-       undo      ; persistent, smarter undo for your inevitable mistakes
+       (undo +tree)      ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
        :term
@@ -195,7 +195,6 @@
        :email
        mu4e
        ;; notmuch
-       ;;(wanderlust +gmail)
 
        :app
        calendar

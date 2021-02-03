@@ -2,11 +2,18 @@
 -- use pandoc's `--lua-filter` option and pass it the following lua script.
 -- For more information see https://pandoc.org/lua-filters.html
 
+-- Keep headers from having extra gunk afterward.
 function Header (elem)
   elem.identifier = ""
   return elem
 end
 
+-- Remove custom attributes applied to spans.
+function Span (elem)
+  return elem.content
+end
+
+-- Remove custom attributes applied to divs.
 function Div (elem)
   return elem.content
 end
@@ -45,9 +52,6 @@ function Table (tb)
   end
 end
 
-function Span (elem)
-  return elem.content
-end
 
 -- Remove more empty paragraphs if possible.
 function Para (elem)

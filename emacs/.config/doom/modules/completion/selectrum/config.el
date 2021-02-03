@@ -63,7 +63,7 @@
   (setq consult-preview-key nil)
 
   (setq consult-project-root-function #'projectile-project-root
-        consult-find-command "fd --color=never --full-path *ARG* OPTS"
+        consult-find-command "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
         consult-ripgrep-command "rg --null --line-buffered --color=always --max-columns=500 --no-heading --line-number --hidden -g!.git -S . -e ARG OPTS")
 
   (map! :leader
@@ -132,6 +132,9 @@
         embark-action-indicator (defun +embark-which-key (map)
                                   "Show key hints in the same minibuffer as actions."
                                   (setq-local which-key-show-prefix nil
+                                              which-key-popup-type (if (and (featurep 'mini-frame) mini-frame-mode)
+                                                                       'minibuffer
+                                                                     which-key-popup-type)
                                               which-key-replacement-alist
                                               (cons '(("^C-h\\|SPC$" . nil) . ignore)
                                                     which-key-replacement-alist))
@@ -214,6 +217,8 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      ;; calc prompts
                                      calcDigit-start))
 
+  (setq mini-frame-resize 'not-set)
+
   ;; Keep the background color the same as normal frames.
   (defun +mini-frame-header-bg (&optional frame)
     (face-attribute 'mode-line :background frame))
@@ -221,12 +226,14 @@ If DIR is not a project, it will be indexed (but not cached)."
 
   ;; Make it pretty and automatically resize based on the prompt.
   (setq mini-frame-show-parameters `((left . 0.5)
-                                     (top . 38)
+                                     (top . 0.3)
                                      (width . 0.55)
-                                     (height . 1)
+                                     (height . 12)
                                      (internal-border-width . 0)
                                      (left-fringe . 10)
-                                     (right-fringe . 10)))
+                                     (right-fringe . 10)
+                                     ;; (font . ,(font-spec :family "SF Mono" :size 17 :weight 'medium))
+                                     ))
 
   ;; Workaround for EXWM compatibility to show the mini-frame on top of any X window.
   (when (featurep 'exwm)

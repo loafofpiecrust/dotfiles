@@ -290,6 +290,14 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
              bitwarden-edit
              bitwarden-generate-password
              bitwarden-getpass-for-user)
+  :init
+  ;; Bind my most used workflows under <leader> a (authentication)
+  (map! :leader
+        :prefix ("a" . "auth")
+        "p" #'bitwarden-getpass
+        "e" #'bitwarden-edit-item
+        "g" #'bitwarden-generate-password
+        "n" #'bitwarden-create-item)
   :config
   ;; I use my main email address for bitwarden, so don't prompt me for it.
   (setq bitwarden-user user-mail-address
@@ -359,7 +367,7 @@ Returns a vector of hashtables of the results."
           (json-key-type 'string))
       (shell-command-to-string (format "echo '%s' | bw encode" (json-serialize obj)))))
 
-  (defun bitwarden-edit (&optional existing-account)
+  (defun bitwarden-edit-item (&optional existing-account)
     (interactive)
     (unless (bitwarden-unlocked-p) (bitwarden-unlock))
     (let* ((acc (or nil (bitwarden--read "Edit account: ")))
@@ -378,6 +386,30 @@ Returns a vector of hashtables of the results."
                     (bitwarden--encode acc))
       (message "Updated %s account for %s" (gethash "name" acc) username)))
 
+  (defun bitwarden-create-item ()
+    (interactive)
+    (unless (bitwarden-unlocked-p) (bitwarden-unlock))
+    (let* ((domain (read-string "Domain name: "))
+           (name (read-string "Entry name: " domain))
+           (username (read-string "Username: "))
+           (password (read-string "Password: "))
+           (acc (make-hash-table :test #'equal))
+           (login (make-hash-table :test #'equal))
+           (uri (make-hash-table :test #'equal)))
+      ;; Replace the existing username and password.
+      (puthash "username" username login)
+      (puthash "password" password login)
+      (puthash "match" :null uri)
+      (puthash "uri" domain uri)
+      (puthash "uris" [uri] login)
+      (puthash "login" login acc)
+      (puthash "name" name acc)
+      ;; Push the updated entry to the vault.
+      (call-process bitwarden-bw-executable nil 0 nil
+                    "create" "item"
+                    (bitwarden--encode acc))
+      (message "Created %s account for %s" domain username)))
+
   (defun bitwarden-generate-password ()
     (interactive)
     (let ((len (read-number "[Bitwarden] Password length: " 24)))
@@ -391,12 +423,7 @@ Returns nil if not logged in."
     (not (string-blank-p (shell-command-to-string (format "cat '%s' | jq .__PROTECTED__key --raw-output"
                                                           bitwarden-data-file)))))
 
-  ;; Bind my most used workflows under <leader> a (authentication)
-  (map! :leader
-        :prefix ("a" . "auth")
-        "p" #'bitwarden-getpass
-        "e" #'bitwarden-edit
-        "g" #'bitwarden-generate-password)
+
 
   ;; TODO Function to generate a password, then push it into the kill-ring so I
   ;; can paste it into a web prompt, then when editing the account.
@@ -1262,8 +1289,7 @@ end of the workspace list."
 ;;   (add-hook! 'show-paren-mode-hook #'+snead/switch-show-paren))
 
 (use-package! emms
-  :disabled
-  :defer 5
+  ;; :defer 5
   :custom
   (emms-source-file-default-directory "~/Music/")
   ;; (emms-player-list '(emms-player-mpg321
@@ -1271,7 +1297,13 @@ end of the workspace list."
   ;;                     emms-player-mplayer))
   :config
   (emms-all)
-  (emms-default-players))
+  (emms-default-players)
+  (require 'emms-info-libtag)
+  (setq emms-info-functions '(emms-info-libtag emms-info-cueinfo emms-info-mpd))
+  ;; Always open EMMS in its own workspace.
+  (advice-add 'emms-smart-browse :before (defun +emms/switch-workspace () (+workspace-switch "*music*" t)))
+  ;; Give it a convenient shortcut.
+  (map! :leader "ol" #'emms-smart-browse))
 
 ;; (insert-image (create-image
 ;; "~/.config/doom/vscode-icons/icons/file_type_rust.svg" 'svg nil :scale 1))
@@ -1311,10 +1343,13 @@ end of the workspace list."
   (setq org-caldav-url "https://dav.mailbox.org/caldav"
         org-caldav-calendar-id "Y2FsOi8vMC8zMQ"
         org-caldav-inbox "~/org/inbox.org"
-        org-caldav-files '("~/org/me.org" "~/org/todo.org" "~/org/spring-2021.org")
+        org-caldav-files '("~/org/me.org" "~/org/todo.org" "~/org/spring-2021.org" "~/org/dailp.org")
         org-caldav-delete-calendar-entries 'always
         org-caldav-sync-direction 'twoway
         org-caldav-resume-aborted 'never
+        ;; org-icalendar-include-todo 'unblocked
+        ;; TODOs don't work with org-caldav yet, so just make events for the deadline.
+        org-icalendar-use-deadline '(event-if-not-todo event-if-todo-not-done)
         org-icalendar-timezone "UTC"
         ;; Alert me 20 minutes before events on my phone.
         org-icalendar-alarm-time 20)
@@ -1354,10 +1389,8 @@ end of the workspace list."
   (doom-modeline-def-segment exwm-title '(:eval (or exwm-title (doom-modeline-segment--buffer-info-simple))))
   (doom-modeline-def-segment major-mode 'mode-name)
   (doom-modeline-def-segment buffer-position '(" " mode-line-percent-position))
-  (doom-modeline-def-segment ace-window '(:eval (and (featurep ace-window)
-                                                     (propertize (concat " " (upcase  (window-parameter (selected-window) 'ace-window-path)) " ")
-                                                                 'face
-                                                                 (and (doom-modeline--active) 'doom-modeline-bar)))))
+  (doom-modeline-def-segment ace-window '(:eval (and (featurep 'ace-window)
+                                                     (concat "  " (upcase  (window-parameter (selected-window) 'ace-window-path)) " "))))
   (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
 
   (doom-modeline-def-modeline 'main
@@ -1486,7 +1519,7 @@ Move it to the mode-line."
   :after all-the-icons doom-modeline
   :config
   (defun +svg-icon-string (collection name)
-    (propertize "--" 'display (svg-icon collection name)))
+    (propertize "--" 'display (svg-icon collection name (face-attribute 'default :foreground))))
   (memoize '+svg-icon-string)
   ;; Redefine battery icon display using svg-icon.
   (defun doom-modeline-update-battery-status ()

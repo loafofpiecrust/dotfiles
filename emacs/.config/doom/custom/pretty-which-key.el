@@ -189,18 +189,18 @@ based on group definitions added by pretty-which-key-add-command-groups"
                            (let* ((command (last kb))
                                   (str (if (consp command) (car command) command)))
                              (get-text-property 0 'pretty-which-key-group str)))
-                         (cl-reduce (lambda (a b) (let ((matching-bind (cl-find-if (lambda (x) (equal (cdr x) (cdr b)))
+                         (cl-reduce (lambda (a b) (let ((matching-bind (cl-find-if (lambda (x) (equal (cdr-safe x) (cdr-safe b)))
                                                                                    a)))
                                                     (cond
-                                                     ((equal (car-safe matching-bind) (car b)))
+                                                     ((and (listp b) matching-bind (equal (car matching-bind) (car b))))
                                                      (matching-bind
-                                                      (setf (car matching-bind) (format "%s, %s" (car matching-bind) (car b)))
+                                                      (setf (car matching-bind) (format "%s, %s" (car matching-bind) (car-safe b)))
                                                       a)
                                                      (t (cons b a)))))
                                     keys
                                     :initial-value nil))
            #'string<
-           :key #'car))
+           :key #'car-safe))
 
 (defun pretty-which-key--partition-list (orig-fun n list)
   "Partition LIST into N-sized sublists."
@@ -283,7 +283,7 @@ alists. Returns a list (key separator description)."
              (key-binding-desc (cdr key-binding))
              (final-desc (which-key--propertize-description
                           key-binding-desc group local hl-face orig-desc)))
-        (when final-desc
+        (when (and final-desc (not (string-empty-p final-desc)))
           (setq final-desc
                 (which-key--truncate-description
                  (which-key--maybe-add-docstring final-desc orig-desc)))

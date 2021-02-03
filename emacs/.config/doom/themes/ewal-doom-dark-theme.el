@@ -172,6 +172,7 @@ Can be an integer to determine the exact padding."
    (aw-mode-line-face :foreground bg)
    (doom-modeline-bar-inactive :height 1.1)
    (doom-modeline-battery-normal :inherit nil)
+   (aw-mode-line-face :foreground fg)
 
    (show-paren-match :background matching-bg :foreground matching-fg :weight 'bold)
    ((hl-todo &override) :foreground numbers)
@@ -188,13 +189,13 @@ Can be an integer to determine the exact padding."
 
    ;; Add padding to the minibuffer prompt, making it easier to read.
    ;; This is especially helpful for single-line prompts like passwords.
-   ((minibuffer-prompt &override) :box `(:line-width 4 :color ,bg;; base6
-                                         ))
+   ;; ((minibuffer-prompt &override) :box `(:line-width 4 :color ,bg;; base6
+   ;;                                       ))
 
    (evil-goggles-default-face :inherit 'region :background (doom-blend region bg 0.5))
 
    ((line-number &override) :foreground comments :background region)
-   ((line-number-current-line &override) :foreground bg :background (+doom--contrast region region))
+   ((line-number-current-line &override) :foreground fg :background bg)
 
    (font-lock-comment-face
     :foreground comments

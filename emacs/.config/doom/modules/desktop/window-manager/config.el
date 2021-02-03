@@ -126,10 +126,11 @@
   ;; different workspace. Workspaces are always shared between all frames.
   (use-package! exwm-randr
     :config
-    (setq exwm-randr-workspace-monitor-plist '(0 "eDP1"
-                                                 1 "HDMI1"))
+    ;; Put one Emacs frame on my laptop screen, another on HDMI output.
+    (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI1"))
     (add-hook 'exwm-randr-screen-change-hook
-              (lambda () (exec "xrandr --output HDMI1 --right-of eDP1 --auto")))
+              (defun +exwm-randr-setup ()
+                (exec "xrandr --output HDMI1 --right-of eDP1 --auto")))
     (exwm-randr-enable))
 
   (exwm-enable))
@@ -153,7 +154,7 @@
 
 ;; Add outer gaps!
 (use-package exwm-outer-gaps
-  :defer 5
+  :defer 3
   :config
   (setq exwm-outer-gaps-width [12 12 12 12])
   (exwm-outer-gaps-mode 1))
