@@ -2,3 +2,8 @@
 	path = emacs/.config/emacs
 	url = https://github.com/hlissner/doom-emacs
 	branch = develop
+
+[submodule "nixos"]
+	path = nixos
+	url = git@github.com:loafofpiecrust/dotnix
+	branch = main
