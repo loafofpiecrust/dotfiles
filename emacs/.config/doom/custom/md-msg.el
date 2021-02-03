@@ -647,18 +647,24 @@ absolute paths."
              (original (when temp-file
                          (md-msg-load-html-file temp-file)))
              (original-body (when original
-                              (assq 'body original))))
+                              (assq 'body original)))
+             ;; TODO Check if there exists the "In-reply-to" header.
+             (is-forward t)
+             (should-cite (or original is-forward)))
         ;; (assq-delete-all 'h1 (assq 'div (assq 'body reply)))
         (md-msg-xml-walk (assq 'body reply) #'fix-img-src)
         (when css
           (assq-delete-all 'style (assq 'head reply))
           (md-msg-xml-walk (assq 'body reply) #'enforce))
-        (if (not original)
+        (if (not should-cite)
+            ;; Remove all scripts from replies?
             (assq-delete-all 'script (assq 'head reply))
           ;; FIXME Add defcustom for this, because some reply styles should have
           ;; the headers. Outlook, for example, does this.
           ;; (md-msg-improve-reply-header original css)
           ;; each one looks like '(body attrs a b c d)
+
+          ;; Add the original message to the end of the reply.
           (setf (cddr (assq 'body reply))
                 (append (cddr (assq 'body reply))
                         ;; Mimic Gmail quote structure.

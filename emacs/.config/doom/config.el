@@ -766,6 +766,11 @@ are ineffectual otherwise."
   (map! :map mu4e-headers-mode-map
         :n "gr" #'mu4e-headers-rerun-search)
 
+  (setq mu4e-view-actions '(("capture message" . mu4e-action-capture-message)
+                            ("browser view" . mu4e-action-view-in-browser)
+                            ("pdf view" . mu4e-action-view-as-pdf)
+                            ("thread view" . mu4e-action-show-thread)))
+
   ;; Add my email accounts.
   (set-email-account! "neu"
                       `((mu4e-sent-folder . "/neu/Sent")
