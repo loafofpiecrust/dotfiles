@@ -1,7 +1,7 @@
 ;;; completion/selectrum/config.el -*- lexical-binding: t; -*-
 
 (use-package! selectrum
-  :hook (doom-first-input . selectrum-mode)
+  :hook (after-init . selectrum-mode)
   :config
   (setq selectrum-extend-current-candidate-highlight t
         selectrum-fix-vertical-window-height t
@@ -196,7 +196,7 @@ If DIR is not a project, it will be indexed (but not cached)."
 ;; completing-read, read-string, etc. functionality.
 (use-package! mini-frame
   :if (featurep! +childframe)
-  :hook (doom-first-input . mini-frame-mode)
+  :hook (selectrum-mode . mini-frame-mode)
 
   :custom
   ;; Immediately instantiate the mini-frame so there's no waiting when we first

@@ -12,8 +12,6 @@ Intended to replicate the functionality of `exec' from i3 config."
   (unless my-autostart-done
     (exec "autostart.sh")
     (exec "picom --experimental-backends")
-    ;; Local endpoint for retrieving Outlook emails from behind OAuth
-    (exec "davmail /home/snead/.config/davmail/.properties")
     ;; System tray over the right side of the echo area
     (exec "stalonetray")
     (setq my-autostart-done t)))
@@ -21,24 +19,21 @@ Intended to replicate the functionality of `exec' from i3 config."
 ;; Autostart stuff.
 (add-hook 'exwm-init-hook #'my-autostart)
 
-(use-package! exwm
-  :no-require t
-  :init
-  (appendq! exwm-input-global-keys `(;;(,(kbd "s-,") . +ivy/switch-workspace-buffer)
-                                     ;; (,(kbd "s-\\") . set-input-method)
-                                     ;; (,(kbd "s-;") . toggle-input-method)
-                                     (,(kbd "<f19>") . ,doom-leader-map)
-                                     (,(kbd "<XF86MonBrightnessDown>") . desktop-environment-brightness-decrement)
-                                     (,(kbd "<XF86MonBrightnessUp>") . desktop-environment-brightness-increment)
-                                     ;; (,(kbd "<Multi_key>") . ,doom-leader-map)
-                                     ;; App Shortcuts
-                                     ;; (,(kbd "s-`") . +vterm/toggle)
-                                     ;; (,(kbd "s-a") . org-agenda)
-                                     ;; (,(kbd "s-o") . ,doom-leader-open-map)
-                                     ;; (,(kbd "s-p") . ,doom-leader-project-map)
-                                     ;; (,(kbd "s-b") . ,(cmd! (exec "firefox")))
-                                     ;; (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
-                                     )))
+(appendq! exwm-input-global-keys `(;;(,(kbd "s-,") . +ivy/switch-workspace-buffer)
+                                   ;; (,(kbd "s-\\") . set-input-method)
+                                   ;; (,(kbd "s-;") . toggle-input-method)
+                                   (,(kbd "<f19>") . ,doom-leader-map)
+                                   (,(kbd "<XF86MonBrightnessDown>") . desktop-environment-brightness-decrement)
+                                   (,(kbd "<XF86MonBrightnessUp>") . desktop-environment-brightness-increment)
+                                   ;; (,(kbd "<Multi_key>") . ,doom-leader-map)
+                                   ;; App Shortcuts
+                                   ;; (,(kbd "s-`") . +vterm/toggle)
+                                   ;; (,(kbd "s-a") . org-agenda)
+                                   ;; (,(kbd "s-o") . ,doom-leader-open-map)
+                                   ;; (,(kbd "s-p") . ,doom-leader-project-map)
+                                   ;; (,(kbd "s-b") . ,(cmd! (exec "firefox")))
+                                   ;; (,(kbd "s-c") . ,(cmd! (exec "playerctl play-pause")))
+                                   ))
 
 ;; (use-package! evil-anzu
 ;;   :after evil
@@ -103,24 +98,12 @@ Intended to replicate the functionality of `exec' from i3 config."
   (interactive)
   (exec "wpg -m"))
 
-(after! (evil evil-collection)
-  (map! :leader
-        :prefix ("r" . "system")
-        :desc "Connect to Network" "i" #'counsel-iwd-connect
-        :desc "Connect to VPN" "v" #'+snead/vpn-connect
-        "w" #'+snead/random-wallpaper
-        :desc "Log out" "o" #'+snead/logout))
-
-
-;; Place ivy frames above X windows.
-(after! ivy-posframe
-  (setq! ivy-posframe-parameters `((min-width . 70)
-                                   (min-height . 17)
-                                   (parent-frame . nil)
-                                   (left-fringe . ,+snead/frame-fringe)
-                                   (right-fringe . ,+snead/frame-fringe)
-                                   (internal-border-width . ,+snead/frame-border-width))))
-
+(map! :leader
+      :prefix ("r" . "system")
+      :desc "Connect to Network" "i" #'counsel-iwd-connect
+      :desc "Connect to VPN" "v" #'+snead/vpn-connect
+      "w" #'+snead/random-wallpaper
+      :desc "Log out" "o" #'+snead/logout)
 
 
 ;; (after! (evil-owl mini-frame)
@@ -212,5 +195,14 @@ Intended to replicate the functionality of `exec' from i3 config."
 
 (after! exwm
   (setenv "SUDO_ASKPASS" "emacsclient -e '(read-passwd \"sudo password: \")' | xargs"))
+
+(define-minor-mode inhibit-screensaver-mode
+  "Inhibit the screensaver from turning the screen dark"
+  :lighter " CAF!"
+  :init-value nil
+  :global t
+  (if inhibit-screensaver-mode
+      (exec "xset s off")
+    (exec "xset s on")))
 
 (provide 'my-exwm-config)

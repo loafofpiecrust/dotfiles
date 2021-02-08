@@ -154,7 +154,8 @@
 
 ;; Add outer gaps!
 (use-package exwm-outer-gaps
-  :defer 3
+  :after exwm
+  :defer 2
   :config
   (setq exwm-outer-gaps-width [12 12 12 12])
   (exwm-outer-gaps-mode 1))

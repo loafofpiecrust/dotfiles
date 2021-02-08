@@ -59,18 +59,24 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 ;; Remove the fringe from all windows, unless you're visiting a file.
 ;; In that case, the fringe is very useful for git status and error information.
-(defun +snead/add-fringe ()
-  (setq-local left-fringe-width 4
-              right-fringe-width 4))
+(defun +snead/add-fringe (&optional no-fringe)
+  (setq-local left-fringe-width (if no-fringe 0 4)
+              right-fringe-width (if no-fringe 0 4)))
+
+(defun +snead/remove-fringe ()
+  (interactive)
+  (set-fringe-mode 0))
 
 (defvar +snead/fringe-deny-modes '(pdf-view-mode))
 (defun +snead/set-fringe ()
   "Add a fringe to windows carrying file-visiting buffers."
-  (when (and (buffer-file-name) (not (memq major-mode +snead/fringe-deny-modes)))
+  (when (and buffer-file-name
+             (not (memq major-mode +snead/fringe-deny-modes)))
     (+snead/add-fringe)))
 
 (after! fringe
   (set-fringe-mode 0)
+  (add-hook 'exwm-mode-hook #'+snead/remove-fringe)
   (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
   (add-hook! '(vterm-mode-hook) #'+snead/add-fringe))
 
@@ -98,10 +104,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-hook! '(vterm-mode-hook eshell-mode-hook)
     truncate-lines nil)
 
-  ;; (when (featurep 'exwm)
   (appendq! initial-frame-alist '((left-fringe . 0)
                                   (right-fringe . 0)))
-  (set-fringe-mode 0);; )
 
   (setq custom-safe-themes t))
 
@@ -115,6 +119,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   ;; remove all scrollbars!
   (horizontal-scroll-bar-mode -1))
 
+;; Add dividers between each window.
 (after! frame
   (setq window-divider-default-right-width 6
         window-divider-default-bottom-width 6))
@@ -135,7 +140,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq-default comment-auto-fill-only-comments t))
 
 ;; Make calculator easy to access.
-(map! :leader "oc" 'calc)
+(map! :leader "oc" #'calc)
 (after! calc
   (setq calc-symbolic-mode t))
 
@@ -176,7 +181,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   ;; Disable background color for highlighted parens
   ;; '(show-paren-match :background nil)
   '(minibuffer-prompt :family nil)
-  '(pyim-page :height 1.1))
+  ;; '(pyim-page :height 1.1)
+  )
 
 ;; Test for unicode icons (should be marked "seen" and "important")
 ;; neu          11:43:48        Information Technology... Received: INC0628880 – Fwd: Office 365 Transition Ridiculous
@@ -436,17 +442,12 @@ Returns nil if not logged in."
   (map! "M-j" #'drag-stuff-down
         "M-k" #'drag-stuff-up))
 
-(after! (undo-tree evil evil-collection)
+(after! undo-tree
   (map! :map undo-tree-map
-        (:leader "ou" 'undo-tree-visualize)
-        ;; :n "U" 'undo-tree-redo
-        ;; :i "C-z" 'undo-tree-undo
-        ;; :i "C-S-Z" 'undo-tree-redo
-        ))
+        (:leader "ou" 'undo-tree-visualize)))
 
 ;; I like using <u> for undo and <U> for redo. It's symmetrical.
-(after! (evil evil-collection)
-  (map! :n "U" 'evil-redo))
+(map! :n "U" 'evil-redo)
 
 (after! (evil evil-collection)
   ;; When Emacs is in server mode, we have to normalize C-i in a graphical window.
@@ -456,6 +457,14 @@ Returns nil if not logged in."
     (define-key input-decode-map [(control ?I)] [(shift control-i)])
     (map! :map evil-motion-state-map "C-i" nil)
     (define-key evil-motion-state-map [control-i] 'evil-jump-forward))
+
+  ;; Disable echo area messages when changing evil states.
+  (setq evil-insert-state-message nil
+        evil-replace-state-message nil
+        evil-emacs-state-message nil
+        evil-visual-line-message nil
+        evil-visual-char-message nil
+        evil-visual-block-message nil)
 
   (add-hook 'doom-first-buffer-hook #'evil-normalize-ctrl-i)
   ;; Prevent accidental commands when exploring little-used modes.
@@ -481,7 +490,7 @@ Returns nil if not logged in."
         :nv "gr" (general-simulate-key "C-c C-c")))
 
 (use-package! tree-sitter
-  :hook ((rustic-mode python-mode json-mode js-mode js2-mode typescript-mode go-mode sh-mode) . tree-sitter-mode)
+  :hook ((rustic-mode python-mode json-mode js-mode js2-mode typescript-mode go-mode sh-mode tuareg-mode) . tree-sitter-mode)
   :config
   (require 'tree-sitter-langs)
   ;; TODO Fix JSX support.
@@ -508,10 +517,10 @@ Returns nil if not logged in."
         lsp-ui-sideline-enable nil
         lsp-ui-sideline-update-mode 'line))
 
-(after! (git-timemachine evil-collection)
-  (map! :map git-timemachine-mode-map
-        "[r" 'git-timemachine-show-previous-revision
-        "]r" 'git-timemachine-show-next-revision))
+(map! :after git-timemachine
+      :map git-timemachine-mode-map
+      "[r" 'git-timemachine-show-previous-revision
+      "]r" 'git-timemachine-show-next-revision)
 
 (after! (evil evil-collection)
   (add-hook 'evil-insert-state-exit-hook 'company-abort)
@@ -530,10 +539,9 @@ Returns nil if not logged in."
         :n "gr" #'recompile)
   (map! :leader "os" 'eshell)
   (map! :nv "zw" 'count-words
-        :n "zG" '+spell/remove-word)
-  )
+        :n "zG" '+spell/remove-word))
 
-(use-package! org-ref
+(use-package org-ref
   :after-call org-mode
   :config
   (setq org-ref-completion-library 'org-ref-ivy-cite)
@@ -1045,13 +1053,16 @@ are ineffectual otherwise."
                   :pipe "\\|"
                   :turnstile "\\|-"))
 
-
-
 (use-package! mixed-pitch
   :commands mixed-pitch-mode
+  :init
+  (map! :leader "tm" 'mixed-pitch-mode)
   :config
+  (setq mixed-pitch-set-height t)
   (appendq! mixed-pitch-fixed-pitch-faces '(outline-1 outline-2 outline-3 outline-4 outline-5
-                                                      outline-6 outline-7 outline-8 outline-9)))
+                                                      outline-6 outline-7 outline-8 outline-9))
+  (custom-set-faces!
+    '(mixed-pitch-variable-pitch :family "PT Serif" :height 1.2)))
 
 ;;;; Periodically clean buffers
 (use-package! midnight
@@ -1076,13 +1087,6 @@ are ineffectual otherwise."
         ;; Clean out potentially old buffers every hour
         midnight-period (* 60 60)))
 
-(after! ivy-posframe
-  (setcdr (assoc t ivy-posframe-display-functions-alist)
-          'ivy-posframe-display-at-frame-top-center)
-
-  (setq ivy-posframe-width 110
-        ivy-posframe-height 20))
-
 ;; Using C-/ for comments aligns with other editors.
 ;; (after! evil
 ;;   (map! :nv "C-/" 'comment-dwim))
@@ -1106,9 +1110,6 @@ are ineffectual otherwise."
 ;; TODO We need chinese font with same height as my font.
 (after! pyim
   (setq pyim-page-tooltip 'posframe))
-
-;; (use-package! hl-todo
-;;   :hook (org-mode . hl-todo-mode))
 
 (use-package! string-inflection)
 
@@ -1226,8 +1227,11 @@ end of the workspace list."
         "DEL" #'+workspace/delete))
 
 ;; Show window hints big and above X windows.
-(map! :leader "j" #'ace-window)
-(after! ace-window
+;; Load this early to give windows their header-line hints ASAP.
+(use-package! ace-window
+  :init
+  (map! :leader "j" #'ace-window)
+  :config
   (setq aw-display-style 'overlay
         aw-posframe-parameters '())
   ;; (when (featurep 'exwm)
@@ -1239,17 +1243,8 @@ end of the workspace list."
 (use-package! npm-mode
   :hook ((prog-mode text-mode conf-mode) . npm-mode))
 
-(use-package! ivy-fuz
-  :disabled
-  :after ivy
-  :defer-incrementally fuz
-  :custom
-  (ivy-sort-matches-functions-alist '((t . ivy-fuz-sort-fn)))
-  (ivy-re-builders-alist '((t . ivy-fuz-regex-fuzzy)))
-  :config
-  (add-to-list 'ivy-highlight-functions-alist '(ivy-fuz-regex-fuzzy . ivy-fuz-highlight-fn)))
-
 (use-package! spotify
+  :disabled
   :commands (spotify-remote-mode global-spotify-remote-mode)
   :config
   (setq spotify-oauth2-client-id "f3e530a58362402fab4ca04976916f80"
@@ -1294,7 +1289,10 @@ end of the workspace list."
 ;;   (add-hook! 'show-paren-mode-hook #'+snead/switch-show-paren))
 
 (use-package! emms
-  ;; :defer 5
+  :commands emms-smart-browse
+  :init
+  (map! :leader "ol" #'emms-smart-browse)
+  (advice-add 'emms-smart-browse :before (defun +emms/switch-workspace () (+workspace-switch "*music*" t)))
   :custom
   (emms-source-file-default-directory "~/Music/")
   ;; (emms-player-list '(emms-player-mpg321
@@ -1303,12 +1301,15 @@ end of the workspace list."
   :config
   (emms-all)
   (emms-default-players)
+  (require 'emms-browser)
+  (require 'emms-player-mpd)
+  (add-to-list 'emms-player-list 'emms-player-mpd)
+  (setq emms-info-asynchronously t)
   (require 'emms-info-libtag)
-  (setq emms-info-functions '(emms-info-libtag emms-info-cueinfo emms-info-mpd))
+  (setq emms-info-functions '(emms-info-mpd emms-info-libtag emms-info-cueinfo))
+  (emms-add-directory-tree emms-source-file-default-directory)
   ;; Always open EMMS in its own workspace.
-  (advice-add 'emms-smart-browse :before (defun +emms/switch-workspace () (+workspace-switch "*music*" t)))
-  ;; Give it a convenient shortcut.
-  (map! :leader "ol" #'emms-smart-browse))
+  )
 
 ;; (insert-image (create-image
 ;; "~/.config/doom/vscode-icons/icons/file_type_rust.svg" 'svg nil :scale 1))
@@ -1395,7 +1396,9 @@ end of the workspace list."
   (doom-modeline-def-segment major-mode 'mode-name)
   (doom-modeline-def-segment buffer-position '(" " mode-line-percent-position))
   (doom-modeline-def-segment ace-window '(:eval (and (featurep 'ace-window)
-                                                     (concat "  " (upcase  (window-parameter (selected-window) 'ace-window-path)) " "))))
+                                                     (propertize (concat "  " (upcase  (window-parameter (selected-window) 'ace-window-path)) " ")
+                                                                 'face
+                                                                 'doom-modeline-bar))))
   (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
 
   (doom-modeline-def-modeline 'main
@@ -1525,7 +1528,7 @@ Move it to the mode-line."
   :config
   (defun +svg-icon-string (collection name)
     (propertize "--" 'display (svg-icon collection name (face-attribute 'default :foreground))))
-  (memoize '+svg-icon-string)
+  (memoize 'svg-icon)
   ;; Redefine battery icon display using svg-icon.
   (defun doom-modeline-update-battery-status ()
     "Update battery status."
@@ -1589,8 +1592,8 @@ Move it to the mode-line."
   ;; (defun all-the-icons-faicon (icon-name &rest args)
   ;;   (propertize "--" 'display (svg-icon "")))
   )
-(map! :leader
-      "fa" (cmd! (consult-find "~")))
+
+(map! :leader "fa" (cmd! (consult-find "~")))
 
 (map! :leader "oe" #'proced)
 (after! proced
@@ -1663,8 +1666,14 @@ Move it to the mode-line."
 (defvar +snead/max-minibuffer-width 130)
 (defun +snead/center-minibuffer ()
   (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
-    (unless mini-frame-mode (set-window-margins nil margin margin))))
+    (unless (and (featurep 'mini-frame) mini-frame-mode)
+      (set-window-margins nil margin margin))))
 (add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
 
 (map! :after envrc
       :leader "e" envrc-command-map)
+
+(use-package! benchmark-init
+  :if doom-debug-p
+  :config
+  (add-hook 'doom-first-input-hook #'benchmark-init/deactivate))

@@ -6,6 +6,8 @@
 ;; use 'M-x doom/reload'.
 ;; (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
 
+(package! benchmark-init)
+
 (package! tree-sitter
   :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
 
@@ -92,7 +94,7 @@
 
 ;; TODO vterm is slightly messed up, I'm not quite sure why.
 ;; (package! vterm :recipe (:no-native-compile t))
-(package! treemacs :recipe (:no-native-compile t))
+;; (package! treemacs :recipe (:no-native-compile t))
 (package! vterm :built-in 'prefer)
 (package! undo-tree :disable t :built-in 'prefer)
 (package! plantuml-mode :built-in 'prefer)
@@ -126,16 +128,13 @@
 (package! org-caldav)
 
 (package! mini-modeline
-  :recipe (:local-repo "emacs-mini-modeline" :no-native-compile t :no-byte-compile t))
-
-(package! evil-collection
-  :recipe (:local-repo "~/pie/evil-collection" :no-native-compile t :no-byte-compile t))
+  :recipe (:local-repo "emacs-mini-modeline" :build (:not compile native-compile)))
 
 (package! which-key
-  :recipe (:local-repo "~/pie/emacs-which-key" :no-native-compile t :no-byte-compile t))
+  :recipe (:local-repo "~/pie/emacs-which-key" :build (:not compile native-compile)))
 
 (package! general
-  :recipe (:local-repo "~/pie/general.el" :no-native-compile t :no-byte-compile t))
+  :recipe (:local-repo "~/pie/general.el" :build (:not compile native-compile)))
 
 (package! svg-icon
   :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
@@ -152,6 +151,8 @@
   :recipe (:host github
            :repo "neeasade/ct.el"
            :branch "master"))
+
+(package! mixed-pitch :disable t)
 
 (package! memoize)
 

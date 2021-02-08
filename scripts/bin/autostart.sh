@@ -35,6 +35,9 @@ xfsettingsd & disown
 # stalonetray & disown
 # sleep 0.5 && polybar main & disown
 
+# Local endpoint for retrieving Outlook emails from behind OAuth
+davmail /home/snead/.config/davmail/.properties -notray & disown
+
 # Restore last wallpaper
 # Starts notification manager as well
 # sleep 0.5 && /home/snead/.config/wpg/wp_init.sh &

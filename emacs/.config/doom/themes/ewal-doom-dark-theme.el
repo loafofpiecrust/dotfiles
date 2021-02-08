@@ -59,11 +59,11 @@ Can be an integer to determine the exact padding."
 
 (ewal-load-colors)
 
-(defun +doom--contrast (a b)
+(defun +doom--contrast (a b &optional ratio)
   (if (consp a)
-      (cons (ct-tint-ratio (car-safe a) (or (car-safe b) b) 5)
+      (cons (ct-tint-ratio (car-safe a) (or (car-safe b) b) (or ratio 5))
             (cdr a))
-    (ct-tint-ratio (or (car-safe a) a) (or (car-safe b) b) 5)))
+    (ct-tint-ratio (or (car-safe a) a) (or (car-safe b) b) (or ratio 5))))
 
 ;; HACK: fixes bytecode overflow
 (defvar ewal-doom-dark-hack
@@ -119,7 +119,8 @@ Can be an integer to determine the exact padding."
    (strings        (+doom--contrast red bg))
    (variables      (+doom--contrast fg bg))
    (numbers        (+doom--contrast orange bg))
-   (region         `(,(doom-lighten (car bg-alt) 0.15) ,@(doom-lighten (cdr base1) 0.35)))
+   (region base6)
+   ;; (region         `(,(doom-lighten (car bg-alt) 0.15) ,@(doom-lighten (cdr base1) 0.35)))
    (error          (+doom--contrast red bg))
    (warning        (+doom--contrast yellow bg))
    (success        (+doom--contrast green bg))
@@ -139,11 +140,11 @@ Can be an integer to determine the exact padding."
    (modeline-fg-alt nil)
    (header-line-bg base6)
 
-   (distant-base (+doom--contrast base1 bg))
+   (distant-base (+doom--contrast fg bg))
 
-   (light-highlight (+doom--contrast base0 orange))
-   (matching-bg (+doom--contrast base9 bg))
-   (matching-fg (+doom--contrast bright-yellow base9))
+   (light-highlight (+doom--contrast fg orange))
+   (matching-bg (+doom--contrast functions fg))
+   (matching-fg (+doom--contrast bright-yellow matching-bg))
 
    (modeline-bg
     (if -modeline-bright
@@ -161,18 +162,17 @@ Can be an integer to determine the exact padding."
   ((elscreen-tab-other-screen-face :background "#353a42" :foreground "#1e2022")
 
    ;; basics
-   ((lazy-highlight &override) :foreground light-highlight :distant-foreground distant-base)
-   ((lsp-face-highlight-textual &override) :foreground light-highlight :distant-foreground distant-base)
-   ((lsp-face-highlight-read &override) :foreground light-highlight :distant-foreground distant-base)
-   ((lsp-face-highlight-write &override) :foreground light-highlight :distant-foreground distant-base)
+   ((lazy-highlight &override) :background orange :foreground light-highlight :distant-foreground distant-base :weight 'normal)
+   (lsp-face-highlight-textual :background matching-bg :foreground matching-fg :distant-foreground distant-base)
+   (lsp-face-highlight-read :background matching-bg :foreground matching-fg :distant-foreground distant-base)
+   (lsp-face-highlight-write :background matching-bg :foreground matching-fg :distant-foreground distant-base)
    ((lsp-ui-peek-highlight &override) :foreground fg)
-   (cursor :background functions)
+   (cursor :background fg)
    (mini-modeline-mode-line :background nil)
    (doom-modeline-bar :background numbers :foreground bg :height 1.1 :weight 'bold)
-   (aw-mode-line-face :foreground bg)
+   (aw-mode-line-face :foreground bg :weight 'bold)
    (doom-modeline-bar-inactive :height 1.1)
    (doom-modeline-battery-normal :inherit nil)
-   (aw-mode-line-face :foreground fg)
 
    (show-paren-match :background matching-bg :foreground matching-fg :weight 'bold)
    ((hl-todo &override) :foreground numbers)
@@ -182,6 +182,8 @@ Can be an integer to determine the exact padding."
    ((link &override) :underline `(:style line :color ,highlight) :weight 'bold)
 
    ;; Turn all wavy underlines into straight ones for readability.
+
+   ((avy-lead-face &override) :weight 'normal)
 
    ((cfw:face-grid &override) :foreground base6)
    ((cfw:face-toolbar-button-off &override) :foreground fg-alt)

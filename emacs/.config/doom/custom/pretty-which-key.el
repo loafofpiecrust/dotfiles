@@ -192,10 +192,23 @@ based on group definitions added by pretty-which-key-add-command-groups"
                          (cl-reduce (lambda (a b) (let ((matching-bind (cl-find-if (lambda (x) (equal (cdr-safe x) (cdr-safe b)))
                                                                                    a)))
                                                     (cond
-                                                     ((and (listp b) matching-bind (equal (car matching-bind) (car b))))
+                                                     ;; Unlabeled prefix keys
+                                                     ;; should not be grouped.
+                                                     ((and (listp b)
+                                                           (equal (nth 2 b) "+prefix"))
+                                                      (cons b a))
+                                                     ;; Don't add the same key twice.
+                                                     ((and (car-safe b)
+                                                           matching-bind
+                                                           (or (equal (car b) (car matching-bind))
+                                                               (s-contains-p (format ", %s" (car b)) (car matching-bind))))
+                                                      a)
+                                                     ;; Group keys bound to the
+                                                     ;; same command.
                                                      (matching-bind
                                                       (setf (car matching-bind) (format "%s, %s" (car matching-bind) (car-safe b)))
                                                       a)
+                                                     ;; Otherwise, just add the binding.
                                                      (t (cons b a)))))
                                     keys
                                     :initial-value nil))
