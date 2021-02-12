@@ -8,7 +8,7 @@
         projectile-completion-system 'default
         selectrum-count-style 'current/matches)
 
-  ;; (setq completion-styles '(substring partial-completion))
+  (setq completion-styles '(substring partial-completion))
 
   (map! :leader "'" #'selectrum-repeat)
 

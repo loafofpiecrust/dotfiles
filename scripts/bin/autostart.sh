@@ -23,10 +23,6 @@ xsetroot -cursor_name left_ptr
 # xkbset mousekeys
 # xkbset exp 1 =sticky =mousekeys =sticky =twokey =latchlock
 
-
-xmodmap -e "keycode 133 = F19"
-xmodmap -e "clear Mod4"
-
 # xfce4-power-manager & disown
 xfsettingsd & disown
 # Prevent the screen going dark while watching videos.
@@ -37,6 +33,15 @@ xfsettingsd & disown
 
 # Local endpoint for retrieving Outlook emails from behind OAuth
 davmail /home/snead/.config/davmail/.properties -notray & disown
+
+xmodmap -e "keycode 133 = Menu"
+xmodmap -e "keycode 108 = Menu"
+# Don't repeat my leader key.
+xset -r 133
+xset -r 108
+xset -r 65                      # I almost never need to hold the space key.
+xset -r 66
+xmodmap -e "clear mod4"
 
 # Restore last wallpaper
 # Starts notification manager as well

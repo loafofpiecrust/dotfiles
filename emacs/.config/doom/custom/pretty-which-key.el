@@ -201,12 +201,12 @@ based on group definitions added by pretty-which-key-add-command-groups"
                                                      ((and (car-safe b)
                                                            matching-bind
                                                            (or (equal (car b) (car matching-bind))
-                                                               (s-contains-p (format ", %s" (car b)) (car matching-bind))))
+                                                               (s-contains-p (format ",%s" (car b)) (car matching-bind))))
                                                       a)
                                                      ;; Group keys bound to the
                                                      ;; same command.
                                                      (matching-bind
-                                                      (setf (car matching-bind) (format "%s, %s" (car matching-bind) (car-safe b)))
+                                                      (setf (car matching-bind) (format "%s,%s" (car matching-bind) (car-safe b)))
                                                       a)
                                                      ;; Otherwise, just add the binding.
                                                      (t (cons b a)))))

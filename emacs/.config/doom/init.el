@@ -15,9 +15,9 @@
 ;;      directory (for easy access to its source code).
 
 ;; Use SPC for global leader, and another single key for local leader.
-;; Backslash default behavior is just Emacs mode, but , and ' may actually be useful.
+;; Backslash default behavior is just Emacs mode for one command, but , and ' may actually be useful.
 (setq doom-leader-key "SPC"
-      doom-leader-alt-key "<f19>"
+      doom-leader-alt-key "<menu>"
       doom-localleader-key "\\")
 
 ;; (setq comp-deferred-compilation t)
@@ -74,7 +74,7 @@
        window-select     ; visually switch windows
        workspaces        ; tab emulation, persistence & separate workspaces
        ;;zen               ; distraction-free coding or writing
-       (emoji +github +unicode)
+       (emoji +github)
 
        :editor
        (evil +everywhere); come to the dark side, we have cookies

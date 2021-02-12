@@ -31,7 +31,10 @@
 (setq doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 18 :weight 'semi-bold)
       ;; These fonts were fucking up display of math symbols! Remove them!
-      doom-unicode-extra-fonts nil)
+      ;; doom-unicode-extra-fonts nil
+      )
+
+(setq doom-scratch-initial-major-mode 'org-mode)
 
 ;; Give each line some room to breathe.
 (setq-default line-spacing 2)
@@ -174,13 +177,13 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   '(org-level-5 :inherit outline-5)
   '(org-level-6 :inherit outline-6)
   ;; Make line numbers more visible on many themes.
-  '(line-number :foreground nil :inherit org-tag)
+  `(line-number :foreground ,nil :inherit org-tag)
   ;; Emacs 28 adds this new face with a different font for comments.
   ;; I want to retain the same font as normal code for now.
-  '(fixed-pitch-serif :family nil)
+  `(fixed-pitch-serif :family ,nil)
   ;; Disable background color for highlighted parens
   ;; '(show-paren-match :background nil)
-  '(minibuffer-prompt :family nil)
+  `(minibuffer-prompt :family ,nil)
   ;; '(pyim-page :height 1.1)
   )
 
@@ -190,7 +193,7 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'ewal-doom-dark
+(setq doom-theme 'modus-operandi
       doom-gruvbox-brighter-comments t
       doom-peacock-brighter-comments t
       doom-monokai-classic-brighter-comments t
@@ -481,9 +484,13 @@ Returns nil if not logged in."
         ;; Stands for "go quit"
         :nm "gq" (general-simulate-key "C-c C-k"))
 
+  (defun +evil-paste-at-point ()
+    (interactive)
+    (evil-paste-from-register ?0))
+
   ;; We want the same save binding everywhere!
-  (map! "C-s" (general-key "C-x C-s")
-        :gi "C-v" 'evil-paste-after))
+  (map! :gi "C-s" (general-key "C-x C-s")
+        :gi "C-v" '+evil-paste-at-point))
 
 (after! (org evil evil-collection)
   (map! :map (org-mode-map)
@@ -507,6 +514,14 @@ Returns nil if not logged in."
                   font-lock-doc-face
                   font-lock-string-face)))
 
+;; Only load the lsp servers that I might actually use.
+;; Loading these packages is about 40% of the delay when first starting a
+;; language server.
+;; The rest is actually loading the server and can't be reduced much.
+(setq lsp-client-packages '(ccls lsp-bash lsp-clangd lsp-cmake lsp-css lsp-dart lsp-dockerfile
+                                 lsp-eslint lsp-go lsp-haskell lsp-java lsp-javascript lsp-json lsp-kotlin
+                                 lsp-lua lsp-nix lsp-ocaml lsp-pyls lsp-python-ms lsp-rust lsp-tex lsp-terraform lsp-xml
+                                 lsp-yaml lsp-r))
 (after! lsp-mode
   (setq lsp-eldoc-render-all nil
         lsp-signature-render-documentation nil
@@ -846,7 +861,8 @@ are ineffectual otherwise."
   ;; Build bookmark queries.
   (let* ((all-trash (mu4e-all-contexts-var 'mu4e-trash-folder))
          (all-spam (mu4e-all-contexts-var 'mu4e-spam-folder))
-         (all-archive (mu4e-all-contexts-var 'mu4e-refile-folder)))
+         (all-archive (mu4e-all-contexts-var 'mu4e-refile-folder))
+         (all-sent (mu4e-all-contexts-var 'mu4e-sent-folder)))
     (setq my/show-all-trash (mapconcat (lambda (d) (format "maildir:%s" d))
                                        all-trash " or ")
           my/hide-all-trash (concat (mapconcat (lambda (d) (format "not maildir:%s" d))
@@ -856,7 +872,9 @@ are ineffectual otherwise."
                                                                              '("gmail" "neu" "personal") " or "))
           my/show-all-archive (concat (mapconcat (lambda (d) (format "maildir:%s" d))
                                                  all-archive " or ")
-                                      " and not flag:trashed")))
+                                      " and not flag:trashed")
+          my/show-all-sent (mapconcat (lambda (d) (format "maildir:%s" d))
+                                      all-sent " or ")))
   ;; Add bookmarks for all important mail categories.
   (setq mu4e-bookmarks
         '((:name "Inbox" :query my/show-all-inboxes :key ?i)
@@ -864,7 +882,19 @@ are ineffectual otherwise."
           (:name "Today" :query (format "date:today..now and (%s)" my/hide-all-trash) :key ?t)
           (:name "This Week" :query (format "date:7d..now and (%s)" my/hide-all-trash) :hide-unread t :key ?w)
           (:name "Archive" :query my/show-all-archive :key ?a)
+          (:name "Sent" :query my/show-all-sent :key ?s)
           (:name "Trash" :query my/show-all-trash :key ?T)))
+
+  ;; Make opening the inbox even faster with one key press.
+  (defun +mu4e-open-inbox ()
+    (interactive)
+    (mu4e-headers-search my/show-all-inboxes))
+
+  (map! :map (mu4e-main-mode-map mu4e-headers-mode-map)
+        :n "i" #'+mu4e-open-inbox)
+
+  (map! :map mu4e-main-mode-map
+        :n "gr" #'mu4e-update-mail-and-index)
 
   (defun mu4e-compose-from-mailto (mailto-string)
     (require 'mu4e)
@@ -917,18 +947,17 @@ are ineffectual otherwise."
   (setq alert-default-style 'libnotify))
 
 ;; Notify me when compilations finish!
-(after! compile
-  (defun +alert/compilation (buffer status)
-    (alert (s-capitalize status)
-           :title (buffer-name buffer)))
-  (add-hook 'compilation-finish-functions #'+alert/compilation))
+(defun +alert/compilation (buffer status)
+  (alert (s-capitalize status)
+         :title (buffer-name buffer)))
+(add-hook 'compilation-finish-functions #'+alert/compilation)
 
 ;; Notify me when I receive emails.
 (use-package! mu4e-alert
   :if (equal "t" (getenv "EMACS_EXWM"))
   :defer 5
   :config
-  (mu4e-alert-set-default-style 'libnotify)
+  ;; (mu4e-alert-set-default-style 'libnotify)
   (setq mu4e-alert-email-notification-types '(count)
         mu4e-alert-email-count-title "Email"
         mu4e-alert-interesting-mail-query (format "date:7d..now and flag:unread and (%s)" my/show-all-inboxes))
@@ -1053,16 +1082,21 @@ are ineffectual otherwise."
                   :pipe "\\|"
                   :turnstile "\\|-"))
 
-(use-package! mixed-pitch
-  :commands mixed-pitch-mode
-  :init
-  (map! :leader "tm" 'mixed-pitch-mode)
-  :config
-  (setq mixed-pitch-set-height t)
-  (appendq! mixed-pitch-fixed-pitch-faces '(outline-1 outline-2 outline-3 outline-4 outline-5
-                                                      outline-6 outline-7 outline-8 outline-9))
-  (custom-set-faces!
-    '(mixed-pitch-variable-pitch :family "PT Serif" :height 1.2)))
+(load! "custom/mixed-pitch")
+;; (use-package! mixed-pitch
+;;   :commands mixed-pitch-mode
+;;   :init
+(map! :leader "tm" #'mixed-pitch-mode)
+;; :config
+(setq mixed-pitch-set-height t)
+(dolist (e '(outline-1 outline-2 outline-3 outline-4 outline-5
+                       outline-6 outline-7 outline-8 outline-9
+                       org-date org-special-keyword org-drawer))
+  (add-to-list 'mixed-pitch-fixed-pitch-faces e))
+
+(custom-set-faces!
+  '(mixed-pitch-variable-pitch :family "Merriweather" :height 1.0))
+;;)
 
 ;;;; Periodically clean buffers
 (use-package! midnight
@@ -1088,8 +1122,10 @@ are ineffectual otherwise."
         midnight-period (* 60 60)))
 
 ;; Using C-/ for comments aligns with other editors.
-;; (after! evil
-;;   (map! :nv "C-/" 'comment-dwim))
+;; IMPORTANT: This MUST be in the global map or else undo-tree doesn't work!
+(map! :map global-map
+      "C-/" 'comment-dwim)
+(map! :i "C-z" 'undo)
 
 (use-package! ox-moderncv
   :after-call org-mode
@@ -1396,13 +1432,20 @@ end of the workspace list."
   (doom-modeline-def-segment major-mode 'mode-name)
   (doom-modeline-def-segment buffer-position '(" " mode-line-percent-position))
   (doom-modeline-def-segment ace-window '(:eval (and (featurep 'ace-window)
-                                                     (propertize (concat "  " (upcase  (window-parameter (selected-window) 'ace-window-path)) " ")
+                                                     (propertize (concat " " (upcase (window-parameter (selected-window) 'ace-window-path)) " ")
                                                                  'face
-                                                                 'doom-modeline-bar))))
+                                                                 (and (doom-modeline--active) 'doom-modeline-bar)))))
   (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
+  (doom-modeline-def-segment buffer-info-revised
+    "Combined information about the current buffer, including the current working
+directory, the file name, and its state (modified, read-only or non-existent)."
+    (concat
+     (doom-modeline--buffer-mode-icon)
+     (doom-modeline--buffer-state-icon)
+     (doom-modeline--buffer-name)))
 
   (doom-modeline-def-modeline 'main
-    '(bar ace-window modals matches buffer-info buffer-position)
+    '(bar ace-window modals buffer-info-revised buffer-position " " matches)
     '(misc-info input-method major-mode vcs lsp checker " "))
   (doom-modeline-def-modeline 'project
     '(bar ace-window buffer-default-directory)
@@ -1646,15 +1689,11 @@ Move it to the mode-line."
 
 ;; Show help menus in evil-bound modes.
 (after! mu4e
-  (defun +mu4e-show-map ()
-    (interactive)
-    (which-key--show-keymap 'mu4e-headers-mode-map (evil-get-auxiliary-keymap mu4e-headers-mode-map 'normal) nil nil t))
   (map! :map mu4e-headers-mode-map
         :mn "?" #'+which-key-show-evil-major))
 
+(map! :leader "o -" #'deer)
 (after! ranger
-  (map! :leader
-        "o -" #'deer)
   (map! :map ranger-mode-map
         :mn "?" #'+which-key-show-evil-major))
 
@@ -1677,3 +1716,24 @@ Move it to the mode-line."
   :if doom-debug-p
   :config
   (add-hook 'doom-first-input-hook #'benchmark-init/deactivate))
+
+(use-package! disk-usage
+  :commands (disk-usage disk-usage-here))
+
+(custom-set-faces!
+  '(doom-modeline-spc-face :inherit nil)
+  '(header-line :inherit mode-line))
+
+(use-package! eldoc-box
+  :hook (eldoc-mode . eldoc-box-hover-mode)
+  :config
+  (defun +eldoc-box--upper-corner-position-function (width _)
+    "Place the box at the upper-right corner of the selected window,
+rather than the default which places it relative to the whole frame.
+Position is calculated base on WIDTH and HEIGHT of childframe text window"
+    (cons (+ (window-left-column) (- (window-pixel-width) width 16))
+          ;; y position + a little padding (16)
+          32))
+  (setq eldoc-box-position-function #'+eldoc-box--upper-corner-position-function)
+  ;; Remove the header-line in the eldoc-box.
+  (add-hook 'eldoc-box-buffer-hook 'mini-modeline--no-header))

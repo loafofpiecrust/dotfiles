@@ -1,11 +1,6 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; $DOOMDIR/packages.el
 
-;; To install a package with Doom you must declare them here and run 'doom sync'
-;; on the command line, then restart Emacs for the changes to take effect -- or
-;; use 'M-x doom/reload'.
-;; (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
-
 (package! benchmark-init)
 
 (package! tree-sitter
@@ -14,7 +9,6 @@
 (package! tree-sitter-langs
   :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
 
-;; Highlight markdown comments in certain modes.
 (package! theme-changer :pin "61945695a30d678e6a5d47cbe7c8aff59a8c30ea")
 (package! ewal)
 (package! ewal-doom-themes)
@@ -24,7 +18,7 @@
 (package! string-inflection)
 ;; Show registers before using them!
 (package! evil-owl :pin "ed5a98644a9cf321de213b50df6473de9f3a71ed")
-(package! olivetti :pin "b76a020aedb57a6a7d0ae61cde13434f5c802a44")
+(package! olivetti :pin "61d26644fd9dd2d45b80b9b82f5f930ed17530d0")
 
 ;; Extra languages
 (package! graphql-mode)
@@ -96,7 +90,7 @@
 ;; (package! vterm :recipe (:no-native-compile t))
 ;; (package! treemacs :recipe (:no-native-compile t))
 (package! vterm :built-in 'prefer)
-(package! undo-tree :disable t :built-in 'prefer)
+(package! undo-tree :built-in 'prefer)
 (package! plantuml-mode :built-in 'prefer)
 
 (package! highlight-numbers :disable t)
@@ -155,6 +149,10 @@
 (package! mixed-pitch :disable t)
 
 (package! memoize)
+
+(package! disk-usage)
+
+(package! eldoc-box)
 
 
 ;; To install a package directly from a remote git repo, you must specify a

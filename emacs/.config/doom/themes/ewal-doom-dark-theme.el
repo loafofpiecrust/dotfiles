@@ -230,11 +230,7 @@ Can be an integer to determine the exact padding."
     :foreground highlight)
    (doom-modeline-spc-face :inherit nil)
 
-   ((header-line &override) :extend t :weight 'medium ;; :background base6
-    :background base6
-    ;; :box `(:line-width 7 :color ,bg)
-    ;; :underline `(:style line :color ,yellow)
-    )
+   ((header-line &override) :extend t :weight 'medium :background base6 :box fg)
    ;; (mode-line-buffer-id :inherit 'variable-pitch)
    ;; ((doom-modeline-buffer-path &override) :inherit 'variable-pitch)
 

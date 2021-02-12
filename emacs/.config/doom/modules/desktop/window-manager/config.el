@@ -9,43 +9,10 @@
 (use-package! exwm
   :if (equal "t" (getenv "EMACS_EXWM"))
   :init
-  (setq exwm-input-global-keys `(;;(,(kbd "s-SPC") . ,doom-leader-map)
-                                 ;; TODO Launch programs in new window.
-                                 ;; Select windows.
-                                 ;; (,(kbd "s-h") . evil-window-left)
-                                 ;; (,(kbd "s-l") . evil-window-right)
-                                 ;; (,(kbd "s-j") . evil-window-down)
-                                 ;; (,(kbd "s-k") . evil-window-up)
-                                 ;; Move windows around.
-                                 ;; (,(kbd "s-H") . +evil/window-move-left)
-                                 ;; (,(kbd "s-J") . +evil/window-move-down)
-                                 ;; (,(kbd "s-K") . +evil/window-move-up)
-                                 ;; (,(kbd "s-L") . +evil/window-move-right)
-                                 ;; (,(kbd "s-u") . winner-undo)
-                                 ;;(,(kbd "s-U") . winner-redo)
-                                 ;; TODO hydra for moving windows.
+  (setq exwm-input-global-keys `(;; TODO hydra for moving windows.
                                  ;; Split the frame, and follow.
-                                 ;; (,(kbd "s-s") . ,(cmd! (evil-window-vsplit) (other-window 1)))
-                                 ;; (,(kbd "s-v") . ,(cmd! (evil-window-split) (other-window 1)))
                                  ;; TODO delete buffer too if it's an app.
                                  (,(kbd "C-w") . kill-current-buffer)
-                                 ;; (,(kbd "s-w") . kill-current-buffer)
-                                 ;; Workspace commands
-                                 ;;(,(kbd "s-q") . +workspace/close-window-or-workspace)
-                                 ;;(,(kbd "s-f") . exwm-floating-toggle-floating)
-                                 ;; (,(kbd "<s-tab>") . +workspace/switch-to-other)
-                                 ;; (,(kbd "<s-backspace>") . +workspace/delete)
-                                 ;; (,(kbd "s-n") . +workspace/new)
-                                 ;; (,(kbd "s-[") . +workspace/switch-left)
-                                 ;; (,(kbd "s-]") . +workspace/switch-right)
-                                 ;; (,(kbd "s-1") . +workspace/switch-to-0)
-                                 ;; (,(kbd "s-2") . +workspace/switch-to-1)
-                                 ;; (,(kbd "s-3") . +workspace/switch-to-2)
-                                 ;; (,(kbd "s-4") . +workspace/switch-to-3)
-                                 ;; (,(kbd "s-5") . +workspace/switch-to-4)
-                                 ;;(,(kbd "s-r") . exwm-reset)
-                                 ;; (,(kbd "s-<") . ivy-switch-buffer)
-                                 ;; (,(kbd "s-,") . ivy-switch-buffer-same-type)
                                  ;; I don't want a big message just for muting
                                  ;; the volume. I have a bar to show me if it worked.
                                  (,(kbd "<XF86AudioMute>") . desktop-environment-toggle-mute)
@@ -53,7 +20,6 @@
                                  (,(kbd "<XF86AudioLowerVolume>") . desktop-environment-volume-decrement)
                                  (,(kbd "<print>") . +wm/screenshot)
                                  ;; App Shortcuts
-                                 ;; (,(kbd "<s-return>") . eshell)
                                  (,(kbd "M-x") . counsel-M-x)))
 
   ;; Show all buffers on all displays since we have DOOM workspaces.
@@ -62,7 +28,9 @@
 
   ;; Pass all keys directly to windows.
   ;; TODO Leverage exwm line and char modes for evil keybindings.
-  (setq exwm-manage-configurations '((t tiling-header-line (:eval (doom-modeline-format--simple))
+  (setq exwm-manage-configurations '(;; ((string-match-p "^zoom" exwm-class-name)
+                                     ;;  floating nil)
+                                     (t tiling-header-line (:eval (doom-modeline-format--simple))
                                         tiling-mode-line nil
                                         floating-mode-line nil)))
 
@@ -141,6 +109,8 @@
   :config
   (setq desktop-environment-brightness-normal-decrement "5%-"
         desktop-environment-brightness-normal-increment "5%+")
+
+  (setq desktop-environment-screenshot-directory "~/Pictures/Screenshots")
 
   ;; This implementation is much faster than the default, preventing Emacs from
   ;; locking up.
