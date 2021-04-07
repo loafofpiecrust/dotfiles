@@ -185,6 +185,7 @@ Can be an integer to determine the exact padding."
 
    ((avy-lead-face &override) :weight 'normal)
 
+   ((cfw:face-title &override) :height 1.8 :box `(:line-width 4 :color ,bg))
    ((cfw:face-grid &override) :foreground base6)
    ((cfw:face-toolbar-button-off &override) :foreground fg-alt)
    ((cfw:face-sunday &override) :foreground strings)
@@ -230,7 +231,7 @@ Can be an integer to determine the exact padding."
     :foreground highlight)
    (doom-modeline-spc-face :inherit nil)
 
-   ((header-line &override) :extend t :weight 'medium :background base6 :box fg)
+   ((header-line &override) :extend t :weight 'medium :background base6)
    ;; (mode-line-buffer-id :inherit 'variable-pitch)
    ;; ((doom-modeline-buffer-path &override) :inherit 'variable-pitch)
 

@@ -1,0 +1,1 @@
+(setf *print-case* :downcase)

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # == Config programs with WM ==
 # gtk theme: lxappearance
@@ -32,7 +32,7 @@ xfsettingsd & disown
 # sleep 0.5 && polybar main & disown
 
 # Local endpoint for retrieving Outlook emails from behind OAuth
-davmail /home/snead/.config/davmail/.properties -notray & disown
+davmail /home/snead/.config/davmail/.properties & disown
 
 xmodmap -e "keycode 133 = Menu"
 xmodmap -e "keycode 108 = Menu"

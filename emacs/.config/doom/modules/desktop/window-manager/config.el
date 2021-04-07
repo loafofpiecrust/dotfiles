@@ -18,9 +18,10 @@
                                  (,(kbd "<XF86AudioMute>") . desktop-environment-toggle-mute)
                                  (,(kbd "<XF86AudioRaiseVolume>") . desktop-environment-volume-increment)
                                  (,(kbd "<XF86AudioLowerVolume>") . desktop-environment-volume-decrement)
-                                 (,(kbd "<print>") . +wm/screenshot)
+                                 ;; (,(kbd "<print>") . +wm/screenshot)
                                  ;; App Shortcuts
-                                 (,(kbd "M-x") . counsel-M-x)))
+                                 ;; (,(kbd "M-x") . counsel-M-x)
+                                 ))
 
   ;; Show all buffers on all displays since we have DOOM workspaces.
   (setq exwm-workspace-show-all-buffers t
@@ -93,6 +94,7 @@
   ;; Each monitor corresponds to an Emacs frame, and each frame can focus on a
   ;; different workspace. Workspaces are always shared between all frames.
   (use-package! exwm-randr
+    :disabled
     :config
     ;; Put one Emacs frame on my laptop screen, another on HDMI output.
     (setq exwm-randr-workspace-monitor-plist '(0 "eDP1" 1 "HDMI1"))
@@ -102,7 +104,6 @@
     (exwm-randr-enable))
 
   (exwm-enable))
-
 
 (use-package! desktop-environment
   :after exwm

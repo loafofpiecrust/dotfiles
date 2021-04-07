@@ -196,8 +196,7 @@ If DIR is not a project, it will be indexed (but not cached)."
 ;; completing-read, read-string, etc. functionality.
 (use-package! mini-frame
   :if (featurep! +childframe)
-  :hook (selectrum-mode . mini-frame-mode)
-
+  :hook (doom-first-input . mini-frame-mode)
   :custom
   ;; Immediately instantiate the mini-frame so there's no waiting when we first
   ;; want to use it.
@@ -217,7 +216,7 @@ If DIR is not a project, it will be indexed (but not cached)."
                                      ;; calc prompts
                                      calcDigit-start))
 
-  (setq mini-frame-resize 'not-set)
+  (setq mini-frame-resize t)
 
   ;; Keep the background color the same as normal frames.
   (defun +mini-frame-header-bg (&optional frame)
@@ -226,9 +225,9 @@ If DIR is not a project, it will be indexed (but not cached)."
 
   ;; Make it pretty and automatically resize based on the prompt.
   (setq mini-frame-show-parameters `((left . 0.5)
-                                     (top . 0.3)
+                                     (top . 42)
                                      (width . 0.55)
-                                     (height . 12)
+                                     (height . 1)
                                      (internal-border-width . 0)
                                      (left-fringe . 10)
                                      (right-fringe . 10)

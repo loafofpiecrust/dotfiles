@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 source "$HOME/.cache/wal/colors.sh"
 bspc config normal_border_color $color0

@@ -3,7 +3,6 @@
 	url = https://github.com/hlissner/doom-emacs
 	branch = develop
 
-[submodule "nixos"]
-	path = nixos
-	url = git@github.com:loafofpiecrust/dotnix
-	branch = main
+[submodule "fonts/.fonts/sf-mono"]
+	path = fonts/.fonts/sf-mono
+	url = git@github.com:supercomputra/SF-Mono-Font

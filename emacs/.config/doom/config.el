@@ -5,12 +5,13 @@
 
 ;; Let me load my custom packages.
 (add-load-path! "custom")
+(add-load-path! "/run/current-system/sw/share/emacs/site-lisp/mu4e")
 
 ;; Load custom themes from the "themes" folder here.
 (setq custom-theme-directory (expand-file-name "~/.config/doom/themes"))
 
 ;; Make shell commands run faster using bash...
-(setq shell-file-name "/bin/bash")
+(setq shell-file-name "/run/current-system/sw/bin/bash")
 ;; ...But let me use fish for interactive sessions.
 (after! vterm
   (setq vterm-shell "/run/current-system/sw/bin/fish"))
@@ -30,6 +31,7 @@
 ;; Symbol test: _ -> => , . `' "" O0l1*#
 (setq doom-font (font-spec :family "SF Mono" :size 15 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 18 :weight 'semi-bold)
+      ;; doom-unicode-font (font-spec :family "Symbola monospacified for Source Code Pro" :size 15)
       ;; These fonts were fucking up display of math symbols! Remove them!
       ;; doom-unicode-extra-fonts nil
       )
@@ -79,8 +81,8 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
 
 (after! fringe
   (set-fringe-mode 0)
-  (add-hook 'exwm-mode-hook #'+snead/remove-fringe)
-  (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
+  (add-hook! '(exwm-mode-hook pdf-view-mode-hook) #'+snead/remove-fringe)
+  ;; (add-hook 'after-change-major-mode-hook #'+snead/set-fringe)
   (add-hook! '(vterm-mode-hook) #'+snead/add-fringe))
 
 ;; Disable line highlighting by default, relying on mode-specific faces and
@@ -96,7 +98,11 @@ It seems excessive, but apparently necessary for fluid LSP usage!"
   (setq user-full-name "Taylor Snead"
         user-mail-address "taylor@snead.xyz")
 
+  (setq confirm-kill-processes nil)
+
   (setq-default truncate-lines nil)
+
+  (setq-default scroll-margin 2)
 
   ;; Inhibit auto-save messages because they're mostly distracting.
   (setq-default auto-save-no-message t)
@@ -492,8 +498,8 @@ Returns nil if not logged in."
   (map! :gi "C-s" (general-key "C-x C-s")
         :gi "C-v" '+evil-paste-at-point))
 
-(after! (org evil evil-collection)
-  (map! :map (org-mode-map)
+(after! org
+  (map! :map org-mode-map
         :nv "gr" (general-simulate-key "C-c C-c")))
 
 (use-package! tree-sitter
@@ -557,7 +563,7 @@ Returns nil if not logged in."
         :n "zG" '+spell/remove-word))
 
 (use-package org-ref
-  :after-call org-mode
+  ;; :after-call org-mode
   :config
   (setq org-ref-completion-library 'org-ref-ivy-cite)
   (map! :map org-mode-map
@@ -965,12 +971,12 @@ are ineffectual otherwise."
   ;; FIXME Start mu4e in the background to retrieve new mail at boot.
   (mu4e t))
 
-(use-package! mu4e-send-delay
-  :disabled
-  :after mu4e
-  :config
-  (add-hook 'mu4e-main-mode-hook #'mu4e-send-delay-initialize-send-queue-timer)
-  (mu4e-send-delay-setup))
+;; (use-package! mu4e-send-delay
+;;   :disabled
+;;   :after mu4e
+;;   :config
+;;   (add-hook 'mu4e-main-mode-hook #'mu4e-send-delay-initialize-send-queue-timer)
+;;   (mu4e-send-delay-setup))
 
 (after! web-mode
   (add-to-list 'web-mode-engines-alist '("django" . "\\.tera\\.(xml|html)\\'")))
@@ -982,12 +988,12 @@ are ineffectual otherwise."
 (add-hook 'pdf-outline-buffer-mode-hook #'disable-line-numbers)
 
 (use-package! olivetti
-  :hook ((org-mode markdown-mode magit-status-mode forge-topic-mode) . olivetti-mode)
+  :hook ((markdown-mode magit-status-mode forge-topic-mode) . olivetti-mode)
   :bind (:map doom-leader-map
          ("to" . olivetti-mode))
   :config
   (add-hook 'olivetti-mode-hook #'disable-line-numbers)
-  (setq-default olivetti-body-width 90))
+  (setq-default olivetti-body-width 95))
 
 (setq +ligatures-extra-symbols
       '(:name "»"
@@ -1036,28 +1042,28 @@ are ineffectual otherwise."
         :merge-right "├╮"
         :split-right "├╯"))
 
-(after! org
-  (set-ligatures! 'org-mode
-                  :title "#+TITLE:"
-                  :title "#+title:"
-                  :quote "#+BEGIN_QUOTE"
-                  :quote_end "#+END_QUOTE"
-                  :quote "#+begin_quote"
-                  :quote_end "#+end_quote"
-                  :begin_export "#+BEGIN_EXPORT"
-                  :end_export "#+END_EXPORT"
-                  :begin_export "#+begin_export"
-                  :end_export "#+end_export"
-                  :begin_quote "#+BEGIN_VERSE"
-                  :end_quote "#+END_VERSE"
-                  :begin_quote "#+begin_verse"
-                  :end_quote "#+end_verse"
-                  :section ":PROPERTIES:"
-                  :end ":END:"))
+;; (after! org
+;;   (set-ligatures! 'org-mode
+;;     :title "#+TITLE:"
+;;     :title "#+title:"
+;;     :quote "#+BEGIN_QUOTE"
+;;     :quote_end "#+END_QUOTE"
+;;     :quote "#+begin_quote"
+;;     :quote_end "#+end_quote"
+;;     :begin_export "#+BEGIN_EXPORT"
+;;     :end_export "#+END_EXPORT"
+;;     :begin_export "#+begin_export"
+;;     :end_export "#+end_export"
+;;     :begin_quote "#+BEGIN_VERSE"
+;;     :end_quote "#+END_VERSE"
+;;     :begin_quote "#+begin_verse"
+;;     :end_quote "#+end_verse"
+;;     :section ":PROPERTIES:"
+;;     :end ":END:"))
 
 (after! markdown-mode
   (set-ligatures! 'markdown-mode
-                  :src_block "```"))
+    :src_block "```"))
 
 (after! web-mode
   (setq web-mode-prettify-symbols-alist nil))
@@ -1068,19 +1074,19 @@ are ineffectual otherwise."
 ;; TODO maybe there's a better machanism for replacing these that works more consistently?
 (after! md-msg
   (set-ligatures! 'md-msg-view-mode
-                  :exclamation "\\!"
-                  :dash "\\-"
-                  :endash "\\--"
-                  :asterisk "\\*"
-                  :lt "\\<"
-                  ;; :nothing "\n\\\n"
-                  ;; :nothing "\n\n\n"
-                  ;; :nothing "\\"
-                  :at_symbol "\\@"
-                  :pound "\\#"
-                  :arrow "-\\>"
-                  :pipe "\\|"
-                  :turnstile "\\|-"))
+    :exclamation "\\!"
+    :dash "\\-"
+    :endash "\\--"
+    :asterisk "\\*"
+    :lt "\\<"
+    ;; :nothing "\n\\\n"
+    ;; :nothing "\n\n\n"
+    ;; :nothing "\\"
+    :at_symbol "\\@"
+    :pound "\\#"
+    :arrow "-\\>"
+    :pipe "\\|"
+    :turnstile "\\|-"))
 
 (load! "custom/mixed-pitch")
 ;; (use-package! mixed-pitch
@@ -1095,7 +1101,7 @@ are ineffectual otherwise."
   (add-to-list 'mixed-pitch-fixed-pitch-faces e))
 
 (custom-set-faces!
-  '(mixed-pitch-variable-pitch :family "Merriweather" :height 1.0))
+  '(mixed-pitch-variable-pitch :family "Times New Roman" :height 1.25))
 ;;)
 
 ;;;; Periodically clean buffers
@@ -1128,7 +1134,7 @@ are ineffectual otherwise."
 (map! :i "C-z" 'undo)
 
 (use-package! ox-moderncv
-  :after-call org-mode
+  :commands (org-cv-export-to-pdf)
   :config
   (defun org-cv-export-to-pdf ()
     (interactive)
@@ -1411,6 +1417,9 @@ end of the workspace list."
 
 ;; Give full state names to make learning the names easier.
 (after! evil
+  (setq-default evil-kill-on-visual-paste nil
+                evil-move-cursor-back t
+                evil-visual-region-expanded t)
   (setq evil-normal-state-tag " NORMAL "
         evil-insert-state-tag " INSERT "
         evil-visual-state-tag " VISUAL "
@@ -1434,7 +1443,9 @@ end of the workspace list."
   (doom-modeline-def-segment ace-window '(:eval (and (featurep 'ace-window)
                                                      (propertize (concat " " (upcase (window-parameter (selected-window) 'ace-window-path)) " ")
                                                                  'face
-                                                                 (and (doom-modeline--active) 'doom-modeline-bar)))))
+                                                                 (if (doom-modeline--active)
+                                                                     'doom-modeline-bar
+                                                                   'doom-modeline-bar-inactive)))))
   (doom-modeline-def-segment ranger '(:eval (ranger-header-line)))
   (doom-modeline-def-segment buffer-info-revised
     "Combined information about the current buffer, including the current working
@@ -1444,26 +1455,29 @@ directory, the file name, and its state (modified, read-only or non-existent)."
      (doom-modeline--buffer-state-icon)
      (doom-modeline--buffer-name)))
 
+  (doom-modeline-def-segment vertical-pad (list (propertize " " 'display '(raise +0.25))
+                                                (propertize " " 'display '(raise -0.25))))
+
   (doom-modeline-def-modeline 'main
-    '(bar ace-window modals buffer-info-revised buffer-position " " matches)
+    '(ace-window modals buffer-info-revised buffer-position " " matches vertical-pad)
     '(misc-info input-method major-mode vcs lsp checker " "))
   (doom-modeline-def-modeline 'project
-    '(bar ace-window buffer-default-directory)
+    '(ace-window buffer-default-directory vertical-pad)
     '(misc-info irc mu4e github debug major-mode process " "))
   (doom-modeline-def-modeline 'vcs
-    '(bar ace-window buffer-info-simple)
+    '(ace-window buffer-info-simple vertical-pad)
     '(misc-info vcs " "))
   (doom-modeline-def-modeline 'simple
-    '(bar ace-window "  " exwm-title)
+    '(ace-window "  " exwm-title vertical-pad)
     '(misc-info major-mode " "))
   (doom-modeline-def-modeline 'pdf
-    '(bar ace-window " " matches buffer-info-simple pdf-pages)
+    '(ace-window " " matches buffer-info-simple pdf-pages vertical-pad)
     '(misc-info major-mode process vcs " "))
   (doom-modeline-def-modeline 'dashboard
-    '(bar ace-window window-number buffer-default-directory-simple)
+    '(ace-window window-number buffer-default-directory-simple vertical-pad)
     '(misc-info irc mu4e github debug minor-modes input-method major-mode process " "))
   (doom-modeline-def-modeline 'ranger
-    '(bar ace-window " " ranger)
+    '(ace-window " " ranger vertical-pad)
     '())
   (add-hook! '(ranger-mode-hook)
     (defun doom-modeline-set-ranger-modeline ()
@@ -1478,12 +1492,12 @@ directory, the file name, and its state (modified, read-only or non-existent)."
   (setq evil-escape-delay 0.04))
 
 (defvar +snead/volume nil)
-(defun +snead/volume-update ()
-  (setq +snead/volume (list (+svg-icon-string "material" "volume-high")
-                            (propertize " " 'display '(space :width 0.5))
-                            (concat (desktop-environment-volume-get) "%"))))
-(after! desktop-environment
-  (run-with-timer 1 2 #'+snead/volume-update))
+;;(defun +snead/volume-update ()
+  ;;(setq +snead/volume (list (+svg-icon-string "material" "volume-high")
+                            ;;(propertize " " 'display '(space :width 0.5))
+                            ;;(concat (desktop-environment-volume-get) "%"))))
+;;(after! desktop-environment
+  ;;(run-with-timer 1 2 #'+snead/volume-update))
 
 (use-package! mini-modeline
   :if (equal "t" (getenv "EMACS_EXWM"))
@@ -1506,11 +1520,12 @@ directory, the file name, and its state (modified, read-only or non-existent)."
             (propertize "--"
                         'display (svg-icon "material" (if connected "wifi" "wifi-off") "white")
                         'help-echo (if connected network-name "Disconnected")))))
-  (run-with-timer 1 5 #'+snead/wifi-update)
+  ;;(run-with-timer 1 5 #'+snead/wifi-update)
 
   (let ((half-space (propertize " " 'display '(space :width 0.5))))
-    (setq mini-modeline-r-format `((:eval (doom-modeline-segment--mu4e))
-                                   (:eval (+svg-icon-string "material" "folder"))
+    (setq mini-modeline-r-format `(
+                                   (:eval (doom-modeline-segment--mu4e))
+                                   ;;(:eval (+svg-icon-string "material" "folder"))
                                    ,half-space
                                    (:eval (+workspace-current-name))
                                    "  "
@@ -1521,7 +1536,7 @@ directory, the file name, and its state (modified, read-only or non-existent)."
                                    (:eval (let ((status doom-modeline--battery-status))
                                             (list (car status) (cdr status))))
                                    "  "
-                                   (:eval (+svg-icon-string "material" "clock-outline"))
+                                   ;;(:eval (+svg-icon-string "material" "clock-outline"))
                                    ,half-space
                                    display-time-string)
           ;; Make room for an external system tray on the right side.
@@ -1567,6 +1582,7 @@ Move it to the mode-line."
 ;;   line-spacing 2)
 
 (use-package! svg-icon
+	      :disabled
   :after all-the-icons doom-modeline
   :config
   (defun +svg-icon-string (collection name)
@@ -1644,7 +1660,7 @@ Move it to the mode-line."
         :n "gr" #'proced-update))
 
 (after! which-key
-  (setq which-key-idle-delay 0.5
+  (setq which-key-idle-delay 0.4
         which-key-show-prefix nil))
 
 ;; Make which-key prettier with groups and command descriptions.
@@ -1688,30 +1704,32 @@ Move it to the mode-line."
         (message "which-key: No map named %s" map-sym)))))
 
 ;; Show help menus in evil-bound modes.
-(after! mu4e
-  (map! :map mu4e-headers-mode-map
-        :mn "?" #'+which-key-show-evil-major))
+(map! :after mu4e
+      :map mu4e-headers-mode-map
+      :mn "?" #'+which-key-show-evil-major)
 
 (map! :leader "o -" #'deer)
-(after! ranger
-  (map! :map ranger-mode-map
-        :mn "?" #'+which-key-show-evil-major))
+(map! :after ranger
+      :map ranger-mode-map
+      :mn "?" #'+which-key-show-evil-major)
 
 (after! pdf-view
   (map! :map pdf-view-mode-map
         :mn "?" #'+which-key-show-evil-major))
 
+
 ;; Center the minibuffer to make it easier to read quickly.
-(defvar +snead/max-minibuffer-width 130)
-(defun +snead/center-minibuffer ()
-  (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
-    (unless (and (featurep 'mini-frame) mini-frame-mode)
-      (set-window-margins nil margin margin))))
-(add-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
+;; (defvar +snead/max-minibuffer-width 130)
+;; (defun +snead/center-minibuffer ()
+;;   (let ((margin (max 0 (/ (- (window-width) +snead/max-minibuffer-width) 2))))
+;;     (unless (and (featurep 'mini-frame) mini-frame-mode)
+;;       (set-window-fringes nil margin margin))))
+;; (remove-hook 'minibuffer-setup-hook #'+snead/center-minibuffer)
 
 (map! :after envrc
       :leader "e" envrc-command-map)
 
+;; Benchmark startup if Emacs is launched with --debug-init
 (use-package! benchmark-init
   :if doom-debug-p
   :config
@@ -1724,16 +1742,45 @@ Move it to the mode-line."
   '(doom-modeline-spc-face :inherit nil)
   '(header-line :inherit mode-line))
 
+(after! lsp-mode
+  (setq lsp-signature-function #'lsp-lv-message))
+
 (use-package! eldoc-box
-  :hook (eldoc-mode . eldoc-box-hover-mode)
+  :hook ((prog-mode) . eldoc-box-hover-mode)
   :config
+  ;; TODO Avoid point when calculating the box position. (Useful for small windows)
   (defun +eldoc-box--upper-corner-position-function (width _)
     "Place the box at the upper-right corner of the selected window,
 rather than the default which places it relative to the whole frame.
 Position is calculated base on WIDTH and HEIGHT of childframe text window"
-    (cons (+ (window-left-column) (- (window-pixel-width) width 16))
+    (cons (+ (window-pixel-left) (- (window-pixel-width) width 8))
           ;; y position + a little padding (16)
-          32))
+          (+ (window-pixel-top) (window-header-line-height))))
   (setq eldoc-box-position-function #'+eldoc-box--upper-corner-position-function)
   ;; Remove the header-line in the eldoc-box.
-  (add-hook 'eldoc-box-buffer-hook 'mini-modeline--no-header))
+
+  (after! mini-modeline
+    (add-hook 'eldoc-box-buffer-hook 'mini-modeline--no-header)))
+
+;; Highlight regions of operation for slightly longer than default.
+(after! evil-goggles
+  (setq evil-goggles-duration 0.2))
+
+;; Exclude org-mode from company, b/c most of the time I don't need completion there.
+(after! company
+  (setq company-global-modes '(not erc-mode message-mode help-mode gud-mode org-mode)))
+
+;; I don't need smartparens in org-mode.
+;; (add-hook 'org-mode-hook 'turn-off-smartparens-mode)
+
+(after! ws-butler
+  (setq ws-butler-keep-whitespace-before-point t))
+
+(use-package! plantuml-mode)
+
+(setq-default inferior-lisp-program "common-lisp.sh")
+
+(use-package! sly-asdf
+  :defer t
+  :init
+  (add-to-list 'sly-contribs 'sly-asdf 'append))

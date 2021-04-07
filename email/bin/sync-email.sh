@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 offlineimap -a Personal -o & pid1=$!
 offlineimap -a Northeastern -o & pid2=$!

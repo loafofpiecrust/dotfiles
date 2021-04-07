@@ -4,10 +4,10 @@
 (package! benchmark-init)
 
 (package! tree-sitter
-  :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
+  :pin "ae26995c4b006f37b8e46a6125e0b60100b42974")
 
 (package! tree-sitter-langs
-  :pin "d569763c143fdf4ba8480befbb4b8ce1e49df5e2")
+  :pin "5d362ce98dcf656d7a55fcad6ae21c0a2caca861")
 
 (package! theme-changer :pin "61945695a30d678e6a5d47cbe7c8aff59a8c30ea")
 (package! ewal)
@@ -130,8 +130,8 @@
 (package! general
   :recipe (:local-repo "~/pie/general.el" :build (:not compile native-compile)))
 
-(package! svg-icon
-  :recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
+;;(package! svg-icon
+  ;;:recipe (:host github :repo "loafofpiecrust/emacs-svg-icon" :branch "icon-submodules"))
 
 (package! hercules
   :recipe (:host gitlab :repo "jjzmajic/hercules.el"))
@@ -153,6 +153,8 @@
 (package! disk-usage)
 
 (package! eldoc-box)
+
+(package! sly-asdf)
 
 
 ;; To install a package directly from a remote git repo, you must specify a

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # wait for formats to output...
 # sleep 0.5
@@ -23,6 +23,7 @@
 # ln -sf ~/.cache/wal/alacritty.yml ~/.config/alacritty/alacritty.yml
 
 # Restart dunst to force it to read new colors.
+mkdir -p ~/.config/dunst
 ln -sf ~/.cache/wal/dunstrc ~/.config/dunst/dunstrc
 if pgrep dunst
 then
@@ -39,4 +40,4 @@ fi
 # pkill waybar && ~/bin/waybar.sh & disown
 
 # Reload theme in emacs!
-emacsclient -n -e "(progn (ewal-load-colors) (when (string-match \"ewal-\" (symbol-name doom-theme)) (load-theme doom-theme)))"
+# emacsclient -n -e "(progn (ewal-load-colors) (when (string-match \"ewal-\" (symbol-name doom-theme)) (load-theme doom-theme)))"
